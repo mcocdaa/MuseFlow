@@ -17,7 +17,8 @@ import {
   Tag,
   CheckCircle,
   Clock,
-  HardDrive
+  HardDrive,
+  Bot
 } from 'lucide-vue-next'
 import { revealInExplorer, openWithDefaultApp, createSuperset, addItemToSuperset } from '../api'
 
@@ -124,29 +125,51 @@ const formatBytes = (bytes) => {
               <Folder class="w-3.5 h-3.5 text-blue-400" />
               <span>系列目录 (Collections)</span>
             </span>
-            <span class="text-[11px] text-gray-500">{{ mediaStore.collections.length }}</span>
+            <div class="flex items-center gap-1">
+              <button
+                @click="mediaStore.openAIOrganizer()"
+                class="p-1 hover:text-purple-300 text-purple-400/80 rounded transition-colors"
+                title="AI 智能整理分析"
+              >
+                <Bot class="w-3.5 h-3.5" />
+              </button>
+              <span class="text-[11px] text-gray-500">{{ mediaStore.collections.length }}</span>
+            </div>
           </div>
 
           <div class="space-y-1 max-h-60 overflow-y-auto pr-1">
-            <button
+            <div
               v-for="col in mediaStore.collections"
               :key="col.id"
-              @click="handleSelectCollection(col.id)"
+              class="group/col flex items-center justify-between rounded-lg transition-colors text-left"
               :class="[
-                'w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors text-left',
                 mediaStore.selectedCollectionId === col.id
                   ? 'bg-blue-600/30 text-blue-200 border border-blue-500/30'
                   : 'text-gray-300 hover:bg-white/5'
               ]"
             >
-              <span class="truncate flex items-center gap-2">
-                <FolderOpen class="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                <span class="truncate">{{ col.name }}</span>
-              </span>
-              <span class="text-[10px] text-gray-500 shrink-0 bg-white/5 px-1.5 py-0.5 rounded-full">
-                {{ col.unit_count }}
-              </span>
-            </button>
+              <button
+                @click="handleSelectCollection(col.id)"
+                class="flex-grow flex items-center justify-between px-2.5 py-1.5 text-xs truncate"
+              >
+                <span class="truncate flex items-center gap-2">
+                  <FolderOpen class="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span class="truncate">{{ col.name }}</span>
+                </span>
+                <span class="text-[10px] text-gray-500 shrink-0 bg-white/5 px-1.5 py-0.5 rounded-full mr-1">
+                  {{ col.unit_count }}
+                </span>
+              </button>
+
+              <button
+                v-if="col.folder_path"
+                @click.stop="mediaStore.openAIOrganizer(col.folder_path)"
+                class="p-1.5 text-purple-400 opacity-0 group-hover/col:opacity-100 hover:text-purple-200 transition-opacity"
+                title="AI 深入分析并整理此系列"
+              >
+                <Bot class="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -221,6 +244,15 @@ const formatBytes = (bytes) => {
               class="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
             />
           </div>
+
+          <button
+            @click="mediaStore.openAIOrganizer()"
+            class="flex items-center gap-1.5 bg-gradient-to-r from-purple-600/30 to-pink-600/30 hover:from-purple-600/40 hover:to-pink-600/40 border border-purple-500/40 text-purple-200 text-xs px-3 py-2 rounded-xl transition-all shrink-0 shadow-sm"
+            title="对当前或指定文件夹进行 AI 拓扑分析与重组"
+          >
+            <Bot class="w-4 h-4 text-purple-400" />
+            <span>AI 深度整理</span>
+          </button>
         </div>
 
         <!-- Items Table / Grid -->

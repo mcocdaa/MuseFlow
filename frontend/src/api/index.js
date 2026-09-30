@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const api = axios.create({
   baseURL: '/api',
-  timeout: 30000,
+  timeout: 120000, // 120s for AI deep reasoning
 })
 
 export const fetchFeed = (params) => api.get('/recommend/feed', { params }).then(res => res.data)
@@ -22,5 +22,14 @@ export const logTelemetry = (unitId, action, dwellSeconds = 0) => api.post('/tel
 export const revealInExplorer = (params) => api.post('/system/reveal', params).then(res => res.data)
 export const openWithDefaultApp = (params) => api.post('/system/open', params).then(res => res.data)
 export const fetchMemoryRecapContext = () => api.get('/ai/memory_recap_context').then(res => res.data)
+
+// AI Deep Organizer API
+export const analyzeFolderWithAI = (folderPath, instruction = '') =>
+  api.post('/ai/analyze_folder', { folder_path: folderPath, instruction }).then(res => res.data)
+
+export const applyAITriagePlan = (folderPath, plan) =>
+  api.post('/ai/apply_triage', { folder_path: folderPath, plan }).then(res => res.data)
+
+export const fetchAISettings = () => api.get('/ai/settings').then(res => res.data)
 
 export default api

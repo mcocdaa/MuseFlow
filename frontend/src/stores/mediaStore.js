@@ -27,9 +27,16 @@ export const useMediaStore = defineStore('media', {
     scanModalOpen: false,
     recapModalOpen: false,
     recapData: null,
+    aiOrganizerModalOpen: false,
+    aiOrganizerTargetFolder: '',
   }),
 
   actions: {
+    openAIOrganizer(folderPath = '') {
+      this.aiOrganizerTargetFolder = folderPath
+      this.aiOrganizerModalOpen = true
+    },
+
     async init() {
       try {
         const algos = await fetchAlgorithms()

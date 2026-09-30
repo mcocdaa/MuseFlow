@@ -19,9 +19,15 @@ SERVER_PORT = int(os.getenv("MUSEFLOW_PORT", "8765"))
 MAX_DWELL_SECONDS = 180.0
 
 # Supported media extensions
-SUPPORTED_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".avif", ".heic"}
-SUPPORTED_VIDEO_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".flv"}
-SUPPORTED_AUDIO_EXTS = {".mp3", ".wav", ".flac", ".aac", ".m4a", ".ogg"}
-SUPPORTED_SUBTITLE_EXTS = {".srt", ".vtt", ".ass"}
+SUPPORTED_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".avif", ".heic", ".raw", ".cr2", ".nef", ".arw"}
+SUPPORTED_VIDEO_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".flv", ".m4v"}
+SUPPORTED_AUDIO_EXTS = {".mp3", ".wav", ".flac", ".aac", ".m4a", ".ogg", ".ape"}
+# Subtitles and companion lyric/cue files
+SUPPORTED_SUBTITLE_EXTS = {".srt", ".vtt", ".ass", ".sub", ".lrc", ".slc", ".cue"}
 
 ALL_MEDIA_EXTS = SUPPORTED_IMAGE_EXTS | SUPPORTED_VIDEO_EXTS | SUPPORTED_AUDIO_EXTS | SUPPORTED_SUBTITLE_EXTS
+
+# AI LLM Settings
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://pool.creative-koala-llm.top/v1")
+LLM_API_KEY = os.getenv("LLM_API_KEY", "sk-ad3e4bdafe5c4c832cefe1562eb82dce20c2d103b54716cf266c7a4a0cf1fa5f")
+LLM_MODEL = os.getenv("LLM_MODEL", "grok-4.7")

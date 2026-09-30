@@ -9,6 +9,7 @@ import ImageViewerModal from './components/ImageViewerModal.vue'
 import AudioPlayerBar from './components/AudioPlayerBar.vue'
 import ScanModal from './components/ScanModal.vue'
 import AIRecapModal from './components/AIRecapModal.vue'
+import AIOrganizerModal from './components/AIOrganizerModal.vue'
 
 const mediaStore = useMediaStore()
 
@@ -34,5 +35,6 @@ onMounted(() => {
     <AudioPlayerBar />
     <ScanModal />
     <AIRecapModal />
+    <AIOrganizerModal />
   </div>
 </template>
