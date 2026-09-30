@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useMediaStore } from './stores/mediaStore'
+import { useThemeStore } from './stores/themeStore'
 import Navbar from './components/Navbar.vue'
 import StreamFeed from './components/StreamFeed.vue'
 import Workplace from './components/Workplace.vue'
@@ -10,16 +11,22 @@ import AudioPlayerBar from './components/AudioPlayerBar.vue'
 import ScanModal from './components/ScanModal.vue'
 import AIRecapModal from './components/AIRecapModal.vue'
 import AIOrganizerModal from './components/AIOrganizerModal.vue'
+import ThemePickerModal from './components/ThemePickerModal.vue'
 
 const mediaStore = useMediaStore()
+const themeStore = useThemeStore()
 
 onMounted(() => {
+  themeStore.initTheme()
   mediaStore.init()
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#0f1117] text-gray-100 flex flex-col font-sans selection:bg-purple-500/30 selection:text-purple-200">
+  <div
+    class="min-h-screen flex flex-col font-sans transition-colors duration-300"
+    style="background-color: var(--bg-app); color: var(--text-primary);"
+  >
     <!-- Top Navigation Bar -->
     <Navbar />
 
@@ -36,5 +43,6 @@ onMounted(() => {
     <ScanModal />
     <AIRecapModal />
     <AIOrganizerModal />
+    <ThemePickerModal />
   </div>
 </template>

@@ -100,7 +100,8 @@ const handleToggleFavorite = (e, unit) => {
         v-for="unit in mediaStore.feedItems"
         :key="unit.id"
         @click="handleCardClick(unit)"
-        class="group relative bg-[#171923]/70 hover:bg-[#1a1f2e] border border-white/5 hover:border-purple-500/30 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-purple-500/10 cursor-pointer flex flex-col"
+        class="group relative border rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer flex flex-col"
+        style="background-color: var(--bg-card); border-color: var(--border-color);"
       >
         <!-- Media Thumbnail Container -->
         <div class="relative w-full aspect-[4/3] bg-black/40 overflow-hidden flex items-center justify-center">
@@ -125,7 +126,10 @@ const handleToggleFavorite = (e, unit) => {
             v-if="unit.unit_type !== 'image'"
             class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
           >
-            <div class="w-12 h-12 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+            <div
+              class="w-12 h-12 rounded-full text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform"
+              style="background-color: var(--accent-color);"
+            >
               <Play class="w-6 h-6 ml-0.5 fill-current" />
             </div>
           </div>

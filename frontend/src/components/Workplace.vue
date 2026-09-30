@@ -99,7 +99,10 @@ const formatBytes = (bytes) => {
   <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[700px]">
       <!-- Left Sidebar: Collections & Supersets -->
-      <aside class="lg:col-span-3 bg-[#171923]/60 border border-white/10 rounded-2xl p-4 flex flex-col gap-6">
+      <aside
+        class="lg:col-span-3 border rounded-2xl p-4 flex flex-col gap-6 transition-colors"
+        style="background-color: var(--bg-surface); border-color: var(--border-color);"
+      >
         <!-- All Root Items -->
         <div>
           <button
@@ -231,7 +234,10 @@ const formatBytes = (bytes) => {
       </aside>
 
       <!-- Main Explorer Area -->
-      <main class="lg:col-span-6 bg-[#171923]/60 border border-white/10 rounded-2xl p-4 flex flex-col">
+      <main
+        class="lg:col-span-6 border rounded-2xl p-4 flex flex-col transition-colors"
+        style="background-color: var(--bg-surface); border-color: var(--border-color);"
+      >
         <!-- Top Toolbar -->
         <div class="flex items-center gap-3 mb-4">
           <div class="relative flex-grow">
@@ -315,7 +321,10 @@ const formatBytes = (bytes) => {
       </main>
 
       <!-- Right Inspector Details Drawer -->
-      <aside class="lg:col-span-3 bg-[#171923]/60 border border-white/10 rounded-2xl p-4 flex flex-col justify-between">
+      <aside
+        class="lg:col-span-3 border rounded-2xl p-4 flex flex-col justify-between transition-colors"
+        style="background-color: var(--bg-surface); border-color: var(--border-color);"
+      >
         <div v-if="selectedItem" class="space-y-5">
           <!-- Title & Type Header -->
           <div>
