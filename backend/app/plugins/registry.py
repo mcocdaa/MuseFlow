@@ -96,6 +96,7 @@ def get_recommender(name: str = "discover") -> BaseRecommender:
 def list_recommenders() -> List[Dict[str, str]]:
     return [
         {
+            "id": rec.name,
             "name": rec.name,
             "display_name": rec.display_name,
             "description": rec.description

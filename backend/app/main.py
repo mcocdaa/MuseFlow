@@ -55,6 +55,8 @@ def health_check():
     return {"status": "ok", "app": "MuseFlow", "version": "0.1.0"}
 
 # Static build serving if frontend/dist exists
-FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+import os
+_env_frontend_dist = os.getenv("MUSEFLOW_FRONTEND_DIST")
+FRONTEND_DIST = Path(_env_frontend_dist).resolve() if _env_frontend_dist else (Path(__file__).resolve().parent.parent.parent / "frontend" / "dist")
 if FRONTEND_DIST.exists():
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="static")

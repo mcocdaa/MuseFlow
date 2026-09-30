@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = BASE_DIR / "data"
+_env_data_dir = os.getenv("MUSEFLOW_DATA_DIR")
+DATA_DIR = Path(_env_data_dir).resolve() if _env_data_dir else BASE_DIR / "data"
 DB_DIR = DATA_DIR / "db"
 THUMBNAILS_DIR = DATA_DIR / "thumbnails"
 

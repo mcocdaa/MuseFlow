@@ -2,201 +2,233 @@
 
 # 🌊 MuseFlow (灵眸流)
 
-### *Your Personal Algorithmic Media Stream & AI Digital Asset Hub*
-**非破坏性本地媒体管理 × 算法推荐流式消费 × 大模型目录拓扑重组**
+**Local-First, AI-Powered Digital Asset Hub & Algorithmic Streaming Platform**  
+*Non-Destructive Local Indexing × Algorithmic Stream Consumption × LLM Directory Topology Triage*
 
-<p align="center">
-  <a href="https://github.com/mcocdaa/MuseFlow/releases"><img src="https://img.shields.io/badge/version-v0.1.0-purple?style=for-the-badge&logo=git" alt="Version"></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge" alt="License"></a>
-  <img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
-  <img src="https://img.shields.io/badge/Vue-3.5+-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white" alt="Vue 3">
-  <img src="https://img.shields.io/badge/Tailwind-v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
-</p>
+[![Family: *Flow](https://img.shields.io/badge/family-*Flow-8A2BE2.svg)](https://github.com/mcocdaa)
+[![CI Status](https://github.com/mcocdaa/MuseFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/mcocdaa/MuseFlow/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python: 3.13+](https://img.shields.io/badge/Python-3.13%2B-brightgreen.svg)](pyproject.toml)
+[![Vue: 3.5+](https://img.shields.io/badge/Vue-3.5%2B-4FC08D.svg)](frontend/package.json)
+[![Tailwind: v4](https://img.shields.io/badge/Tailwind-v4-38B2AC.svg)](frontend/package.json)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-<p align="center">
-  <a href="#-key-features">✨ 核心特性</a> •
-  <a href="#-why-museflow">💡 为什么选择 MuseFlow</a> •
-  <a href="#-quick-start">🚀 极速上手</a> •
-  <a href="#-architecture">🏛️ 架构设计</a> •
-  <a href="#-themes">🎨 个性化主题</a> •
-  <a href="#-docs--api">📖 文档与接口</a>
-</p>
+[English](README.md) | [简体中文](README_CN.md)
 
 </div>
 
 ---
 
-## 💡 为什么选择 MuseFlow？(Why MuseFlow?)
+## 💡 Why MuseFlow?
 
-市面上的数字资产工具往往将**“管理 (DAM)”**与**“消费 (Streaming)”**割裂：
+Modern creators and media collectors accumulate vast amounts of fragmented media files: travel photo batches, Vlog project suites (video + external subtitles + BGM audio + cover art), lossless audio discs, and multi-tier archive folders. Traditional tools force an artificial divide between **"Digital Asset Management (DAM)"** and **"Content Consumption (Streaming)"**:
 
-| 维度对比 | 传统素材管理工具 (Eagle / Billfish) | 传统家庭影院 (Jellyfin / Plex) | 传统相册系统 (Immich / PhotoPrism) | 🌊 **MuseFlow (灵眸流)** |
+| Dimension | Traditional Asset DAMs (Eagle / Billfish) | Home Theater Servers (Jellyfin / Plex) | Cloud Photo Hubs (Immich / PhotoPrism) | 🌊 **MuseFlow (灵眸流)** |
 | :--- | :--- | :--- | :--- | :--- |
-| **底层物理文件** | 强制导入专有库格式，破坏文件结构 | 物理目录映射 | 物理目录映射 | **零破坏原生索引**，随时调用外部软件 |
-| **复合工程包** | 拆成孤立碎文件 | 仅识别单视频 | 无法有效处理音画字合集 | **智能识别 `mp4+srt+wav` 最小消费原子** |
-| **混乱目录拓扑** | 纯人工打标签整理 | 死板扫描，不支持子系列提取 | 基于时间线强行合并 | **LLM 拓扑推断 (如 Grok-4.7) 自动剥离子系列** |
-| **浏览消费手感** | 办公表格/平铺，无算法喂饭感 | 传统电影海报网格 | 传统相册时间流 | **小红书瀑布流 + 抖音上下滑视频 + 专业音乐条** |
-| **跨维虚拟超集** | 仅支持单一标签 | 依赖手动建播放列表 | 仅人脸相册 | **虚拟超集 (Supersets)：跨物理目录任意组合** |
-| **推荐系统** | 无推荐算法 | 仅按最新添加/继续观看 | 无 | **可插拔推荐插件 (漫游/时光回忆/智能加权)** |
+| **Physical Files** | Imports to proprietary vault, destroys original folder hierarchy | Read-only physical mount | Forcefully renames or reorganizes into date-based trees | **Zero-Destruction In-Place Indexing**, physical files remain 100% untouched |
+| **Composite Project Bundles** | Fragmented into loose orphan files | Treats as isolated single video | Cannot pair multitrack companion files | **Auto-detects `mp4+srt+wav` as atomic consumption particles** |
+| **Chaotic Directory Topology** | Purely manual tagging | Rigid scanning, misses sub-collections | Forces chronological flattening | **LLM (Grok-4.7) Topology Triage isolates sub-series & pairs orphan files** |
+| **Consumption Experience** | Spreadsheet / dense grid with no algorithmic feed | Clunky TV poster wall | Generic chronological timeline | **Xiaohongshu Waterfall + TikTok Vertical Swipe + Spotify-Grade Audio Bar** |
+| **Cross-Dimension Grouping** | Single directory tag | Manual playlists | Face clusters only | **Virtual Supersets (超集) cross physical collections effortlessly** |
+| **Recommender Engine** | None, manual search only | Basic "Recently Added / Continue Watching" | None | **Pluggable Recommender System (Discover / Flashback / Weighted Affinity)** |
 
 ---
 
-## ✨ 核心特性 (Key Features)
+## ✨ Key Features
 
-### 1. 🎬 复合原子消费单元 (Smart Composite Bundling)
-- 自动识别“不可再分的最小消费粒子”：
-  - 一个文件夹内的 `tokyo_vlog.mp4`、`tokyo_vlog.srt` 和 `tokyo_vlog_bgm.wav` 自动捆绑为一个复合单元（`AssetUnit [bundle]`）；
-  - 播放视频时，后端自动将 `.srt` / `.ass` 转换为浏览器标准的 WebVTT 格式挂载字幕；
-  - 独立图片、单曲音频（附带 `.lrc` / `.slc` 歌词）、独立视频各自保持独立原子单元。
+### 1. 🎬 Smart Atom-Bundle Packaging
+- **Multitrack Media United**:
+  - Automatically identifies accompanying companion files. When scanning `tokyo_vlog.mp4`, `tokyo_vlog.srt`, and `tokyo_vlog_bgm.wav`, MuseFlow binds them into a single `AssetUnit [bundle]`.
+  - On-the-fly subtitle transcoding: Subtitle files (`.srt`, `.ass`) are converted dynamically into browser-standard WebVTT format with automatic character encoding detection (UTF-8, GBK, GB18030).
+  - Standalone pictures, lossless music tracks (with `.lrc` lyrics), and independent video files maintain particle integrity without cluttering feeds with orphan files.
 
-### 2. 🤖 LLM 智能目录拓扑重组 (AI Directory Topology Triage)
-- **不再受制于硬编码的正则判断**：
-  - 例如 `A/a1.png`, `A/a2.png`, `A/B/b1.png`，AI 自动判定子文件夹 `B` 为独立子系列并完整剥离；
-  - 自动识别跨目录存放的音画字（如 `ep1.srt` 在父级，`raw/ep1.mp4` 在子级）；
-  - 一键预览 AI 生成的重组提案与理由，一键确认生效，**物理磁盘文件毫发无损**。
+### 2. 🤖 LLM Directory Topology Triage
+- **Beyond Fragile Regex Rules**:
+  - For messy, deeply nested folders (e.g., `A/a1.png`, `A/a2.png`, `A/B/b1.png`), MuseFlow extracts directory relative trees and metadata and prompts reasoning LLMs (Grok-4.7, Claude 3.5, GPT-4o) for semantic topology inference.
+  - Automatically isolates subfolder `B` as an independent child collection.
+  - Pairs cross-folder files (such as `subtitles/ep1.srt` belonging to `video/ep1.mp4`).
+  - **Visual Preview & One-Click Apply**: Interactive modal shows AI reasoning and planned restructuring before executing virtual database changes—**raw disk files remain untouched**.
 
-### 3. 🌊 双态无缝切换 (Fluid Dual-Mode Experience)
-- **沉浸消费流 (Stream Feed)**：
-  - 瀑布流媒体卡片，带高画质智能缩略图；
-  - **抖音/B 站式垂直视频播放器**：支持键盘 `↑` / `↓` 顺畅切换下一个推荐视频；
-  - **沉浸相册画廊**：高帧率平滑缩放、原图查看与快速评分；
-  - **专业底部音乐播放器**：专辑封面、波形滑动条、单曲循环、**睡眠定时器 (15/30/60m)**。
-- **资源工作台 (Workplace)**：
-  - 物理系列目录树（Collections）+ 多维虚拟超集（Supersets）；
-  - 物理文件拓扑面板（清晰查看一个消费包关联的原始磁盘文件）；
-  - 快捷联动：**“在系统资源管理器中定位”** 与 **“使用系统默认程序打开”**。
+### 3. 🌊 Fluid Dual-Mode Experience
+- **Immersive Stream Feed**:
+  - Dual-column waterfall cards with high-fidelity thumbnails and duration capsules.
+  - **TikTok-Style Vertical Swipe Reel**: Up/Down arrow keys smoothly cycle through recommended videos; spacebar instant pause; auto-loaded WebVTT subtitles.
+  - **High-Res Lightbox Viewer**: Smooth zooming, aspect-ratio preservation, and 1~5 star rating.
+  - **Floating Audio Bar**: Vinyl album spin animation, interactive scrub bar, single-loop mode, and **configurable Sleep Timer (15/30/60m)**.
+- **Workplace Mode**:
+  - Physical Collections Tree + Multi-dimensional Virtual Supersets.
+  - File Topology Inspector: inspect exact disk locations and companion roles for any atomic bundle.
+  - Native OS integration: **"Reveal in File Explorer (`explorer.exe /select`, `open -R`, `xdg-open`)"** and **"Launch in Default System App"**.
 
-### 4. 🎨 7 款精选主题配色 (Personalized Themes)
-内置 7 款专业调色盘，即点即生效，持久化保存：
-- 🔮 **幻紫流光 (Cyber Dark)**：经典暗黑极客，霓光紫与极光靛
-- 🌌 **黑曜深空 (OLED Pure Black)**：纯黑极致省电，高对比度观影神器
-- 🌸 **粉黛微光 (Sakura & Bilibili)**：桃粉微光，二次元与生活记录
-- ⚡ **赛博电青 (Cyberpunk Neon)**：冷调深海蓝与高饱和电光青
-- 🌲 **苍翠松隐 (Forest Emerald)**：北欧静谧墨绿与薄荷青翠，适合风景旅拍
-- 🌅 **落日熔金 (Sunset Amber)**：暖暮晚霞暖棕与落日熔金
-- ☀️ **摄影工坊 (Studio Light)**：极简柔光素白白天模式
+### 4. 🎨 7 Curated Design Themes
+Tailored color palettes switchable instantly with persistent `localStorage` synchronization:
+- 🔮 **Cyber Dark**: Neon purple and aurora indigo on deep slate
+- 🌌 **OLED Pure Black**: Battery-efficient true black with hyper-contrasting media
+- 🌸 **Sakura Pink**: Vibrant pink-and-white aesthetic for lifestyle logs
+- ⚡ **Cyberpunk Neon**: Deep oceanic navy with electric cyan highlights
+- 🌲 **Forest Emerald**: Nordic deep pine green and mint accents for landscape travel
+- 🌅 **Sunset Amber**: Warm dusk brown with golden hour highlights
+- ☀️ **Studio Light**: Clean, minimalist daylight studio mode
 
-### 5. 🔌 可插拔推荐算法与防挂机埋点
-- 自动埋点：点击率、5星即时评分、红心收藏、有效停留时长；
-- **防挂机截断保护**：单次有效停留上限 180 秒，防止页面长时间后台静置导致推荐权重倾斜；
-- 内置三大开箱即用算法：
-  - 🎲 **探索漫游 (Discover)**：全库随机发现
-  - ⏳ **时光倒流 (Flashback)**：优先推荐久未重温的尘封记忆
-  - ❤️ **猜你喜欢 (Affinity)**：基于评分与偏好加权
+### 5. 🔌 Pluggable Recommenders with Anti-Hang Telemetry
+- **Rich Behavioral Telemetry**: Click-through, 5-star ratings, favorite toggles, and dwell duration tracking.
+- **Anti-Hang Protection**: Playback dwell time is strictly capped at `min(dwell, 180s)` to prevent forgotten browser tabs from distorting recommendation vectors.
+- **Built-in Algorithms**:
+  - 🎲 **Discover**: Library-wide exploration and serendipitous discovery
+  - ⏳ **Flashback**: Prioritizes forgotten archives and rarely revisited memories
+  - ❤️ **Affinity**: Personalized ranking based on user ratings and dwell times
 
 ---
 
-## 🏛️ 系统架构 (Architecture)
+## 🏛️ System Architecture
 
 ```mermaid
 flowchart TD
-    subgraph Storage ["物理磁盘层 (Raw Files)"]
-        F1["视频文件 (.mp4/.mov)"]
-        F2["字幕/歌词 (.srt/.lrc/.slc)"]
-        F3["音轨 (.wav/.mp3/.flac)"]
-        F4["照片 (.jpg/.png/.heic)"]
+    subgraph Storage ["1. Physical Storage Layer (Raw Files)"]
+        F1["Video Files (.mp4/.mov)"]
+        F2["Subtitles & Lyrics (.srt/.lrc/.slc)"]
+        F3["Audio Tracks (.wav/.mp3/.flac)"]
+        F4["Photos & Art (.jpg/.png/.heic)"]
     end
 
-    subgraph Core ["MuseFlow 智能中枢"]
-        SCAN["非破坏性扫描器 (Scanner)"]
-        AI["LLM 拓扑重组引擎 (Grok-4.7)"]
-        BUNDLE["复合原子打包器 (Bundle Detector)"]
-        MEDIA["多媒体转码与 WebVTT 转换 (FFmpeg)"]
-        REC["可插拔推荐系统 (Pluggable Recommender)"]
-        DB[("SQLite + SQLModel")]
+    subgraph CoreEngine ["2. Ingestion & Topology Triage (Muse Engine)"]
+        Scanner["Local File Scanner"]
+        Bundle["Atom-Bundle Detector"]
+        AITriage["LLM Directory Topology Triage (Grok-4.7)"]
+        Proc["FFmpeg Media Processor (Thumbnails/Duration/ID3)"]
+        
+        Scanner --> Bundle
+        Bundle --> AITriage
+        Bundle --> Proc
     end
 
-    subgraph UI ["双态前端界面 (Vue 3 + Tailwind v4)"]
-        FEED["🌊 沉浸流 (Stream Feed)"]
-        WORK["📁 资源工作台 (Workplace)"]
-        PLAYER["🎬 抖音式上下滑播放器"]
-        AUDIO["🎵 悬浮专业音乐条"]
+    subgraph DataLayer ["3. Virtual Domain Model"]
+        AssetUnit["AssetUnit (Atomic Unit: bundle/video/image/audio)"]
+        AssetFile["AssetFile (Physical File & Companion Role)"]
+        Collection["Collection (Physical Directory Hierarchy)"]
+        Superset["Superset (Virtual Multi-Dimensional Groups)"]
+
+        AssetUnit --- AssetFile
+        AssetUnit --> Collection
+        Superset -.-> AssetUnit
     end
 
-    Storage --> SCAN
-    SCAN --> BUNDLE
-    SCAN --> AI
-    AI --> DB
-    BUNDLE --> DB
-    DB --> REC
-    REC --> FEED
-    DB --> WORK
-    MEDIA --> PLAYER
-    MEDIA --> AUDIO
+    subgraph RecEngine ["4. Recommender & Telemetry Engine"]
+        Telemetry["Telemetry (Click / Dwell 180s Cap / Rate / Favorite)"]
+        Registry["Recommender Registry (Discover / Flashback / Affinity)"]
+        
+        Telemetry --> Registry
+        Registry --> Feed["Dynamic Stream Feed"]
+    end
+
+    subgraph UI ["5. Client Application (Dual-Mode Vue 3 App)"]
+        STREAM["Stream Feed: Waterfall / TikTok Reels / Audio Bar"]
+        WORK["Workplace: Tree / Supersets / Topology / Native OS Integration"]
+        THEMES["7 Curated Themes (Cyber Dark, OLED, Sakura, Neon...)"]
+    end
+
+    Storage --> Scanner
+    CoreEngine --> DataLayer
+    DataLayer --> RecEngine
+    RecEngine --> UI
 ```
 
 ---
 
-## 🚀 极速上手 (Quick Start)
+## 🚀 Quick Start
 
-### 1. 环境准备
-- **Python**: `>= 3.12`（推荐使用 [`uv`](https://github.com/astral-sh/uv)）
-- **Node.js**: `>= 20`（包管理使用 `pnpm`）
-- **FFmpeg**: `>= 6.0`（用于缩略图与时长提取）
+### Option A: Local Development (via `uv` & `pnpm`)
 
-### 2. 克隆与启动后端
+#### 1. Prerequisites
+- Python: `>= 3.13` (recommended: [uv](https://github.com/astral-sh/uv))
+- Node.js: `>= 20` (recommended: `pnpm`)
+- FFmpeg: `>= 6.0` (for thumbnail generation and audio metadata)
+
+#### 2. Clone & Configure
 ```bash
-# 克隆仓库
 git clone git@github.com:mcocdaa/MuseFlow.git
-cd MuseFlow/backend
+cd MuseFlow
 
-# 同步依赖并启动
-uv sync
-uv run python run.py
-# 后端服务已启动在: http://localhost:8765
+# Copy environment configuration
+cp .env.example .env
 ```
 
-### 3. 启动前端开发服务器 (可选，独立调试时使用)
+#### 3. One-Command Development Server
 ```bash
-cd ../frontend
-pnpm install
-pnpm dev
-# 前端服务在: http://localhost:5173
+./scripts/dev.sh
 ```
-> **提示**：MuseFlow 后端已内置静态构建托管能力。直接访问 `http://localhost:8765` 即可使用完整前后端服务！
+- Backend API: `http://localhost:8765`
+- Frontend App: `http://localhost:5173`
+- Interactive API Docs: `http://localhost:8765/docs`
+
+#### 4. Generate Sample Media Library (Optional)
+```bash
+cd backend && uv run python generate_samples.py
+```
+> Synthesizes realistic travel albums, a tripartite `tokyo_vlog` bundle (`mp4+srt+wav`), and loose media files for instant demonstration.
 
 ---
 
-## ⚙️ 环境变量与配置 (Configuration)
+### Option B: Docker Compose Deployment
 
-在 `backend/.env` 或系统环境变量中配置：
+Deploy with a single command:
 
-| 变量名 | 默认值 | 说明 |
+```bash
+MEDIA_PATH=/path/to/your/media docker compose up -d --build
+```
+- Web UI & API: `http://localhost:8765`
+- Volume Mounts:
+  - `/data`: SQLite database and generated thumbnails cache (persistent).
+  - `/media`: Read-only mount of your physical photo, video, and audio directories.
+
+---
+
+## ⚙️ Environment Variables & Configuration
+
+Configure in `.env` or system environment:
+
+| Variable | Default | Description |
 | :--- | :--- | :--- |
-| `MUSEFLOW_HOST` | `0.0.0.0` | 服务监听地址（支持手机/平板局域网访问） |
-| `MUSEFLOW_PORT` | `8765` | 服务监听端口 |
-| `LLM_BASE_URL` | `https://pool.creative-koala-llm.top/v1` | OpenAI 兼容的大模型 API 基础地址 |
-| `LLM_API_KEY` | `sk-...` | 大模型 API Key |
-| `LLM_MODEL` | `grok-4.7` | 用于复杂目录拓扑重组的模型（支持 Grok / Claude / GPT） |
+| `MUSEFLOW_HOST` | `0.0.0.0` | Server host binding (enables LAN access for tablets & phones) |
+| `MUSEFLOW_PORT` | `8765` | Server port |
+| `MUSEFLOW_DATA_DIR` | `backend/data` | Database and thumbnail storage directory |
+| `MAX_DWELL_SECONDS` | `180.0` | Maximum dwell time telemetry cap per playback (seconds) |
+| `LLM_BASE_URL` | `https://pool.creative-koala-llm.top/v1` | OpenAI-compatible LLM endpoint |
+| `LLM_API_KEY` | `sk-...` | LLM API key |
+| `LLM_MODEL` | `grok-4.7` | Reasoning model for directory topology triage |
 
 ---
 
-## 📖 文档索引 (Documentation)
+## 📖 Documentation Index
 
-- 🏛️ [架构设计与领域实体模型](./docs/architecture.md)
-- 🤖 [LLM 目录拓扑分析与重组指南](./docs/ai_triage_guide.md)
-- 🔌 [可插拔推荐系统与行为埋点插件规范](./docs/recommender_plugin.md)
-- 🤝 [开源贡献指南 (Contributing)](./CONTRIBUTING.md)
-
----
-
-## 🗺️ 路线图 (Roadmap)
-
-- [x] 非破坏性物理文件索引与系列树建立
-- [x] 复合原子单元智能打包 (`mp4+srt+wav`, `mp3+lrc`)
-- [x] 大语言模型 (Grok-4.7) 混乱目录拓扑分析与一键重组
-- [x] 双态流媒体界面（小红书瀑布流 + 资源管理器工作台）
-- [x] 抖音式上下滑动视频流与自适应 WebVTT 字幕挂载
-- [x] 专业级悬浮音乐条与睡眠定时器
-- [x] 7 款个性化沉浸主题配色与即时持久化
-- [x] 跨平台原生文件管理器定位 (`explorer.exe /select`, `xdg-open`)
-- [ ] 基于 OpenCV / PIL 的自适应主体构图智能裁剪
-- [ ] 离线大模型 / 本地 Ollama 拓扑分析支持
-- [ ] Windows 桌面端原生安装包 (`.exe` 带系统托盘)
+- 🏛️ [System Architecture & Entity Domain Models](docs/architecture.md)
+- 🤖 [LLM Directory Topology Triage Guide](docs/ai_triage_guide.md)
+- 🔌 [Pluggable Recommender & Telemetry Specification](docs/recommender_plugin.md)
+- 🤖 [AI Coding Agent Guidelines & Invariants](AGENTS.md)
+- 🤝 [Contributing Guidelines](CONTRIBUTING.md)
+- 🔒 [Security & Vulnerability Disclosure](SECURITY.md)
+- 📜 [Changelog](CHANGELOG.md)
 
 ---
 
-## 📄 开源许可证 (License)
+## 🗺️ Roadmap
 
-本项目基于 [MIT License](./LICENSE) 协议开源。欢迎自由使用、扩展与共建！
+- [x] Non-destructive physical file indexing & collection trees
+- [x] Atomic bundle detection (`mp4+srt+wav`, `mp3+lrc`)
+- [x] LLM (Grok-4.7) directory topology triage & 1-click plan application
+- [x] Dual-mode UI (Xiaohongshu-style waterfall + Workplace Explorer)
+- [x] TikTok-style vertical swipe reel with WebVTT subtitle support
+- [x] Floating audio player with sleep timer
+- [x] 7 curated theme palettes with instant persistent switching
+- [x] Cross-platform native OS integration (`explorer.exe /select`, `open -R`, `xdg-open`)
+- [x] Multi-stage Docker containerization and Docker Compose orchestration
+- [x] Automated GitHub Actions CI workflow & Pytest suite
+- [ ] Adaptive smart thumbnail auto-cropping using OpenCV saliency detection
+- [ ] Offline local LLM / Ollama support
+- [ ] Windows desktop standalone distribution (.exe with system tray)
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE). Contributions and feedback are warmly welcomed!

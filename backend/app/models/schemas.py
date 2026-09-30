@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class AssetFileRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     file_path: str
     file_name: str
@@ -12,10 +13,8 @@ class AssetFileRead(BaseModel):
     role: str
     modified_at: datetime
 
-    class Config:
-        from_attributes = True
-
 class AssetUnitRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     title: str
     unit_type: str
@@ -33,10 +32,8 @@ class AssetUnitRead(BaseModel):
     created_at: datetime
     files: List[AssetFileRead] = []
 
-    class Config:
-        from_attributes = True
-
 class CollectionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     name: str
     folder_path: Optional[str] = None
@@ -46,19 +43,14 @@ class CollectionRead(BaseModel):
     unit_count: int = 0
     children: List["CollectionRead"] = []
 
-    class Config:
-        from_attributes = True
-
 class SupersetRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     name: str
     description: Optional[str] = None
     icon: Optional[str] = "sparkles"
     cover_url: Optional[str] = None
     unit_count: int = 0
-
-    class Config:
-        from_attributes = True
 
 class TelemetryCreate(BaseModel):
     unit_id: int

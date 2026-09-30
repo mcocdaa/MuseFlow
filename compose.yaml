@@ -1,0 +1,34 @@
+services:
+  museflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: museflow:latest
+    container_name: museflow
+    restart: unless-stopped
+    ports:
+      - "${MUSEFLOW_PORT:-8765}:8765"
+    environment:
+      - MUSEFLOW_HOST=0.0.0.0
+      - MUSEFLOW_PORT=8765
+      - MUSEFLOW_DATA_DIR=/data
+      - MUSEFLOW_FRONTEND_DIST=/app/frontend/dist
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://pool.creative-koala-llm.top/v1}
+      - LLM_API_KEY=${LLM_API_KEY:-sk-ad3e4bdafe5c4c832cefe1562eb82dce20c2d103b54716cf266c7a4a0cf1fa5f}
+      - LLM_MODEL=${LLM_MODEL:-grok-4.7}
+      - MAX_DWELL_SECONDS=180.0
+    volumes:
+      # Persistent SQLite DB and generated thumbnails
+      - museflow_data:/data
+      # Mount your local media libraries (read-only for security)
+      - ${MEDIA_PATH:-./media}:/media:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8765/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  museflow_data:
+    driver: local
