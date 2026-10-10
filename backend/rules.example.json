@@ -1,0 +1,47 @@
+{
+  "_comment": "MuseFlow 用户专属规则配置文件示例。复制此文件至 backend/data/config/user_rules.json 或通过环境变量 MUSEFLOW_USER_RULES 指定路径。",
+  "creator_aliases": {
+    "创作者旧名称": "创作者标准名",
+    "示例艺术家Official": "示例艺术家"
+  },
+  "va_aliases": {
+    "示例演职员(旧名)": "示例演职员"
+  },
+  "domain_aliases": {
+    "Spatial Audio": "空间音频",
+    "Ambient": "自然环境音"
+  },
+  "domain_mapping": {
+    "漫游": "自然环境音",
+    "轻音乐": "器乐纯音"
+  },
+  "workflow_mapping": {
+    "待分类": "待整理",
+    "待翻译": "待翻译"
+  },
+  "creator_parent_dirs": [
+    "创作者归档"
+  ],
+  "known_creator_dirs": {
+    "特定工作室目录": "标准工作室名"
+  },
+  "domain_hierarchy": {
+    "自然环境音": ["雨声", "森林声", "空间音频"],
+    "器乐纯音": ["古典交响", "钢琴独奏"]
+  },
+  "strip_suffixes": [
+    "老师",
+    "工作室",
+    "Official",
+    "频道",
+    "社团"
+  ],
+  "slang_filter": [
+    "测试过滤词A",
+    "测试过滤词B"
+  ],
+  "ignore_segments": [
+    "临时目录",
+    "网络暂存"
+  ]
+}

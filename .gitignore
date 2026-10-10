@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+backend/.venv/
+backend/data/
+backend/sample_media/
+.env
+*.env
+*.db
+*.sqlite
+*.sqlite3
+
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.pnpm-debug.log*
+
+# Media files
+*.mp4
+*.wav
+*.mp3
+*.mkv
+*.flac
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.gif
+*.bmp
+*.webm
+*.avi
+*.mov
+*.m4v
+*.aac
+*.ogg
+*.opus
+
+# System & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# Local temporary audit scripts & benchmarks (Privacy Protection)
+backend/audit_*.py
+backend/tests/manual_*.py
+backend/app/services/database_healer.py
+scripts/local_*.sh
+*.local.*
+*.local
+docker_test_sandbox/
