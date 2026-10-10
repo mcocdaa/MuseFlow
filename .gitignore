@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+backend/.venv/
+backend/data/
+backend/sample_media/
+.env
+*.env
+*.db
+*.sqlite
+*.sqlite3
+
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.pnpm-debug.log*
+
+# Media files
+*.mp4
+*.wav
+*.mp3
+*.mkv
+*.flac
+*.jpg
+*.png
+
+# System & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
