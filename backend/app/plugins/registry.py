@@ -107,10 +107,16 @@ def build_all_series_cards(session: Session, context: Dict[str, Any]) -> List[Di
         if not c_units:
             continue
 
-        # Check if collection is an author/container bucket with loose tracks
-        # If it has child collections (or is a flat author folder),
-        # its child collections are already individual series. Direct units in it are standalone individual works!
-        is_bucket = bool(children_map.get(c.id)) or is_container_or_author_bucket(c, len(c_units))
+        # Check if collection is an author/container bucket with loose tracks or contains atomic composite units
+        has_atomic_work = any(
+            (u.dynamic_attributes or {}).get("is_atomic_work") or WORK_CODE_REGEX.search(u.title or "")
+            for u in c_units
+        )
+        is_bucket = (
+            bool(children_map.get(c.id))
+            or is_container_or_author_bucket(c, len(c_units))
+            or has_atomic_work
+        )
 
         if is_bucket:
             # Emit direct units in this bucket as individual work cards
@@ -125,6 +131,13 @@ def build_all_series_cards(session: Session, context: Dict[str, Any]) -> List[Di
 
                 u_tags = unit_tags_map.get(u.id, [])
                 u_tag_names = [t["name"] for t in u_tags]
+                attrs = u.dynamic_attributes or {}
+                aud_cnt = int(attrs.get("audio_count") or (1 if u.unit_type == "audio" else 0))
+                vid_cnt = int(attrs.get("video_count") or (1 if u.unit_type in ("video", "bundle") else 0))
+                img_cnt = int(attrs.get("image_count") or (1 if u.unit_type == "image" else 0))
+                trk_cnt = int(attrs.get("track_count") or max(1, aud_cnt + vid_cnt))
+                tot_cnt = trk_cnt + (img_cnt if u.unit_type != "image" else 0)
+
                 series_cards.append({
                     "id": u.id,
                     "card_id": f"unit_{u.id}",
@@ -141,21 +154,21 @@ def build_all_series_cards(session: Session, context: Dict[str, Any]) -> List[Di
                     "total_dwell_seconds": u.total_dwell_seconds or 0.0,
                     "created_at": u.created_at,
                     "is_series": False,
-                    "unit_count": 1,
-                    "total_count": 1,
-                    "audio_count": 1 if u.unit_type == "audio" else 0,
-                    "video_count": 1 if u.unit_type in ("video", "bundle") else 0,
-                    "image_count": 1 if u.unit_type == "image" else 0,
+                    "unit_count": trk_cnt,
+                    "total_count": tot_cnt,
+                    "audio_count": aud_cnt,
+                    "video_count": vid_cnt,
+                    "image_count": img_cnt,
                     "media_breakdown": {
-                        "audio": 1 if u.unit_type == "audio" else 0,
-                        "video": 1 if u.unit_type in ("video", "bundle") else 0,
-                        "image": 1 if u.unit_type == "image" else 0,
-                        "total": 1,
+                        "audio": aud_cnt,
+                        "video": vid_cnt,
+                        "image": img_cnt,
+                        "total": tot_cnt,
                     },
                     "representative_unit_id": u.id,
                     "tags": u_tags,
                     "tag_names": u_tag_names,
-                    "dynamic_attributes": u.dynamic_attributes or {},
+                    "dynamic_attributes": attrs,
                 })
             continue
 
@@ -186,17 +199,13 @@ def build_all_series_cards(session: Session, context: Dict[str, Any]) -> List[Di
                     cover_id = img_u.cover_file_id
                     break
 
-        has_audio = len(audio_units) > 0
-        has_video = len(video_units) > 0
-        has_image = len(image_units) > 0
-
-        # Filter by unit_type if specified
+        # Filter strictly by dominant primary type so audio/video works with internal images never leak into "image"
         if requested_unit_type:
-            if requested_unit_type == "video" and not has_video:
+            if requested_unit_type == "video" and ptype != "video":
                 continue
-            elif requested_unit_type == "audio" and not has_audio:
+            elif requested_unit_type == "audio" and ptype != "audio":
                 continue
-            elif requested_unit_type == "image" and not has_image:
+            elif requested_unit_type == "image" and ptype != "image":
                 continue
 
         # Filter by search keyword if specified
@@ -206,12 +215,14 @@ def build_all_series_cards(session: Session, context: Dict[str, Any]) -> List[Di
             if not (matches_col_name or matches_any_track):
                 continue
 
-        # Aggregate series tags across units
+        # Aggregate series tags across primary units only (never pollute audio/video series with image tags)
         series_tags = []
         series_tag_names = set()
         seen_tag_ids = set()
-        for u in c_units:
+        for u in primary_units:
             for t in unit_tags_map.get(u.id, []):
+                if ptype != "image" and t.get("name") in ("图片", "独立画册"):
+                    continue
                 if t["id"] not in seen_tag_ids:
                     seen_tag_ids.add(t["id"])
                     series_tags.append(t)
@@ -268,6 +279,12 @@ def build_all_series_cards(session: Session, context: Dict[str, Any]) -> List[Di
 
             u_tags = unit_tags_map.get(u.id, [])
             u_tag_names = [t["name"] for t in u_tags]
+            attrs = u.dynamic_attributes or {}
+            aud_cnt = int(attrs.get("audio_count") or (1 if u.unit_type == "audio" else 0))
+            vid_cnt = int(attrs.get("video_count") or (1 if u.unit_type in ("video", "bundle") else 0))
+            img_cnt = int(attrs.get("image_count") or (1 if u.unit_type == "image" else 0))
+            trk_cnt = int(attrs.get("track_count") or max(1, aud_cnt + vid_cnt))
+            tot_cnt = trk_cnt + (img_cnt if u.unit_type != "image" else 0)
 
             series_cards.append({
                 "id": u.id,
@@ -285,21 +302,21 @@ def build_all_series_cards(session: Session, context: Dict[str, Any]) -> List[Di
                 "total_dwell_seconds": u.total_dwell_seconds,
                 "created_at": u.created_at,
                 "is_series": False,
-                "unit_count": 1,
-                "total_count": 1,
-                "audio_count": 1 if u.unit_type == "audio" else 0,
-                "video_count": 1 if u.unit_type in ("video", "bundle") else 0,
-                "image_count": 1 if u.unit_type == "image" else 0,
+                "unit_count": trk_cnt,
+                "total_count": tot_cnt,
+                "audio_count": aud_cnt,
+                "video_count": vid_cnt,
+                "image_count": img_cnt,
                 "media_breakdown": {
-                    "audio": 1 if u.unit_type == "audio" else 0,
-                    "video": 1 if u.unit_type in ("video", "bundle") else 0,
-                    "image": 1 if u.unit_type == "image" else 0,
-                    "total": 1,
+                    "audio": aud_cnt,
+                    "video": vid_cnt,
+                    "image": img_cnt,
+                    "total": tot_cnt,
                 },
                 "representative_unit_id": u.id,
                 "tags": u_tags,
                 "tag_names": u_tag_names,
-                "dynamic_attributes": u.dynamic_attributes or {},
+                "dynamic_attributes": attrs,
             })
 
     # Batch preload files for all representative unit cards so front-end players can instantly stream

@@ -279,11 +279,11 @@ const matchesFacet = (item, category, value) => {
     if (item.tag_names.includes(value)) return true
   }
 
-  // 2. Unit type fallback for media kind
+  // 2. Unit type fallback for media kind (strictly by primary unit_type so bound companion illustrations never leak into '图片')
   if (category === 'media_kind') {
-    if (value === '音频' && (item.unit_type === 'audio' || item.has_audio || item.audio_count > 0)) return true
-    if (value === '视频' && (item.unit_type === 'video' || item.has_video || item.video_count > 0)) return true
-    if (value === '图片' && (item.unit_type === 'image' || item.has_image || item.image_count > 0)) return true
+    if (value === '音频' && item.unit_type === 'audio') return true
+    if (value === '视频' && (item.unit_type === 'video' || item.unit_type === 'bundle')) return true
+    if (value === '图片' && item.unit_type === 'image') return true
     return false
   }
 
@@ -566,9 +566,9 @@ const facetMatchCountMap = computed(() => {
   let imageCnt = 0
 
   for (const item of items) {
-    if (item.unit_type === 'audio' || item.has_audio || item.audio_count > 0) audioCnt++
-    if (item.unit_type === 'video' || item.has_video || item.video_count > 0) videoCnt++
-    if (item.unit_type === 'image' || item.has_image || item.image_count > 0) imageCnt++
+    if (item.unit_type === 'audio') audioCnt++
+    if (item.unit_type === 'video' || item.unit_type === 'bundle') videoCnt++
+    if (item.unit_type === 'image') imageCnt++
 
     const seenNamesForItem = new Set()
     if (item.tags && Array.isArray(item.tags)) {

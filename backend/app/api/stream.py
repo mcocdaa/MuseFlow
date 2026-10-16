@@ -120,6 +120,40 @@ def stream_cover(unit_id: int, session: Session = Depends(get_session)):
     """原子单元封面/缩略图快捷流路由"""
     return get_thumbnail(unit_id, session)
 
+@router.get("/file_thumbnail/{file_id}")
+def get_file_thumbnail(file_id: int, session: Session = Depends(get_session)):
+    """获取作品内嵌插画文件 (AssetFile) 的预览缩略图（优先本地 SSD 缓存，免疫 NAS 离线）"""
+    local_f_thumb = THUMBNAILS_DIR / f"thumb_file_{file_id}.jpg"
+    if local_f_thumb.exists():
+        return FileResponse(local_f_thumb, media_type="image/jpeg")
+
+    asset_file = session.get(AssetFile, file_id)
+    if not asset_file:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    if asset_file.asset_unit_id:
+        unit = session.get(AssetUnit, asset_file.asset_unit_id)
+        if unit and unit.cover_file_id == file_id:
+            unit_thumb = THUMBNAILS_DIR / f"thumb_{unit.id}.jpg"
+            if unit_thumb.exists():
+                return FileResponse(unit_thumb, media_type="image/jpeg")
+
+    is_nas = is_network_or_nas_path(asset_file.file_path)
+    if not is_nas or is_nas_online():
+        path = resolve_physical_path(asset_file.file_path)
+        try:
+            if path.exists():
+                return FileResponse(path, media_type=asset_file.mime_type or "image/jpeg")
+        except Exception:
+            pass
+
+    if asset_file.asset_unit_id:
+        unit_thumb = THUMBNAILS_DIR / f"thumb_{asset_file.asset_unit_id}.jpg"
+        if unit_thumb.exists():
+            return FileResponse(unit_thumb, media_type="image/jpeg")
+
+    raise HTTPException(status_code=404, detail="File thumbnail not available")
+
 from concurrent.futures import ThreadPoolExecutor
 
 _NEGATIVE_UNIT_THUMBS: set[int] = set()

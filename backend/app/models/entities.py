@@ -19,7 +19,7 @@ class Collection(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     folder_path: Optional[str] = Field(default=None, index=True)
-    parent_id: Optional[int] = Field(default=None, foreign_key="collection.id")
+    parent_id: Optional[int] = Field(default=None, foreign_key="collection.id", index=True)
     cover_asset_id: Optional[int] = Field(default=None)
     description: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=utc_now)
@@ -133,7 +133,7 @@ class AssetUnit(SQLModel, table=True):
     title: str = Field(index=True)
     unit_type: str = Field(index=True)  # "image", "video", "audio", "bundle"
     
-    collection_id: Optional[int] = Field(default=None, foreign_key="collection.id")
+    collection_id: Optional[int] = Field(default=None, foreign_key="collection.id", index=True)
     cover_file_id: Optional[int] = Field(default=None)
     
     duration_seconds: Optional[float] = Field(default=None)
@@ -142,7 +142,7 @@ class AssetUnit(SQLModel, table=True):
     
     # 评价与反馈
     rating: float = Field(default=0.0)  # 0.0~5.0 (支持多次时序打分与折旧小数)
-    is_favorite: bool = Field(default=False)
+    is_favorite: bool = Field(default=False, index=True)
     
     # 统计数据（喂给推荐算法）
     view_count: int = Field(default=0)
@@ -177,7 +177,7 @@ class AssetFile(SQLModel, table=True):
     file_size: int
     modified_at: datetime
     
-    asset_unit_id: Optional[int] = Field(default=None, foreign_key="assetunit.id")
+    asset_unit_id: Optional[int] = Field(default=None, foreign_key="assetunit.id", index=True)
     role: str = Field(default="primary") # primary, video, audio, subtitle, image, thumbnail
     
     unit: Optional[AssetUnit] = Relationship(back_populates="files")

@@ -863,6 +863,16 @@ const isAudioUnit = (unit) => {
 
 const handleDoubleClick = (item) => {
   if (isBatchMode.value) return
+  if (item.dynamic_attributes?.tracks?.length > 1 || item.dynamic_attributes?.is_atomic_work) {
+    if (isAudioUnit(item)) {
+      playerStore.openAudioModal(item, [item], false)
+    } else if (item.unit_type === 'video' || item.unit_type === 'bundle') {
+      playerStore.openVideo(item, [item], false)
+    } else if (item.unit_type === 'image') {
+      playerStore.openImage(item, [item], false)
+    }
+    return
+  }
   let seriesPlaylist = []
   if (item.collection_id) {
     seriesPlaylist = displayItems.value.filter(u => u.collection_id === item.collection_id)
@@ -1661,7 +1671,13 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 <div class="text-xs font-medium truncate flex items-center gap-2">
                   <span class="truncate">{{ item.title }}</span>
                   <span
-                    v-if="item.unit_type === 'bundle'"
+                    v-if="item.dynamic_attributes?.track_count > 1"
+                    class="bg-purple-500/20 text-purple-300 text-[10px] px-1.5 py-0.2 rounded border border-purple-500/30 shrink-0 font-mono"
+                  >
+                    {{ item.dynamic_attributes.track_count }} 轨<template v-if="item.dynamic_attributes?.image_count > 0"> · {{ item.dynamic_attributes.image_count }} 插画</template>
+                  </span>
+                  <span
+                    v-else-if="item.unit_type === 'bundle'"
                     class="bg-purple-500/20 text-purple-300 text-[10px] px-1.5 py-0.2 rounded border border-purple-500/30 shrink-0"
                   >
                     复合包 ({{ item.files?.length || 1 }}文件)

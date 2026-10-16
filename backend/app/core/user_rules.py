@@ -85,6 +85,18 @@ class UserRules(BaseModel):
         default_factory=list,
         description="自定义在解析物理路径时需要忽略的文件夹名称"
     )
+    container_bucket_dirs: List[str] = Field(
+        default_factory=list,
+        description="作为分类或批次容器大桶（而非单一作品）处理的目录名集合"
+    )
+    accessory_dir_patterns: List[str] = Field(
+        default_factory=list,
+        description="自定义作品内部附属/花絮/变体子目录名称的正则匹配列表"
+    )
+    non_creator_patterns: List[str] = Field(
+        default_factory=list,
+        description="自定义排除在创作者方括号提取之外的正则匹配列表"
+    )
 
 
 _CACHED_USER_RULES: Optional[UserRules] = None

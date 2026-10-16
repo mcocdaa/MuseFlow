@@ -4,22 +4,34 @@ from collections import defaultdict
 from sqlmodel import Session, select, func
 from app.models.entities import Collection, AssetUnit
 
+from app.core.user_rules import load_user_rules
+
 WORK_CODE_REGEX = re.compile(r'([A-Z]{2,4}\d{5,8})', re.IGNORECASE)
 DISC_REGEX = re.compile(r'^(disc|cd|vol|part|volume)[\s\._-]*\d+$', re.IGNORECASE)
 
 ACCESSORY_PATTERNS = [
-    r'^(img|image|images|photo|photos|pic|pics|picture|pictures|illust|jacket)$',
-    r'^(イラスト|画像|图片|插图|插圖|插画|插画变体|插绘|cg|cgs|bk|scans|booklet|封面.*|壁纸|壁紙)$',
-    r'^\d+[\._-]?(イラスト|插画|插图|画像|图片|cg|封面.*)$',
-    r'^(mp3|wav|flac|mkv|01_mp3|01_wav|02_mp3|01通常版|通常版|本篇.*|本編.*|正篇.*|SE.*|無SE|有SE|効果音.*|音频数据.*|.*リバーブ.*ver|.*エコー.*ver|リバーブなし.*|リバーブあり.*|排除)$',
-    r'^(特典|おまけ|購入.*特典|购买特典|购入特典|附赠|附屬.*|附属.*|サンプル|样本|体験版|台本.*|字幕.*)$',
+    r'^(img|image|images|photo|photos|pic|pics|picture|pictures|illust|jacket|scans|booklet)$',
+    r'^(图片|插图|插画|封面.*|壁纸)$',
+    r'^\d+[\._-]?(img|image|illust|插画|插图|图片|封面.*)$',
+    r'^(mp3|wav|flac|mkv|mp4|audio|video|main|standard|default)$',
+    r'^(bonus|extra|extras|sample|subtitles|花絮|附赠|附属.*|样本|字幕.*)$',
 ]
 COMBINED_ACCESSORY_REGEX = re.compile('|'.join(ACCESSORY_PATTERNS), re.IGNORECASE)
 
 def is_accessory_collection_name(name: str) -> bool:
     if not name:
         return False
-    return bool(COMBINED_ACCESSORY_REGEX.search(name.strip()))
+    clean = name.strip()
+    if COMBINED_ACCESSORY_REGEX.search(clean):
+        return True
+    rules = load_user_rules()
+    for pat in rules.accessory_dir_patterns:
+        try:
+            if re.search(pat, clean, re.IGNORECASE):
+                return True
+        except re.error:
+            continue
+    return False
 
 def find_canonical_work_collection(col: Collection, col_map: Dict[int, Collection]) -> Optional[Collection]:
     """
@@ -57,7 +69,7 @@ def find_canonical_work_collection(col: Collection, col_map: Dict[int, Collectio
 
 def rollup_all_split_works(session: Session) -> Dict[str, Any]:
     """
-    自愈并归拢所有属于作品附属目录、碟片分流、插画特典或分支子目录的资产，
+    自愈并归拢所有属于作品附属目录、碟片分流、插画画册或分支子目录的资产，
     将其安全合并收纳至对应的真实作品合集（Canonical Work Collection）中，
     彻底消除单个作品被碎裂拆分成多张卡片的问题。
     """
@@ -91,7 +103,7 @@ def rollup_all_split_works(session: Session) -> Dict[str, Any]:
                 attrs["is_accessory"] = True
                 if u.unit_type == "image":
                     attrs["role"] = "illustration"
-                elif "特典" in sub.name or "おまけ" in sub.name:
+                else:
                     attrs["role"] = "bonus"
 
             u.dynamic_attributes = attrs
@@ -150,9 +162,22 @@ SUB_ALBUM_KEYWORDS = [
 ]
 
 def is_container_or_author_bucket(col: Collection, unit_count: int) -> bool:
-    """判断一个集合是否为作者目录或批次归档大目录（而非单个具体作品）"""
+    """判断一个集合是否为作者目录、分类目录或批次归档大目录（而非单个具体作品）"""
     desc = col.description or ""
-    return "容器" in desc or "归档大目录" in desc
+    if "旗下独立系列作品" in desc:
+        return False
+    if "容器" in desc or "归档大目录" in desc:
+        return True
+    rules = load_user_rules()
+    if (
+        col.name in rules.container_bucket_dirs
+        or col.name in rules.domain_mapping
+        or col.name in rules.workflow_mapping
+        or col.name in rules.creator_parent_dirs
+        or col.name in rules.known_creator_dirs
+    ):
+        return True
+    return False
 
 
 def is_eligible_series_container(col: Collection, unit_count: int) -> bool:
@@ -163,15 +188,15 @@ def is_eligible_series_container(col: Collection, unit_count: int) -> bool:
         return False
     if WORK_CODE_REGEX.search(f"{col.name} {col.folder_path or ''}"):
         return False
-    if re.search(r'^(img|image|特典|附赠|cg|bk|scans)', col.name, re.I):
+    if is_accessory_collection_name(col.name):
         return False
     return unit_count >= 2
 
 
 def clean_series_name(name: str) -> str:
-    """清理提取出的系列名称中的 CV 标注、作者信息、多余标点与后缀"""
+    """清理提取出的系列名称中的演职员标注、作者信息、多余标点与后缀"""
     name = re.sub(
-        r'[-_ ]*(?:--|-)?(?:CV|cv|演职员|声优|作者|社团|By|by)[:：\s]*\S+.*$',
+        r'[-_ ]*(?:--|-)?(?:CV|cv|Cast|cast|演职员|配音|作者|出品|By|by)[:：\s]*\S+.*$',
         '',
         name,
         flags=re.IGNORECASE

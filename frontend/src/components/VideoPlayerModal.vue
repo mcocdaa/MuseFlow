@@ -628,7 +628,7 @@ const addToCooldown = async () => {
         <div class="flex-grow overflow-y-auto pr-1 py-3 space-y-1.5">
           <div
             v-for="(unit, idx) in playerStore.videoQueue"
-            :key="unit.id"
+            :key="unit.track_key || `${unit.id}_${idx}`"
             @click="playerStore.selectVideoIndex(idx)"
             :class="[
               'group p-2.5 rounded-xl border flex items-center justify-between gap-2 cursor-pointer transition-all select-none',

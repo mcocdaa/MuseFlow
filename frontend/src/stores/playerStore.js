@@ -1,6 +1,81 @@
 import { defineStore } from 'pinia'
 import { logTelemetry, createSupersetFromQueue, fetchAssets } from '../api'
 
+function expandCompositeUnit(unit) {
+  if (!unit) return { tracks: [], gallery: [] }
+  const attrs = unit.dynamic_attributes || {}
+  const rawTracks = Array.isArray(attrs.tracks) ? attrs.tracks : []
+  const rawGallery = Array.isArray(attrs.gallery) ? attrs.gallery : []
+  const fileMap = new Map()
+  if (Array.isArray(unit.files)) {
+    for (const f of unit.files) {
+      if (f && f.id) fileMap.set(f.id, f)
+    }
+  }
+
+  let tracks = []
+  if (rawTracks.length > 0 && fileMap.size > 0) {
+    rawTracks.forEach((t, idx) => {
+      const audioFile = fileMap.get(t.audio_file_id)
+      if (!audioFile) return
+      const subFile = t.subtitle_file_id
+        ? fileMap.get(t.subtitle_file_id)
+        : t.lyrics_file_id
+          ? fileMap.get(t.lyrics_file_id)
+          : null
+      const trackFiles = [{ ...audioFile, role: 'primary' }]
+      if (subFile) {
+        trackFiles.push({ ...subFile, role: subFile.role === 'lyrics' ? 'lyrics' : 'subtitle' })
+      }
+      tracks.push({
+        ...unit,
+        track_key: `${unit.id}_track_${idx}_${t.audio_file_id}`,
+        title: t.title || audioFile.file_name || unit.title,
+        collection_name: unit.title,
+        unit_type: t.unit_type || unit.unit_type,
+        duration_seconds: t.duration_seconds ?? unit.duration_seconds,
+        files: trackFiles,
+      })
+    })
+  }
+  if (tracks.length === 0) {
+    tracks = [unit]
+  }
+
+  const gallery = []
+  if (rawGallery.length > 0 && fileMap.size > 0) {
+    rawGallery.forEach((g, idx) => {
+      const imgFile = fileMap.get(g.file_id)
+      if (!imgFile) return
+      gallery.push({
+        id: unit.id,
+        file_id: g.file_id,
+        track_key: `${unit.id}_img_${idx}_${g.file_id}`,
+        title: g.title || imgFile.file_name || unit.title,
+        collection_name: unit.title,
+        unit_type: 'image',
+        files: [{ ...imgFile, role: 'primary' }],
+      })
+    })
+  } else if (Array.isArray(unit.files)) {
+    unit.files
+      .filter((f) => f.role === 'image' || f.role === 'cover')
+      .forEach((imgFile, idx) => {
+        gallery.push({
+          id: unit.id,
+          file_id: imgFile.id,
+          track_key: `${unit.id}_img_${idx}_${imgFile.id}`,
+          title: imgFile.file_name?.replace(/\.[^.]+$/, '') || unit.title,
+          collection_name: unit.title,
+          unit_type: 'image',
+          files: [{ ...imgFile, role: 'primary' }],
+        })
+      })
+  }
+
+  return { tracks, gallery }
+}
+
 export const usePlayerStore = defineStore('player', {
   state: () => ({
     // -------------------------------------------------------------
@@ -250,7 +325,9 @@ export const usePlayerStore = defineStore('player', {
       this.startDwell(unit.id)
       this.activeFgUnit = unit
       this.fgQueue = queue.length > 0 ? queue : [unit]
-      const idx = this.fgQueue.findIndex((u) => u.id === unit.id)
+      const idx = this.fgQueue.findIndex((u) =>
+        unit.file_id && u.file_id ? u.file_id === unit.file_id : u.id === unit.id
+      )
       this.fgQueueIndex = idx !== -1 ? idx : 0
       this.fgViewerOpen = true
       this.fgAutoPlay = autoPlay
@@ -360,12 +437,24 @@ export const usePlayerStore = defineStore('player', {
     // -------------------------------------------------------------
     openAudioModal(unit, playlist = [], autoPlay = false, companionGallery = []) {
       this.startDwell(unit.id)
-      this.activeFgAudioUnit = unit
-      this.fgAudioPlaylist = playlist.length > 0 ? playlist : [unit]
-      const idx = this.fgAudioPlaylist.findIndex((u) => u.id === unit.id)
+      const sourceList = playlist.length > 0 ? playlist : [unit]
+      const expandedTracks = []
+      const expandedGallery = [...(companionGallery || [])]
+      for (const item of sourceList) {
+        const { tracks, gallery } = expandCompositeUnit(item)
+        expandedTracks.push(...tracks)
+        if (item.id === unit.id && (!companionGallery || companionGallery.length === 0)) {
+          expandedGallery.push(...gallery)
+        }
+      }
+      this.fgAudioPlaylist = expandedTracks.length > 0 ? expandedTracks : [unit]
+      const idx = this.fgAudioPlaylist.findIndex((u) =>
+        unit.track_key && u.track_key ? u.track_key === unit.track_key : u.id === unit.id
+      )
       this.fgAudioPlaylistIndex = idx !== -1 ? idx : 0
+      this.activeFgAudioUnit = this.fgAudioPlaylist[this.fgAudioPlaylistIndex] || unit
       this.isFgAudioPlaying = autoPlay
-      this.companionGallery = companionGallery || []
+      this.companionGallery = expandedGallery
       this.galleryDrawerOpen = false
       this.fgAudioModalOpen = true
       this.fgAudioDrawerOpen = false
@@ -425,11 +514,16 @@ export const usePlayerStore = defineStore('player', {
       if (!this.activeFgAudioUnit) return
       this.addMultipleToBgQueue(this.fgAudioPlaylist)
       this.activeBgUnit = this.activeFgAudioUnit
-      this.bgQueueIndex = this.bgQueue.findIndex(u => u.id === this.activeFgAudioUnit.id)
+      this.bgQueueIndex = this.bgQueue.findIndex(u =>
+        this.activeFgAudioUnit.track_key && u.track_key
+          ? u.track_key === this.activeFgAudioUnit.track_key
+          : u.id === this.activeFgAudioUnit.id
+      )
+      if (this.bgQueueIndex === -1) this.bgQueueIndex = 0
       this.isBgPlaying = this.isFgAudioPlaying
       this.bgViewMode = 'disc'
       this.closeAudioModal()
-      this.showToast(`已将「${this.activeFgAudioUnit.title}」移入背景播放`)
+      this.showToast(`已将「${this.activeBgUnit.title}」移入背景播放`)
     },
 
     toggleFgAudioDrawer() {
@@ -441,10 +535,18 @@ export const usePlayerStore = defineStore('player', {
     // -------------------------------------------------------------
     openVideo(unit, queue = [], autoPlay = false) {
       this.startDwell(unit.id)
-      this.activeVideoUnit = unit
-      this.videoQueue = queue.length > 0 ? queue : [unit]
-      const idx = this.videoQueue.findIndex((u) => u.id === unit.id)
+      const sourceList = queue.length > 0 ? queue : [unit]
+      const expandedTracks = []
+      for (const item of sourceList) {
+        const { tracks } = expandCompositeUnit(item)
+        expandedTracks.push(...tracks)
+      }
+      this.videoQueue = expandedTracks.length > 0 ? expandedTracks : [unit]
+      const idx = this.videoQueue.findIndex((u) =>
+        unit.track_key && u.track_key ? u.track_key === unit.track_key : u.id === unit.id
+      )
       this.videoQueueIndex = idx !== -1 ? idx : 0
+      this.activeVideoUnit = this.videoQueue[this.videoQueueIndex] || unit
       this.videoModalOpen = true
       this.videoDrawerOpen = false
     },
@@ -544,16 +646,28 @@ export const usePlayerStore = defineStore('player', {
     // -------------------------------------------------------------
     addToBgQueue(unit) {
       if (!unit) return
-      const exists = this.bgQueue.some((u) => u.id === unit.id)
-      if (!exists) {
-        this.bgQueue.push(unit)
-        this.showToast(`已加入播放队列: 「${unit.title}」`)
+      const { tracks } = expandCompositeUnit(unit)
+      let addedCount = 0
+      for (const t of tracks) {
+        const key = t.track_key || t.id
+        const exists = this.bgQueue.some((u) => (u.track_key || u.id) === key)
+        if (!exists) {
+          this.bgQueue.push(t)
+          addedCount++
+        }
+      }
+      if (addedCount > 0) {
+        this.showToast(
+          tracks.length > 1
+            ? `已将「${unit.title}」(${addedCount} 轨) 加入播放队列`
+            : `已加入播放队列: 「${unit.title}」`
+        )
       } else {
         this.showToast(`「${unit.title}」已在播放队列中`)
       }
       // If nothing was in background, set activeBgUnit peacefully paused
       if (!this.activeBgUnit && this.bgQueue.length > 0) {
-        this.activeBgUnit = unit
+        this.activeBgUnit = this.bgQueue[0]
         this.bgQueueIndex = 0
         this.isBgPlaying = false
         this.bgViewMode = 'disc'
@@ -564,10 +678,14 @@ export const usePlayerStore = defineStore('player', {
       if (!units || !units.length) return
       let addedCount = 0
       units.forEach((u) => {
-        if (!this.bgQueue.some((item) => item.id === u.id)) {
-          this.bgQueue.push(u)
-          addedCount++
-        }
+        const { tracks } = expandCompositeUnit(u)
+        tracks.forEach((t) => {
+          const key = t.track_key || t.id
+          if (!this.bgQueue.some((item) => (item.track_key || item.id) === key)) {
+            this.bgQueue.push(t)
+            addedCount++
+          }
+        })
       })
       if (!this.activeBgUnit && this.bgQueue.length > 0) {
         this.playAudio(this.bgQueue[0], this.bgQueue, 'disc')

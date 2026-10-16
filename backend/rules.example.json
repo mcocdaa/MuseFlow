@@ -43,5 +43,16 @@
   "ignore_segments": [
     "临时目录",
     "网络暂存"
+  ],
+  "container_bucket_dirs": [
+    "待分类",
+    "00_散装",
+    "季度归档"
+  ],
+  "accessory_dir_patterns": [
+    "^(bonus|extras|booklet|scans)$"
+  ],
+  "non_creator_patterns": [
+    "^(?:\\d+月专享|.*直播回放)$"
   ]
 }

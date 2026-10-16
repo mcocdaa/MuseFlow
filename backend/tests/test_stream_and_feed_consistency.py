@@ -254,8 +254,8 @@ def test_recommend_feed_contract():
         assert "title" in c and c["title"] is not None
         assert "unit_type" in c
         assert c["is_series"] is False
-        assert c["unit_count"] == 1
+        assert c["unit_count"] >= 1
         assert "tags" in c and isinstance(c["tags"], list)
         assert "files" in c and isinstance(c["files"], list)
         assert "media_breakdown" in c and isinstance(c["media_breakdown"], dict)
-        assert c["media_breakdown"]["total"] == 1
+        assert c["media_breakdown"]["total"] >= 1

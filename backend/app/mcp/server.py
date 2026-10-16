@@ -359,7 +359,7 @@ def get_asset_details(unit_id: int) -> Dict[str, Any]:
                     "mime_type": f.mime_type,
                     "file_size": f.file_size,
                     "role": f.role,
-                    "duration_seconds": f.duration_seconds,
+                    "duration_seconds": getattr(f, "duration_seconds", None),
                 }
                 for f in files
             ],

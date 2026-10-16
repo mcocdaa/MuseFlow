@@ -16,11 +16,11 @@ def setup_db():
 
 def test_accessory_and_disc_regex():
     assert is_accessory_collection_name("img") is True
-    assert is_accessory_collection_name("イラスト") is True
-    assert is_accessory_collection_name("特典") is True
-    assert is_accessory_collection_name("01通常版") is True
-    assert is_accessory_collection_name("音频数据") is True
-    assert is_accessory_collection_name("正篇") is True
+    assert is_accessory_collection_name("booklet") is True
+    assert is_accessory_collection_name("bonus") is True
+    assert is_accessory_collection_name("main") is True
+    assert is_accessory_collection_name("subtitles") is True
+    assert is_accessory_collection_name("花絮") is True
     assert bool(DISC_REGEX.search("Disc 1")) is True
     assert bool(DISC_REGEX.search("CD 2")) is True
     assert is_accessory_collection_name("独立交响乐专辑") is False
@@ -38,8 +38,8 @@ def test_rollup_split_work_collections():
 
         # Create split sub-collections
         sub_audio = Collection(
-            name="01 本篇音频",
-            folder_path=f"{work_col.folder_path}/01 本篇音频",
+            name="audio",
+            folder_path=f"{work_col.folder_path}/audio",
             parent_id=work_col.id
         )
         sub_img = Collection(
@@ -48,8 +48,8 @@ def test_rollup_split_work_collections():
             parent_id=work_col.id
         )
         sub_bonus = Collection(
-            name="特典/手机壁纸",
-            folder_path=f"{work_col.folder_path}/特典/手机壁纸",
+            name="bonus",
+            folder_path=f"{work_col.folder_path}/bonus",
             parent_id=work_col.id
         )
         session.add_all([sub_audio, sub_img, sub_bonus])
@@ -118,8 +118,8 @@ def test_multipart_series_extraction_and_grouping():
         session.refresh(bucket_col)
 
         # 初始放入两个分集单元和一个独立单元
-        ep1 = AssetUnit(title="多情女秘书（上）", unit_type="audio", collection_id=bucket_col.id)
-        ep2 = AssetUnit(title="多情女秘书（下）", unit_type="audio", collection_id=bucket_col.id)
+        ep1 = AssetUnit(title="量子物理导论（上）", unit_type="audio", collection_id=bucket_col.id)
+        ep2 = AssetUnit(title="量子物理导论（下）", unit_type="audio", collection_id=bucket_col.id)
         standalone = AssetUnit(title="纯独家单曲", unit_type="audio", collection_id=bucket_col.id)
         session.add_all([ep1, ep2, standalone])
         session.commit()
@@ -139,7 +139,7 @@ def test_multipart_series_extraction_and_grouping():
 
         # 验证新建的系列集合
         sub_series = session.exec(
-            select(Collection).where(Collection.parent_id == bucket_col.id, Collection.name == "多情女秘书")
+            select(Collection).where(Collection.parent_id == bucket_col.id, Collection.name == "量子物理导论")
         ).first()
         assert sub_series is not None
         assert sub_series.cover_asset_id in [ep1.id, ep2.id]
@@ -156,4 +156,54 @@ def test_multipart_series_extraction_and_grouping():
         # 验证父级集合封面已被重新自愈锚定到剩余的 direct unit
         session.refresh(bucket_col)
         assert bucket_col.cover_asset_id == standalone.id
+
+
+def test_atomic_work_directory_scan(tmp_path):
+    from app.services.scanner import scan_directory
+    from app.models.entities import AssetFile
+
+    # 构建模拟分类与带标准编号的复合专辑目录
+    cat_dir = tmp_path / "有声读物"
+    work_dir = cat_dir / "[ALB888777] 测试原子有声专辑"
+    sub_audio_dir = work_dir / "audio"
+    sub_img_dir = work_dir / "img"
+    sub_audio_dir.mkdir(parents=True)
+    sub_img_dir.mkdir(parents=True)
+
+    (work_dir / "cover.jpg").write_bytes(b"\xff\xd8\xff\xe0" + b"0" * 128)
+    (sub_audio_dir / "track01.mp3").write_bytes(b"ID3" + b"0" * 256)
+    (sub_audio_dir / "track01.vtt").write_text("WEBVTT\n\n00:00.000 --> 00:02.000\nHello\n", encoding="utf-8")
+    (sub_audio_dir / "track02.mp3").write_bytes(b"ID3" + b"0" * 256)
+    (sub_img_dir / "illust_01.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"0" * 128)
+
+    with Session(engine) as session:
+        res = scan_directory(session, str(tmp_path))
+        assert res["status"] == "success"
+        assert res["total_units"] == 1
+
+        work_unit = session.exec(
+            select(AssetUnit).where(AssetUnit.title == "[ALB888777] 测试原子有声专辑")
+        ).first()
+        assert work_unit is not None
+        assert work_unit.unit_type == "audio"
+        assert work_unit.dynamic_attributes.get("is_atomic_work") is True
+        assert work_unit.dynamic_attributes.get("track_count") == 2
+        assert work_unit.dynamic_attributes.get("image_count") == 2
+        assert len(work_unit.dynamic_attributes.get("tracks", [])) == 2
+        assert len(work_unit.dynamic_attributes.get("gallery", [])) == 2
+
+        # 验证内部图片绝不产生独立的 unit_type='image' 单元
+        leaked_img_units = session.exec(
+            select(AssetUnit).where(
+                AssetUnit.collection_id == work_unit.collection_id,
+                AssetUnit.unit_type == "image",
+            )
+        ).all()
+        assert len(leaked_img_units) == 0
+
+        # 验证全部物理文件均挂载在该唯一原子单元 AssetUnit 下
+        unit_files = session.exec(
+            select(AssetFile).where(AssetFile.asset_unit_id == work_unit.id)
+        ).all()
+        assert len(unit_files) == 5
 

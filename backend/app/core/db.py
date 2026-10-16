@@ -50,9 +50,13 @@ def init_db(preset: Optional[str] = None):
                 conn.execute(text("ALTER TABLE telemetrylog ADD COLUMN context_metadata JSON DEFAULT '{}'"))
 
         # 2. 覆盖索引加固：消除回表，加速批量预加载与多维标签检索
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_collection_parent_id ON collection (parent_id);"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_assetunit_collection_id ON assetunit (collection_id);"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_assetunit_collection_type ON assetunit (collection_id, unit_type);"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_asset_unit_tag_link_covering ON asset_unit_tag_link (tag_id, unit_id, is_primary_landing);"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_asset_unit_tag_link_unit ON asset_unit_tag_link (unit_id);"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_asset_file_unit_id ON assetfile (asset_unit_id);"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_assetfile_unit_role ON assetfile (asset_unit_id, role);"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_telemetrylog_unit_action ON telemetrylog (unit_id, action);"))
         conn.commit()
 

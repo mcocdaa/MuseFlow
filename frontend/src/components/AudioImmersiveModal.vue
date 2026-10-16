@@ -614,7 +614,7 @@ const cooldownCurrent = async () => {
           <div class="flex-grow overflow-y-auto pr-1 py-3 space-y-1.5">
             <div
               v-for="(unit, idx) in playlist"
-              :key="unit.id"
+              :key="unit.track_key || `${unit.id}_${idx}`"
               @click="selectTrack(idx)"
               :class="[
                 'group p-2.5 rounded-xl border flex items-center justify-between gap-2 cursor-pointer transition-all select-none',
@@ -681,13 +681,13 @@ const cooldownCurrent = async () => {
           <div class="flex-grow overflow-y-auto pr-1 py-3 grid grid-cols-2 gap-2.5">
             <div
               v-for="(imgUnit, imgIdx) in playerStore.companionGallery"
-              :key="imgUnit.id"
+              :key="imgUnit.track_key || imgUnit.file_id || `${imgUnit.id}_${imgIdx}`"
               @click="playerStore.openImage(imgUnit, playerStore.companionGallery, false)"
               class="group relative aspect-square rounded-xl overflow-hidden bg-black/40 border border-white/10 hover:border-amber-400/50 cursor-pointer transition-all hover:scale-105 shadow"
               :title="imgUnit.title"
             >
               <img
-                :src="`/api/stream/thumbnail/${imgUnit.id}`"
+                :src="imgUnit.file_id ? `/api/stream/file_thumbnail/${imgUnit.file_id}` : `/api/stream/thumbnail/${imgUnit.id}`"
                 :alt="imgUnit.title"
                 loading="lazy"
                 class="w-full h-full object-cover"

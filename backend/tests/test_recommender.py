@@ -12,8 +12,8 @@ def seed_test_series_data():
         session.commit()
         session.refresh(col)
         
-        u1 = AssetUnit(title="测试第1集", unit_type="audio", collection_id=col.id)
-        u2 = AssetUnit(title="测试第2集", unit_type="audio", collection_id=col.id)
+        u1 = AssetUnit(title="测试第1集", unit_type="audio", collection_id=col.id, rating=5.0, is_favorite=True)
+        u2 = AssetUnit(title="测试第2集", unit_type="audio", collection_id=col.id, rating=5.0, is_favorite=True)
         session.add(u1)
         session.add(u2)
         session.commit()

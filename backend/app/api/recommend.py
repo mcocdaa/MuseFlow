@@ -38,6 +38,12 @@ def get_recommendation_feed(
         enriched_units = enrich_units_batch(units, session)
         feed_cards = []
         for ur in enriched_units:
+            attrs = ur.dynamic_attributes or {}
+            aud_cnt = int(attrs.get("audio_count") or (1 if ur.unit_type == "audio" else 0))
+            vid_cnt = int(attrs.get("video_count") or (1 if ur.unit_type in ("video", "bundle") else 0))
+            img_cnt = int(attrs.get("image_count") or (1 if ur.unit_type == "image" else 0))
+            trk_cnt = int(attrs.get("track_count") or max(1, aud_cnt + vid_cnt))
+            tot_cnt = trk_cnt + (img_cnt if ur.unit_type != "image" else 0)
             feed_cards.append(FeedCardRead(
                 id=ur.id,
                 card_id=f"unit_{ur.id}",
@@ -59,21 +65,21 @@ def get_recommendation_feed(
                 created_at=ur.created_at,
                 files=ur.files,
                 is_series=False,
-                unit_count=1,
-                total_count=1,
-                audio_count=1 if ur.unit_type == "audio" else 0,
-                video_count=1 if ur.unit_type in ("video", "bundle") else 0,
-                image_count=1 if ur.unit_type == "image" else 0,
+                unit_count=trk_cnt,
+                total_count=tot_cnt,
+                audio_count=aud_cnt,
+                video_count=vid_cnt,
+                image_count=img_cnt,
                 media_breakdown={
-                    "audio": 1 if ur.unit_type == "audio" else 0,
-                    "video": 1 if ur.unit_type in ("video", "bundle") else 0,
-                    "image": 1 if ur.unit_type == "image" else 0,
-                    "total": 1,
+                    "audio": aud_cnt,
+                    "video": vid_cnt,
+                    "image": img_cnt,
+                    "total": tot_cnt,
                 },
                 representative_unit_id=ur.id,
                 tags=ur.tags,
                 tag_names=ur.tag_names,
-                dynamic_attributes=ur.dynamic_attributes,
+                dynamic_attributes=attrs,
             ))
         return feed_cards
 

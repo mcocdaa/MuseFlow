@@ -93,20 +93,18 @@ NON_CREATOR_BRACKET_PATTERNS = [
     re.compile(
         r"^(?:第[一二三四五六七八九十百千万零\d]+[章节回集话篇部幕季期天日]"
         r"|(?:Part|Vol|Disc|CD|Track|Ep|Episode|Chapter|Week|Day)\s*\d+"
-        r"|宣传|宣伝|宣传demo|预告|试听|体验版|お試し版|附赠|付属|特典|おまけ"
-        r"|全篇|全集|本編|本篇|完整版|无损|高清|高音质|字幕版|中文版|简体中文版|繁体中文版"
+        r"|宣传|宣传demo|预告|试听|体验版|附赠|附属|花絮"
+        r"|全篇|全集|正篇|完整版|无损|高清|高音质|字幕版|中文版|简体中文版|繁体中文版"
         r"|简体字幕版|简体中文字幕版|日文版|日配中字|DL版|通常版|限定版|完全版"
-        r"|\d+月舰长|.*小剧场|.*直播剪辑|.*特辑|.*限定|.*倒数.*|.*管理第.*天)$",
+        r"|.*特辑|.*限定)$",
         re.IGNORECASE,
     ),
     re.compile(r"\.(?:com|net|org|io|cc|tv|jp|cn|me|xyz|info)\b", re.IGNORECASE),
     re.compile(
-        r"^(?:MP3|WAV|FLAC|MP4|AAC|Voice|SE\b|BGM|No\s*SE|SEあり|SEなし"
-        r"|タイトルあり|タイトルなし|パッケージ.*|イラスト.*|KU100.*"
+        r"^(?:MP3|WAV|FLAC|MP4|AAC|Voice|SE\b|BGM"
         r"|Binaural|3D|VR|4K|1080P|720P|HDR|Dolby"
         r"|Voiced.*|Fully[\s_]*Voiced|Animated.*|Stream\s*Replay|Script\s*Fill"
-        r"|Public|Formerly.*|会員限定|.*カメラ配信|.*初配信|"
-        r"中文|⚠️.*|達成率.*)$",
+        r"|Public|Formerly.*|中文|⚠️.*)$",
         re.IGNORECASE,
     ),
 ]
@@ -115,7 +113,7 @@ NON_CREATOR_BRACKET_PATTERNS = [
 def is_valid_creator_candidate(candidate: str, user_rules: Optional[UserRules] = None) -> bool:
     """
     通用创作者候选词合法性守卫：
-    排除作品编号、章节序号 (第一章/Part 1)、版本说明 (简体中文版/宣传/特典)、
+    排除作品编号、章节序号 (第一章/Part 1)、版本说明 (简体中文版/宣传/附赠)、
     纯数字/分辨率、网址域名以及通用音频格式标记。
     """
     if not candidate:
@@ -130,6 +128,12 @@ def is_valid_creator_candidate(candidate: str, user_rules: Optional[UserRules] =
             return False
         if c in user_rules.domain_mapping or c in user_rules.domain_aliases or c in user_rules.workflow_mapping:
             return False
+        for custom_pat in user_rules.non_creator_patterns:
+            try:
+                if re.search(custom_pat, c, re.IGNORECASE):
+                    return False
+            except re.error:
+                continue
     for pat in NON_CREATOR_BRACKET_PATTERNS:
         if pat.search(c):
             return False
@@ -495,7 +499,7 @@ def infer_and_assign_tags_from_path(
         is_ancestor_category = (idx < len(org_segments) - 1) or (len(org_segments) == 1)
         is_tech_subfolder = bool(
             re.match(
-                r"^(?:mp3|wav|flac|mp4|audio|video|image|images|img|cg|bonus|特典|附赠|本篇|正文|(?:disc|cd|part|vol)\.?\s*\d+)$",
+                r"^(?:mp3|wav|flac|mp4|audio|video|image|images|img|bonus|extra|附赠|正篇|正文|(?:disc|cd|part|vol)\.?\s*\d+)$",
                 seg_clean,
                 re.IGNORECASE,
             )

@@ -32,11 +32,11 @@ def get_or_create_collection_hierarchy(session: Session, folder_path: Path, root
     current_folder = root_path
     last_col = None
     for part in rel_path.parts:
-        # 如果上级已经是一个独立作品合集 (例如带标准作品编号)，则内部的所有子目录不再创建独立子集合，而是直接统一收纳到该作品合集！
-        if last_col is not None and WORK_CODE_REGEX.search(f"{last_col.name} {last_col.folder_path or ''}"):
+        # 如果当前部分本身是带标准作品编号的文件夹，不再为其创建 Collection 包装层，而是直接归入上级分类/创作者集合！
+        if WORK_CODE_REGEX.search(part):
             break
 
-        # 过滤 Disc 1 / CD 1 及各类附件/特典/图片目录
+        # 过滤 Disc 1 / CD 1 及各类附件/花絮/图片目录
         if last_col is not None and (is_accessory_collection_name(part) or DISC_REGEX.search(part)):
             continue
 
@@ -55,6 +55,178 @@ def get_or_create_collection_hierarchy(session: Session, folder_path: Path, root
         last_col = col
 
     return last_col
+
+
+def _scan_atomic_work_directory(
+    session: Session,
+    work_dir: Path,
+    root_path: Path,
+    existing_files_by_path: dict,
+) -> tuple[int, int]:
+    """将带标准编号的独立作品/专辑目录整体作为唯一的最小原子单元 (AssetUnit) 纳管，不拆分子音轨与内部图片单元"""
+    from app.core.path_resolver import is_network_or_nas_path
+
+    all_detected = []
+    for sub_dirpath, _, sub_filenames in os.walk(work_dir):
+        sub_dir = Path(sub_dirpath)
+        sub_media = [
+            sub_dir / fn for fn in sub_filenames
+            if (sub_dir / fn).suffix.lower() in ALL_MEDIA_EXTS
+        ]
+        if not sub_media:
+            continue
+        rel_sub = ""
+        if sub_dir != work_dir:
+            try:
+                rel_sub = str(sub_dir.relative_to(work_dir))
+            except ValueError:
+                rel_sub = sub_dir.name
+        for du in analyze_folder_for_bundles(sub_dir, sub_media):
+            all_detected.append((du, rel_sub))
+
+    if not all_detected:
+        return 0, 0
+
+    # 检查是否已有主文件被纳管
+    for du, _ in all_detected:
+        p_str = os.path.abspath(str(du.primary_file))
+        existing_f = existing_files_by_path.get(p_str)
+        if existing_f and existing_f.asset_unit_id:
+            return 0, 0
+
+    collection = get_or_create_collection_hierarchy(session, work_dir.parent, root_path)
+    work_abs = os.path.abspath(str(work_dir))
+    is_nas = is_network_or_nas_path(work_abs)
+    now_utc = datetime.now(timezone.utc)
+
+    track_dus = [(du, rel_sub) for du, rel_sub in all_detected if du.unit_type in ("audio", "video", "bundle")]
+    image_dus = [(du, rel_sub) for du, rel_sub in all_detected if du.unit_type == "image"]
+
+    has_audio = any(du.unit_type == "audio" or (du.unit_type == "bundle" and du.primary_file.suffix.lower() in {".mp3", ".wav", ".flac", ".m4a", ".ogg", ".aac", ".wma"}) for du, _ in track_dus)
+    has_video = any(du.unit_type in ("video", "bundle") for du, _ in track_dus)
+    unit_type = "audio" if has_audio else ("video" if has_video else "image")
+
+    unit = AssetUnit(
+        title=work_dir.name,
+        unit_type=unit_type,
+        collection_id=collection.id if collection else None,
+        dynamic_attributes={"is_atomic_work": True, "folder_path": work_abs},
+    )
+    session.add(unit)
+    session.flush()
+
+    files_scanned = 0
+    tracks_manifest = []
+    gallery_manifest = []
+    seen_gallery_paths = set()
+    cover_file_id = None
+    primary_file_id = None
+    total_duration = 0.0
+
+    def _register_file(p_file: Path, role: str) -> AssetFile:
+        nonlocal files_scanned
+        resolved = os.path.abspath(str(p_file))
+        if resolved in existing_files_by_path:
+            return existing_files_by_path[resolved]
+        if is_nas:
+            f_size = 0
+            f_mtime = now_utc
+        else:
+            stat = p_file.stat()
+            f_size = stat.st_size
+            f_mtime = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
+        mime, _ = mimetypes.guess_type(str(p_file))
+        f_rec = AssetFile(
+            file_path=resolved,
+            file_name=p_file.name,
+            extension=p_file.suffix.lower(),
+            mime_type=mime or "application/octet-stream",
+            file_size=f_size,
+            modified_at=f_mtime,
+            asset_unit_id=unit.id,
+            role=role,
+        )
+        session.add(f_rec)
+        session.flush()
+        existing_files_by_path[resolved] = f_rec
+        files_scanned += 1
+        return f_rec
+
+    for idx, (du, rel_sub) in enumerate(track_dus):
+        dur = None
+        if not is_nas:
+            _, _, dur = get_media_dimensions_and_duration(du.primary_file)
+        if dur:
+            total_duration += dur
+        p_role = "primary" if idx == 0 else ("video" if du.unit_type == "video" else "audio")
+        p_rec = _register_file(du.primary_file, p_role)
+        if primary_file_id is None:
+            primary_file_id = p_rec.id
+
+        sub_id = None
+        lyr_id = None
+        for comp_path, comp_role in du.files:
+            if comp_role == "primary":
+                continue
+            if comp_role == "cover":
+                c_rec = _register_file(comp_path, "cover" if cover_file_id is None else "image")
+                if cover_file_id is None:
+                    cover_file_id = c_rec.id
+                if c_rec.file_path not in seen_gallery_paths:
+                    seen_gallery_paths.add(c_rec.file_path)
+                    gallery_manifest.append({
+                        "title": comp_path.stem,
+                        "file_id": c_rec.id,
+                        "file_name": comp_path.name,
+                        "sub_folder": rel_sub,
+                    })
+            else:
+                comp_rec = _register_file(comp_path, comp_role)
+                if comp_role == "subtitle" and sub_id is None:
+                    sub_id = comp_rec.id
+                elif comp_role == "lyrics" and lyr_id is None:
+                    lyr_id = comp_rec.id
+
+        tracks_manifest.append({
+            "title": du.title,
+            "unit_type": du.unit_type,
+            "audio_file_id": p_rec.id,
+            "subtitle_file_id": sub_id,
+            "lyrics_file_id": lyr_id,
+            "duration_seconds": dur,
+            "sub_folder": rel_sub,
+        })
+
+    for du, rel_sub in image_dus:
+        img_rec = _register_file(du.primary_file, "cover" if cover_file_id is None else "image")
+        if cover_file_id is None:
+            cover_file_id = img_rec.id
+        if img_rec.file_path not in seen_gallery_paths:
+            seen_gallery_paths.add(img_rec.file_path)
+            gallery_manifest.append({
+                "title": du.title,
+                "file_id": img_rec.id,
+                "file_name": du.primary_file.name,
+                "sub_folder": rel_sub,
+            })
+
+    unit.cover_file_id = cover_file_id or primary_file_id
+    unit.duration_seconds = total_duration if total_duration > 0 else None
+    unit.dynamic_attributes = {
+        "is_atomic_work": True,
+        "folder_path": work_abs,
+        "track_count": len(tracks_manifest),
+        "image_count": len(gallery_manifest),
+        "tracks": tracks_manifest,
+        "gallery": gallery_manifest,
+    }
+    session.add(unit)
+    if collection and not collection.cover_asset_id:
+        collection.cover_asset_id = unit.id
+        session.add(collection)
+    session.commit()
+    return files_scanned, 1
+
 
 def scan_directory(session: Session, root_path_str: str) -> dict:
     """非破坏性扫描指定物理目录并完成单元建模与系列归纳"""
@@ -81,7 +253,15 @@ def scan_directory(session: Session, root_path_str: str) -> dict:
     # 递归遍历所有文件夹
     for dirpath, dirnames, filenames in os.walk(root_path):
         current_dir = Path(dirpath)
-        
+
+        # 若当前文件夹是带标准目录编号的作品/专辑目录，将其整体作为唯一的最小原子单元 (AssetUnit)，不再拆分内部子文件夹
+        if WORK_CODE_REGEX.search(current_dir.name):
+            dirnames[:] = []
+            f_cnt, u_cnt = _scan_atomic_work_directory(session, current_dir, root_path, existing_files_by_path)
+            total_files_scanned += f_cnt
+            total_units_created += u_cnt
+            continue
+
         # 收集该文件夹下受支持的媒体文件
         media_files = []
         for fn in filenames:
@@ -94,6 +274,18 @@ def scan_directory(session: Session, root_path_str: str) -> dict:
 
         # 运行聚类与复合包检测
         detected_units = analyze_folder_for_bundles(current_dir, media_files)
+
+        # 如果同目录存在音频/视频单元，则同目录内剩余的图片不作为孤立图片单元，而是挂载到首个音视频单元作为附属插画
+        has_av_in_folder = any(u.unit_type in ("audio", "video", "bundle") for u in detected_units)
+        if has_av_in_folder:
+            av_units = [u for u in detected_units if u.unit_type in ("audio", "video", "bundle")]
+            img_units = [u for u in detected_units if u.unit_type == "image"]
+            if img_units and av_units:
+                existing_comp_paths = {p for p, _ in av_units[0].files}
+                for iu in img_units:
+                    if iu.primary_file not in existing_comp_paths:
+                        av_units[0].files.append((iu.primary_file, "image"))
+                detected_units = av_units
 
         # 检查是否需要关联或生成该文件夹对应的系列 Collection
         collection = None
@@ -140,7 +332,7 @@ def scan_directory(session: Session, root_path_str: str) -> dict:
             if collection is None:
                 collection = get_or_create_collection_hierarchy(session, current_dir, root_path)
 
-            # 标记附属子目录元数据 (插画/特典/CG/分流等)
+            # 标记附属子目录元数据 (插画/花絮/分流等)
             unit_attrs = {}
             cur_abs = os.path.abspath(str(current_dir))
             if collection and collection.folder_path and cur_abs.startswith(collection.folder_path):
@@ -154,7 +346,7 @@ def scan_directory(session: Session, root_path_str: str) -> dict:
                 unit_attrs["accessory_folder"] = current_dir.name
                 if du.unit_type == "image":
                     unit_attrs["role"] = "illustration"
-                elif "特典" in current_dir.name or "おまけ" in current_dir.name:
+                else:
                     unit_attrs["role"] = "bonus"
 
             from app.core.path_resolver import is_network_or_nas_path
