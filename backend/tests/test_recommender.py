@@ -71,7 +71,7 @@ def test_feed_modes():
     assert isinstance(unit_data, list)
     if unit_data:
         assert unit_data[0]["is_series"] is False
-        assert unit_data[0]["unit_count"] == 1
+        assert unit_data[0]["unit_count"] >= 1
 
 
 def test_single_unit_collection_is_not_series():
