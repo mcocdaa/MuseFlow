@@ -15,6 +15,8 @@
 
 [English](README.md) | [简体中文](README_CN.md)
 
+<img src="docs/assets/demo_museflow.gif" alt="MuseFlow Dual-Mode Explorer & Immersive Player Demo" width="820">
+
 </div>
 
 ---

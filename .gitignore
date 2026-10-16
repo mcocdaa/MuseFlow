@@ -38,6 +38,8 @@ frontend/.pnpm-debug.log*
 *.aac
 *.ogg
 *.opus
+!docs/assets/
+!docs/assets/**
 
 # System & IDE
 .DS_Store
