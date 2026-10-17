@@ -334,7 +334,11 @@ const batchFilteredTags = computed(() => {
   }
   if (batchTagSearchQuery.value.trim()) {
     const q = batchTagSearchQuery.value.trim().toLowerCase()
-    list = list.filter(t => t.name.toLowerCase().includes(q))
+    list = list.filter(t =>
+      t.name.toLowerCase().includes(q) ||
+      tData(t.name).toLowerCase().includes(q) ||
+      (t.display_path && (t.display_path.toLowerCase().includes(q) || tData(t.display_path).toLowerCase().includes(q)))
+    )
   }
   return list.slice(0, 30)
 })
@@ -378,7 +382,8 @@ const availableTagSuggestions = computed(() => {
   const q = tagSearchQuery.value.trim().toLowerCase()
   return allTagsFlat.value.filter(t =>
     t.name.toLowerCase().includes(q) ||
-    (t.display_path && t.display_path.toLowerCase().includes(q))
+    tData(t.name).toLowerCase().includes(q) ||
+    (t.display_path && (t.display_path.toLowerCase().includes(q) || tData(t.display_path).toLowerCase().includes(q)))
   ).slice(0, 8)
 })
 
@@ -401,7 +406,10 @@ const handleAssignTag = async (tag) => {
 const handleCreateAndAssignTag = async () => {
   if (!selectedItem.value || !tagSearchQuery.value.trim()) return
   try {
-    const existing = allTagsFlat.value.find(t => t.name.toLowerCase() === tagSearchQuery.value.trim().toLowerCase())
+    const q = tagSearchQuery.value.trim().toLowerCase()
+    const existing = allTagsFlat.value.find(
+      t => t.name.toLowerCase() === q || tData(t.name).toLowerCase() === q
+    )
     let tagId = existing ? existing.id : null
     if (!tagId) {
       const created = await createTag({
@@ -1638,6 +1646,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   class="w-4 h-4 text-gray-500 absolute"
                 />
                 <img
+                  v-if="item.cover_path || item.unit_type === 'video' || item.unit_type === 'image' || item.dynamic_attributes?.image_count > 0"
                   :src="`/api/stream/thumbnail/${item.id}`"
                   class="relative z-10 w-full h-full object-cover"
                   loading="lazy"
@@ -1784,6 +1793,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             class="w-10 h-10 text-white/10 absolute z-0"
           />
           <img
+            v-if="selectedItem.cover_path || selectedItem.unit_type === 'video' || selectedItem.unit_type === 'image' || selectedItem.dynamic_attributes?.image_count > 0"
             :src="`/api/stream/thumbnail/${selectedItem.id}`"
             class="relative z-10 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             @error="(e) => e.target.style.display = 'none'"
@@ -1801,7 +1811,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             {{ tData(selectedItem.title) }}
           </h3>
           <div class="flex items-center gap-2 text-[11px] text-gray-400 mt-1 font-mono whitespace-nowrap">
-            <span class="capitalize">{{ selectedItem.unit_type === 'bundle' ? t('workplace.typeBundle') : selectedItem.unit_type }}</span>
+            <span class="capitalize">{{ selectedItem.unit_type === 'bundle' ? t('workplace.typeBundle') : tData(selectedItem.unit_type) }}</span>
             <span>·</span>
             <span>{{ t('workplace.filesCount', { count: selectedItem.files?.length || 1 }) }}</span>
             <span v-if="selectedItem.files?.[0]?.file_size">· {{ formatBytes(selectedItem.files[0].file_size) }}</span>
@@ -1932,7 +1942,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 <span class="text-[10px] text-gray-500 shrink-0 ml-1">{{ tFacet(sug.class_code, sug.class_name) }}</span>
               </button>
             </div>
-            <div v-else-if="tagSearchQuery.trim()">
+            <div v-if="tagSearchQuery.trim() && !allTagsFlat.some(t => t.name.toLowerCase() === tagSearchQuery.trim().toLowerCase() || tData(t.name).toLowerCase() === tagSearchQuery.trim().toLowerCase())">
               <button
                 @click="handleCreateAndAssignTag"
                 class="w-full text-center py-1 text-xs text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg transition-colors cursor-pointer"

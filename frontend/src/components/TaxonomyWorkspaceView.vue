@@ -449,7 +449,7 @@
                 @keyup.enter="handleSaveTagUpdate"
               />
               <button
-                v-if="editTagName.trim() && editTagName.trim() !== selectedTag.name"
+                v-if="editTagName.trim() && editTagName.trim() !== selectedTag.name && editTagName.trim() !== tData(selectedTag.name)"
                 @click="handleSaveTagUpdate"
                 class="w-7 h-7 rounded-lg bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
                 :title="t('tax.saveTagNameTip')"
@@ -593,6 +593,7 @@
               >
                 <div class="flex items-center gap-2.5 min-w-0">
                   <img
+                    v-if="u.cover_path || u.unit_type === 'video' || u.unit_type === 'image' || u.dynamic_attributes?.image_count > 0"
                     :src="`/api/stream/thumbnail/${u.id}`"
                     class="w-7 h-7 rounded-lg object-cover bg-black/40 shrink-0"
                     @error="(e) => e.target.style.display = 'none'"
@@ -673,7 +674,7 @@ import {
 } from '../api'
 import { useMediaStore } from '../stores/mediaStore'
 import { usePlayerStore } from '../stores/playerStore'
-import { t, tData, tFacet } from '../i18n'
+import { locale, t, tData, tFacet } from '../i18n'
 
 const props = defineProps({
   initialClassCode: { type: String, default: null },
@@ -783,7 +784,10 @@ const filteredFlatTags = computed(() => {
   const q = treeSearchQuery.value.trim().toLowerCase()
   if (!q) return null
   return currentClassTags.value.filter(
-    t => t.name.toLowerCase().includes(q) || (t.display_path && t.display_path.toLowerCase().includes(q))
+    t =>
+      t.name.toLowerCase().includes(q) ||
+      tData(t.name).toLowerCase().includes(q) ||
+      (t.display_path && (t.display_path.toLowerCase().includes(q) || tData(t.display_path).toLowerCase().includes(q)))
   )
 })
 
@@ -883,7 +887,7 @@ const selectClass = (classId) => {
 
 const selectTagNode = async (node) => {
   selectedTagId.value = node.id
-  editTagName.value = node.name
+  editTagName.value = tData(node.name)
   newAliasName.value = ''
   loadingUnits.value = true
   try {
@@ -902,7 +906,13 @@ const selectTagNode = async (node) => {
 
 watch(selectedTag, (newTag) => {
   if (newTag) {
-    editTagName.value = newTag.name
+    editTagName.value = tData(newTag.name)
+  }
+})
+
+watch(locale, () => {
+  if (selectedTag.value) {
+    editTagName.value = tData(selectedTag.value.name)
   }
 })
 
@@ -1023,7 +1033,12 @@ const handleCreateTag = async () => {
 }
 
 const handleSaveTagUpdate = async () => {
-  if (!selectedTag.value || !editTagName.value.trim() || editTagName.value.trim() === selectedTag.value.name) return
+  if (
+    !selectedTag.value ||
+    !editTagName.value.trim() ||
+    editTagName.value.trim() === selectedTag.value.name ||
+    editTagName.value.trim() === tData(selectedTag.value.name)
+  ) return
   try {
     const updated = await updateTag(selectedTag.value.id, {
       name: editTagName.value.trim(),

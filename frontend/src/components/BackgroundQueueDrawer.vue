@@ -297,6 +297,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                 <!-- Thumbnail -->
                 <div class="w-9 h-9 rounded-lg bg-black/40 overflow-hidden shrink-0 flex items-center justify-center border border-white/10">
                   <img
+                    v-if="unit.cover_path || unit.unit_type === 'video' || unit.unit_type === 'image' || unit.dynamic_attributes?.image_count > 0"
                     :src="`/api/stream/thumbnail/${unit.id}`"
                     class="w-full h-full object-cover"
                     loading="lazy"

@@ -1954,6 +1954,12 @@ const ZH_DATA_MAP = {
   IMAGE: '图集',
   COMIC: '漫画',
   NOVEL: '小说',
+  audio: '音频',
+  video: '视频',
+  bundle: '合集',
+  image: '图片',
+  comic: '漫画',
+  novel: '小说',
 }
 
 // Dynamic backend/domain term translations when in 'en' mode
@@ -1965,6 +1971,12 @@ export const EN_DATA_MAP = {
   IMAGE: 'Image',
   COMIC: 'Comic',
   NOVEL: 'Novel',
+  audio: 'Audio',
+  video: 'Video',
+  bundle: 'Bundle',
+  image: 'Image',
+  comic: 'Comic',
+  novel: 'Novel',
 
   // Facet / TagClass display names
   '媒体形态': 'Media Type',
@@ -2261,6 +2273,117 @@ export const EN_DATA_MAP = {
   '鬼畜': 'Extreme',
   '龟头刺激': 'Tip Focus',
 
+  // Creators, Collections & Works in Library
+  '步非烟': 'Bufeiyan',
+  '千千乱歌': 'Qianqian Luange',
+  '喜欢你': 'Like You',
+  '如果寂寞了': 'If Lonely',
+  '常回家干干': 'Visit Home Often',
+  '画心': 'Painted Heart',
+  '131 骚曲合集': '131 ASMR Track Anthology',
+  '11月新衣回限定音声': 'Nov New Outfit Special Audio',
+  '126 绿帽背锅侠': '126 NTR Scapegoat Drama',
+  '128 病娇妈妈': '128 Yandere Roleplay',
+  '132 百合紧缚游戏': '132 Yuri Bondage Game',
+  '135 蛇蝎妹妹': '135 Femme Fatale Sister',
+  '14.恋足的下贱老公': '14. Foot Fetish Roleplay',
+  '00-14 女体化校园催眠系列': '00-14 Campus Trance Series',
+  '008 沦为肉BQ的娇妻': '008 Devoted Wife Drama',
+  '00_”Idemiiam\u200b“作品 [动画+动图+图集]': '00_Idemiiam Works [Animation & Art]',
+  '00_剧情': '00_Story & Drama',
+  '00_散图': '00_Loose Illustrations',
+  '00_散装': '00_Loose Audio',
+  '00_散装助眠': '00_Loose Sleep Aid',
+  '01_MMD': '01_MMD Animations',
+  '01_漫画与本子': '01_Manga & Doujinshi',
+  '02_动漫视频': '02_Anime Videos',
+  '02_画师与3D图集': '02_Artist & 3D Artworks',
+  '03_AI图集': '03_AI Artworks',
+  '03_HOTALICE': '03_HOTALICE',
+  '03_铅笔少女 纱纪酱': '03_Pencil Girl Saki-chan',
+  '03_高跟': '03_High Heels',
+  '04_2b': '04_2B Cosplay & 3D',
+  '04_图包': '04_Photo Packs',
+  '04_學園系過激按摩 今日開店！': '04_Academy Massage Parlor',
+  '04_烧鸡': '04_Featured Clips',
+  '055 肌肉娘': '055 Fit Girl Roleplay',
+  '096 调教丝袜母狗': '096 Stockings Training Drama',
+  '1.混乱催眠': '1. Chaos Hypnosis',
+  '11.欲魔的精奴养成': '11. Succubus Trance Training',
+  '118姐弟之逆转': '118 Sibling Reversal Drama',
+  '157 寂寞人妻彻底沉沦': '157 Lonely Wife Immersion',
+  '16 毒液': '16 Venom Symbiote Roleplay',
+  '170 催眠贞操带管理': '170 Trance Schedule Control',
+  '170 温柔娇妻之百货商城': '170 Gentle Wife Department Store',
+  '178 双龙戏凤': '178 Dual Roleplay Drama',
+  '2.标准催眠': '2. Standard Hypnosis',
+  '20.09.06 09弱音写真': '20.09.06 Haku Photo Set',
+  '20.09.11弱音写真视频': '20.09.11 Haku Photo & Video',
+  '20.09.16三人写真': '20.09.16 Trio Photo Set',
+  '拉莱耶王女': 'Princess of R\'lyeh',
+  '催眠治疗师': 'Hypnosis Therapist',
+  '小野猫': 'Wild Kitten',
+  '小野猫音声': 'Wild Kitten Audio',
+  '阿木木': 'Amumu',
+  '林晓蜜': 'Lin Xiaomi',
+  '秋水': 'Qiushui',
+  '吱吱': 'Zhizhi',
+  '月一': 'Yueyi',
+  '月一姐姐': 'Sister Yueyi',
+  '井上鸢御': 'Inoue鳶',
+  '奈兔': 'Naitu',
+  '奈兔sama': 'Naitu-sama',
+  '岁岁': 'Suisui',
+  '蛀牙不是虫': 'Sweet Tooth',
+  '晨曦': 'Chenxi',
+  '一块小酥饼': 'Little Shortbread',
+  '三岁鸢尾猫': 'Iris Cat',
+  '三酒': 'Sanjiu',
+  '冰糖IO': 'Rock Candy IO',
+  '南征': 'Nanzheng',
+  '哈尼': 'Hani',
+  '啄木鸟': 'Woodpecker',
+  '埋埋': 'Maimai',
+  '奶瓶': 'Milk Bottle',
+  '嫣然': 'Yanran',
+  '春眠音声社': 'Chunmian Audio Club',
+  '柳柳': 'Liuliu',
+  '洗脑君S': 'Mind Trainer S',
+  '芃芃': 'Pengpeng',
+  '男性向｜中文': 'Male-Oriented | CN',
+  '男性向中文': 'Male-Oriented CN',
+  '全性向中文': 'All-Orientation CN',
+  '中文音声｜全性向': 'CN Audio | All',
+  '中文音声｜男性向': 'CN Audio | Male',
+  '催眠音声｜男性向': 'Hypnosis Audio | Male',
+  '催眠大师': 'Hypnosis Master',
+  '【催眠音声】七日堕DAY7完结·完全沦陷的人型犬（你可以是人可以是物，甚至可以是另外的一种生物，但我们始终是我们': '[Hypnosis Audio] 7-Day Fall Day 7 Finale · Complete Devotion',
+  '【催眠音声】七日堕DAY6·不要去听我所说的话（无释放放置': '[Hypnosis Audio] 7-Day Fall Day 6 · Do Not Listen (Denial & Neglect)',
+  '【催眠音声】七日堕DAY5·演奏高潮': '[Hypnosis Audio] 7-Day Fall Day 5 · Crescendo Performance',
+  '【催眠音声】七日堕DAY4·一个末梢神经的臣服仪式（被催眠视角）': '[Hypnosis Audio] 7-Day Fall Day 4 · Nerve Surrender Ritual (POV)',
+  '【催眠音声】七日堕DAY3·感官替换（摸手不是摸手而是': '[Hypnosis Audio] 7-Day Fall Day 3 · Sensory Substitution',
+  '【催眠音声】七日堕DAY2·让PC肌和大脑建立敏感通道': '[Hypnosis Audio] 7-Day Fall Day 2 · Neural Sensitivity Link',
+  '【催眠音声】七日堕DAY1·用呼吸控制让你上瘾（记得看简介的安全预警！': '[Hypnosis Audio] 7-Day Fall Day 1 · Breath Control Induction',
+  '高潮催眠术9：无限快感循环2': 'Euphoria Hypnosis 9: Infinite Loop II',
+  '高潮催眠术8：快乐的玩偶': 'Euphoria Hypnosis 8: Blissful Doll',
+  '高潮催眠术7：女性快感体验': 'Euphoria Hypnosis 7: Sensory Experience',
+  '高潮催眠术6：变身为女孩子': 'Euphoria Hypnosis 6: Transformation Trance',
+  '高潮催眠术5：无限快感循环': 'Euphoria Hypnosis 5: Infinite Loop I',
+  '高潮催眠术4：销魂春梦': 'Euphoria Hypnosis 4: Lucid Dream',
+  '高潮催眠术3：快乐玩具催眠': 'Euphoria Hypnosis 3: Toy Trance',
+  '高潮催眠术2': 'Euphoria Hypnosis 2',
+  '高潮催眠术1：飘飘欲仙': 'Euphoria Hypnosis 1: Floating Bliss',
+  '高潮催眠术13：快感的七重门': 'Euphoria Hypnosis 13: Seven Gates of Bliss',
+  '高潮催眠术12：欲仙欲死': 'Euphoria Hypnosis 12: Deep Ecstasy',
+  '高潮催眠术11：快乐的天堂': 'Euphoria Hypnosis 11: Paradise of Joy',
+  '高潮催眠术10：欲火焚身': 'Euphoria Hypnosis 10: Burning Desire',
+  '中文音声｜被女友催眠到圣教（真人版）_ 变成舒服的玩偶': 'CN Audio | Hypnotized by Girlfriend (Live Action): Blissful Doll',
+  '不断迷失沉沦~你变成了小人偶': 'Drifting Deeper ~ Turning Into a Little Puppet',
+  '【男性向｜中文音声】被女友催眠到圣教7（真人版）：欲仙欲死': '[Male | CN Audio] Hypnotized by Girlfriend Ep.7: Deep Ecstasy',
+  '【男性向中文音声】被女友催眠到圣教（真人版）：入教洗礼': '[Male CN Audio] Hypnotized by Girlfriend: Initiation Rite',
+  '【男性向中文音声】被女友催眠到圣教6（真人版）：魔女的催眠响指': '[Male CN Audio] Hypnotized by Girlfriend Ep.6: Witch\'s Snap',
+  '自定义智能拓扑结构归类': 'Custom intelligent topology classification',
+
   // Collections & Supersets
   '本地创意媒体库': 'Creative Media Library',
   '京都旅拍纪实集': 'Kyoto Travel Series',
@@ -2394,6 +2517,11 @@ export function t(key, params = {}) {
     for (const [k, v] of Object.entries(params)) {
       str = str.replaceAll(`{${k}}`, String(v ?? ''))
     }
+    if (locale.value === 'en') {
+      str = str.replace(/\b1 (files|tracks|items|works|units|tags|views|episodes|videos|artworks|collections|actions|operations)\b/gi, (_, word) => {
+        return `1 ${word.slice(0, -1)}`
+      })
+    }
   }
   return str
 }
@@ -2413,11 +2541,23 @@ export function tData(str) {
     if (/^修改文件夹时间为官方发布日期[：:]\s*/.test(str)) {
       return str.replace(/^修改文件夹时间为官方发布日期[：:]\s*/, 'Sync folder timestamp to release date: ')
     }
+    if (/^标准化重命名[：:]\s*/.test(str)) {
+      return str.replace(/^标准化重命名[：:]\s*/, 'Standardized rename: ')
+    }
     if (/^创建待翻译专用目录[：:]\s*/.test(str)) {
       return str.replace(/^创建待翻译专用目录[：:]\s*(.*)$/, (_, folder) => {
         const trimmed = folder.trim()
         return `Create untracked translation folder: ${EN_DATA_MAP[trimmed] || trimmed}`
       })
+    }
+    if (/^创建目标拓扑目录[：:]\s*/.test(str)) {
+      return str.replace(/^创建目标拓扑目录[：:]\s*/, 'Create target topology folder: ')
+    }
+    if (/^归档散落文件[：:]\s*/.test(str)) {
+      return str.replace(/^归档散落文件[：:]\s*/, 'Archive loose file: ')
+    }
+    if (/^将未翻译作品移入待翻译归类[：:]\s*/.test(str)) {
+      return str.replace(/^将未翻译作品移入待翻译归类[：:]\s*/, 'Move untranslated work to staging folder: ')
     }
     const planSummaryMatch = str.match(
       /^在作用域「(.+?)」内对\s*(\d+)\s*个作品执行物理整理(?:[（(]预演模式[：:]\s*(.+?)[）)])?$/
@@ -2428,6 +2568,22 @@ export function tData(str) {
       return mode
         ? `Dry-run physical organization across ${count} works in scope "${enScope}" (dry_run: ${mode})`
         : `Physical organization across ${count} works in scope "${enScope}"`
+    }
+    const normSummaryMatch = str.match(
+      /^在作用域「(.+?)」内对\s*(\d+)\s*个作品执行物理整理：共计规划\s*(\d+)\s*项目录规范重命名，以及\s*(\d+)\s*项发布时间对齐。$/
+    )
+    if (normSummaryMatch) {
+      const [, scope, works, renames, mtimes] = normSummaryMatch
+      const enScope = EN_DATA_MAP[scope] || scope
+      return `Physical organization across ${works} works in "${enScope}": ${renames} folder renames and ${mtimes} release date alignments planned.`
+    }
+    const isoSummaryMatch = str.match(
+      /^在作用域「(.+?)」内筛选未翻译作品：发现\s*(\d+)\s*项操作，拟将未翻译作品归入「(.+?)」子目录以待后续翻译。$/
+    )
+    if (isoSummaryMatch) {
+      const [, scope, count, sub] = isoSummaryMatch
+      const enScope = EN_DATA_MAP[scope] || scope
+      return `Untranslated triage in "${enScope}": ${count} actions planned to isolate untranslated works into "${sub}".`
     }
     if (str.includes('文本命中「')) {
       return str.replace(/文本命中「([^」]+)」/g, (_, kw) => `Matched text "${EN_DATA_MAP[kw] || kw}"`)
@@ -2468,6 +2624,7 @@ export function tPath(pathStr) {
   if (!pathStr || locale.value !== 'en') return pathStr
   let out = pathStr.replace(/^\/媒体库\//, '/Library/')
   for (const [zhTerm, enTerm] of Object.entries(EN_DATA_MAP)) {
+    if (/^[\x00-\x7F]+$/.test(zhTerm)) continue
     if (out.includes(zhTerm)) {
       out = out.replaceAll(zhTerm, enTerm)
     }

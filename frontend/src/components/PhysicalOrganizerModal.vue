@@ -18,7 +18,7 @@ import {
   FolderInput
 } from 'lucide-vue-next'
 import { planTriage, executeTriagePlan } from '../api'
-import { t } from '../i18n'
+import { t, tData } from '../i18n'
 
 const mediaStore = useMediaStore()
 const playerStore = usePlayerStore()
