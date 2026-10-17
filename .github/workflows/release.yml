@@ -50,4 +50,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: museflow-${{ github.ref_name }}.tar.gz
-          generate_release_notes: false
+          generate_release_notes: true
