@@ -21,7 +21,6 @@ import {
   Tv,
   ListMusic,
   Power,
-  Bot,
   Tags
 } from 'lucide-vue-next'
 

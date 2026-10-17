@@ -20,7 +20,6 @@ import {
   CheckCircle,
   Clock,
   HardDrive,
-  Bot,
   Play,
   ListPlus,
   Tv,
@@ -69,7 +68,6 @@ import {
 import PipelineBuilderModal from './PipelineBuilderModal.vue'
 import TagManagerModal from './TagManagerModal.vue'
 import TaxonomyWorkspaceView from './TaxonomyWorkspaceView.vue'
-import AgentMCPModal from './AgentMCPModal.vue'
 import LensTreeNode from './LensTreeNode.vue'
 
 const mediaStore = useMediaStore()
@@ -80,7 +78,6 @@ const newSupersetName = ref('')
 const showNewSupersetInput = ref(false)
 const showPipelineModal = ref(false)
 const showTagManagerModal = ref(false)
-const showMCPModal = ref(false)
 const showMoreTools = ref(false)
 const showAlgoDetails = ref(false)
 
@@ -2343,12 +2340,6 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
       :isOpen="showTagManagerModal"
       @close="showTagManagerModal = false"
       @changed="handleTagChanged"
-    />
-
-    <!-- Agent MCP Modal -->
-    <AgentMCPModal
-      :isOpen="showMCPModal"
-      @close="showMCPModal = false"
     />
   </div>
 </template>

@@ -15,7 +15,6 @@ import ScanModal from './components/ScanModal.vue'
 import PhysicalOrganizerModal from './components/PhysicalOrganizerModal.vue'
 import ThemePickerModal from './components/ThemePickerModal.vue'
 import BackgroundQueueDrawer from './components/BackgroundQueueDrawer.vue'
-import AgentMCPModal from './components/AgentMCPModal.vue'
 
 const mediaStore = useMediaStore()
 const themeStore = useThemeStore()
@@ -74,10 +73,6 @@ onMounted(() => {
     <PhysicalOrganizerModal />
     <ThemePickerModal />
     <BackgroundQueueDrawer />
-    <AgentMCPModal
-      :isOpen="mediaStore.agentMCPModalOpen"
-      @close="mediaStore.agentMCPModalOpen = false"
-    />
 
     <!-- Global Floating Toast Notification -->
     <Transition

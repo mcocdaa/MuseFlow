@@ -80,11 +80,10 @@ onUnmounted(() => {
           <div class="flex items-start justify-between gap-2">
             <div>
               <div class="text-sm font-bold text-white flex items-center gap-1.5">
-                <span>{{ theme.name }}</span>
-                <span v-if="theme.name !== theme.subname" class="text-[10px] text-gray-400 font-mono font-normal">({{ theme.subname }})</span>
+                <span>{{ tData(theme.name) }}</span>
               </div>
               <p class="text-[11px] text-gray-400 mt-0.5 leading-relaxed">
-                {{ theme.desc }}
+                {{ tData(theme.desc) }}
               </p>
             </div>
 

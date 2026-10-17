@@ -638,7 +638,6 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import {
   ArrowLeft,
   ArrowUpRight,
-  Bot,
   Tag as TagIcon,
   Sparkles,
   Plus,
@@ -1124,18 +1123,6 @@ const handleReorganizeAll = async () => {
     playerStore.showToast(t('tax.toastReorganizeFailed') + (e.response?.data?.detail || e.message))
   } finally {
     reorganizing.value = false
-  }
-}
-
-const handleCopyMCPColumnPrompt = async (tc) => {
-  if (!tc) return
-  const name = tFacet(tc.code, tc.display_name)
-  const prompt = t('tax.mcpColumnPrompt', { code: tc.code, name })
-  try {
-    await navigator.clipboard.writeText(prompt)
-    playerStore.showToast(t('tax.toastMcpPromptCopied', { name }))
-  } catch (e) {
-    mediaStore.openAgentMCP()
   }
 }
 

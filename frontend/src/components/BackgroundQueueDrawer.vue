@@ -365,7 +365,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                 <span class="font-medium text-white">{{ tData(currentUnit.title) }}</span>
               </div>
               <span class="text-[10px] text-purple-300 font-mono shrink-0 uppercase px-1.5 py-0.5 rounded bg-purple-500/20">
-                {{ currentUnit.unit_type }}
+                {{ tData(currentUnit.unit_type) }}
               </span>
             </div>
 
