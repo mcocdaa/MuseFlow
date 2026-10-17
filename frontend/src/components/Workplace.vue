@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useMediaStore } from '../stores/mediaStore'
 import { usePlayerStore } from '../stores/playerStore'
+import { locale, t, tData, tFacet } from '../i18n'
 import {
   Folder,
   FolderOpen,
@@ -500,8 +501,8 @@ const projectableFacets = computed(() => {
 const batchCategoryTabs = computed(() => {
   const dynamicTabs = projectableFacets.value
     .filter(f => f.code !== 'media_kind')
-    .map(f => ({ code: f.code, label: f.display_name }))
-  return [...dynamicTabs, { code: '', label: '全部标签' }]
+    .map(f => ({ code: f.code, label: tFacet(f.code, f.display_name) }))
+  return [...dynamicTabs, { code: '', label: locale.value === 'en' ? 'All Tags' : '全部标签' }]
 })
 
 const WORKPLACE_MEDIA_KIND_NAMES = new Set(['音频', '视频', '图片', '复合媒体'])
@@ -565,9 +566,9 @@ const getRowCleanTags = (item) => {
 const currentLensContext = computed(() => {
   if (mediaStore.selectedMissingFacet) {
     const f = mediaStore.facetSummary?.find(x => x.code === mediaStore.selectedMissingFacet)
-    const facetName = f ? f.display_name : mediaStore.selectedMissingFacet
+    const facetName = tFacet(mediaStore.selectedMissingFacet, f ? f.display_name : mediaStore.selectedMissingFacet)
     return {
-      title: `未分类/缺失「${facetName}」`,
+      title: locale.value === 'en' ? `Missing "${facetName}"` : `未分类/缺失「${facetName}」`,
       is_unassigned: true,
       facet_code: mediaStore.selectedMissingFacet
     }
@@ -583,9 +584,9 @@ const currentLensContext = computed(() => {
       return null
     }
     const node = findInTree(mediaStore.lensTreeData?.tree)
-    const name = node?.display_path || node?.name || allTagsFlat.value.find(t => t.id === mediaStore.selectedLensTagId)?.name || `标签 #${mediaStore.selectedLensTagId}`
+    const rawName = node?.display_path || node?.name || allTagsFlat.value.find(t => t.id === mediaStore.selectedLensTagId)?.name || `#${mediaStore.selectedLensTagId}`
     return {
-      title: name,
+      title: tData(rawName),
       is_unassigned: false,
       tag_id: mediaStore.selectedLensTagId
     }
@@ -837,7 +838,9 @@ const displayItems = computed(() => {
   const q = mediaStore.searchQuery.trim().toLowerCase()
   return items.filter(u =>
     (u.title && u.title.toLowerCase().includes(q)) ||
-    (u.collection_name && u.collection_name.toLowerCase().includes(q))
+    (u.title && tData(u.title).toLowerCase().includes(q)) ||
+    (u.collection_name && u.collection_name.toLowerCase().includes(q)) ||
+    (u.collection_name && tData(u.collection_name).toLowerCase().includes(q))
   )
 })
 
@@ -953,29 +956,29 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <button
             @click="handleSwitchLens('physical')"
             :class="[
-              'flex-1 py-1.5 px-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer',
+              'flex-1 py-1.5 px-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap',
               mediaStore.activeLens === 'physical'
                 ? 'bg-purple-600/30 text-purple-200 border border-purple-500/30 shadow-sm'
                 : 'text-gray-400 hover:text-gray-200'
             ]"
-            title="按物理文件目录与系列归类"
+            :title="t('workplace.foldersTip')"
           >
-            <Folder class="w-3.5 h-3.5 text-blue-400" />
-            <span>物理目录</span>
+            <Folder class="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <span>{{ t('workplace.folders') }}</span>
           </button>
 
           <button
             @click="handleSwitchLens(mediaStore.activeLens === 'physical' ? (projectableFacets[0]?.code || 'domain') : mediaStore.activeLens)"
             :class="[
-              'flex-1 py-1.5 px-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer',
+              'flex-1 py-1.5 px-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap',
               mediaStore.activeLens !== 'physical'
                 ? 'bg-purple-600/30 text-purple-200 border border-purple-500/30 shadow-sm'
                 : 'text-gray-400 hover:text-gray-200'
             ]"
-            title="按多维标签分类透镜浏览"
+            :title="t('workplace.taxonomyTip')"
           >
-            <Tag class="w-3.5 h-3.5 text-purple-400" />
-            <span>分类透镜</span>
+            <Tag class="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            <span>{{ t('workplace.taxonomy') }}</span>
           </button>
         </div>
 
@@ -983,14 +986,13 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
         <div v-if="mediaStore.activeLens !== 'physical'" class="space-y-1.5">
           <div class="flex items-center justify-between px-1">
             <label class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-              分类维度 ({{ projectableFacets.length }})
+              {{ t('workplace.dimensions', { count: projectableFacets.length }) }}
             </label>
             <button
               @click="mediaStore.openTaxonomyWorkspace(mediaStore.activeLens)"
               class="text-[10px] text-purple-400 hover:text-purple-300 font-medium cursor-pointer"
-              title="进入分类与标签中心专页"
             >
-              管理中心 →
+              {{ t('workplace.manageCenter') }}
             </button>
           </div>
           <div class="grid grid-cols-2 gap-1.5 py-0.5">
@@ -1004,11 +1006,11 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   ? 'bg-purple-600/30 text-purple-200 border-purple-500/40 shadow-xs'
                   : 'bg-white/5 border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/10'
               ]"
-              :title="`${facet.display_name} (${facet.tag_count || 0} 个标签 · 覆盖率 ${facet.coverage_percent || 0}%)`"
+              :title="`${tFacet(facet.code, facet.display_name)} (${facet.tag_count || 0})`"
             >
               <div class="flex items-center gap-1.5 min-w-0 truncate">
                 <span class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: facet.color || '#a855f7' }" />
-                <span class="truncate">{{ facet.display_name }}</span>
+                <span class="truncate">{{ tFacet(facet.code, facet.display_name) }}</span>
               </div>
               <span class="text-[10px] font-mono opacity-60 shrink-0">{{ facet.tag_count || '' }}</span>
             </button>
@@ -1018,6 +1020,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
         <!-- All Root Items & Untagged Quick Filter -->
         <div class="space-y-1">
           <button
+            data-testid="workplace-all-media-btn"
             @click="handleSelectAllRoot"
             :class="[
               'w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors text-left cursor-pointer',
@@ -1026,9 +1029,9 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 : 'text-gray-300 hover:bg-white/5'
             ]"
           >
-            <span class="flex items-center gap-2">
-              <HardDrive class="w-4 h-4 text-purple-400" />
-              <span>全库总览</span>
+            <span class="flex items-center gap-2 whitespace-nowrap">
+              <HardDrive class="w-4 h-4 text-purple-400 shrink-0" />
+              <span>{{ t('workplace.allMedia') }}</span>
             </span>
             <span class="text-[10px] text-gray-400 bg-white/5 px-2 py-0.5 rounded-full font-mono">
               {{ mediaStore.facetSummary?.[0]?.total_units || mediaStore.workplaceItems.length }}
@@ -1045,11 +1048,11 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 ? 'bg-amber-500/25 text-amber-200 border border-amber-500/40 shadow-sm'
                 : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
             ]"
-            title="筛选尚未打标或缺少关键分类属性的作品"
+            :title="t('workplace.unorganizedTip')"
           >
-            <span class="flex items-center gap-2">
-              <Clock class="w-4 h-4 text-amber-400" />
-              <span>待整理作品</span>
+            <span class="flex items-center gap-2 whitespace-nowrap">
+              <Clock class="w-4 h-4 text-amber-400 shrink-0" />
+              <span>{{ t('workplace.unorganized') }}</span>
             </span>
             <span class="text-[10px] text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full font-mono font-semibold">
               {{ totalUntaggedCount }}
@@ -1062,9 +1065,9 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <!-- Collections / Folders Tree -->
           <div>
             <div class="flex items-center justify-between text-xs font-semibold text-gray-400 mb-2.5 px-1">
-              <span class="flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                <Folder class="w-3.5 h-3.5 text-blue-400" />
-                <span>系列目录</span>
+              <span class="flex items-center gap-1.5 uppercase tracking-wider text-[11px] whitespace-nowrap">
+                <Folder class="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                <span>{{ t('workplace.collections') }}</span>
               </span>
               <span class="text-[11px] text-gray-500">{{ mediaStore.collections.length }}</span>
             </div>
@@ -1083,10 +1086,11 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 <button
                   @click="handleSelectCollection(col.id)"
                   class="flex-grow min-w-0 flex items-center justify-between px-2.5 py-1.5 text-xs"
+                  :title="tData(col.name)"
                 >
                   <span class="truncate flex items-center gap-2 min-w-0">
                     <FolderOpen class="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                    <span class="truncate">{{ col.name }}</span>
+                    <span class="truncate">{{ tData(col.name) }}</span>
                   </span>
                   <span class="text-[10px] text-gray-500 shrink-0 bg-white/5 px-1.5 py-0.5 rounded-full ml-1.5">
                     {{ col.unit_count }}
@@ -1097,7 +1101,6 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   v-if="col.folder_path"
                   @click.stop="mediaStore.openPhysicalOrganizer(col.folder_path)"
                   class="p-1.5 text-amber-400 hidden group-hover/col:inline-flex hover:text-amber-200 transition-opacity shrink-0"
-                  title="物理整理与发售时间对齐"
                 >
                   <FolderCog class="w-3.5 h-3.5" />
                 </button>
@@ -1108,14 +1111,14 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <!-- Virtual Supersets -->
           <div>
             <div class="flex items-center justify-between text-xs font-semibold text-gray-400 mb-2.5 px-1">
-              <span class="flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                <Sparkles class="w-3.5 h-3.5 text-pink-400" />
-                <span>虚拟超集</span>
+              <span class="flex items-center gap-1.5 uppercase tracking-wider text-[11px] whitespace-nowrap">
+                <Sparkles class="w-3.5 h-3.5 text-pink-400 shrink-0" />
+                <span>{{ t('workplace.supersets') }}</span>
               </span>
               <button
                 @click="showNewSupersetInput = !showNewSupersetInput"
                 class="p-1 hover:text-white text-gray-400 rounded transition-colors"
-                title="新建跨目录超集"
+                :title="t('workplace.newSupersetTip')"
               >
                 <Plus class="w-3.5 h-3.5" />
               </button>
@@ -1126,7 +1129,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               <input
                 v-model="newSupersetName"
                 type="text"
-                placeholder="例如: 好友小李的照片"
+                :placeholder="t('workplace.newSupersetPlaceholder')"
                 class="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-pink-500/50"
                 @keyup.enter="handleCreateSuperset"
               />
@@ -1134,7 +1137,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 @click="handleCreateSuperset"
                 class="bg-pink-600 hover:bg-pink-500 text-white text-xs px-2 py-1 rounded-lg shrink-0"
               >
-                确定
+                {{ t('workplace.confirmBtn') }}
               </button>
             </div>
 
@@ -1152,11 +1155,11 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 <button
                   @click="handleSelectSuperset(sup.id)"
                   class="flex-grow min-w-0 flex items-center justify-between px-2.5 py-1.5 text-xs"
-                  :title="sup.name"
+                  :title="tData(sup.name)"
                 >
                   <span class="truncate flex items-center gap-2 min-w-0">
                     <Tag class="w-3.5 h-3.5 text-pink-400 shrink-0" />
-                    <span class="truncate">{{ sup.name }}</span>
+                    <span class="truncate">{{ tData(sup.name) }}</span>
                   </span>
                   <span class="text-[10px] text-gray-500 shrink-0 bg-white/5 px-1.5 py-0.5 rounded-full ml-1.5">
                     {{ sup.unit_count }}
@@ -1168,21 +1171,18 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   <button
                     @click.stop="playerStore.loadSuperset(sup.id, 'bg', true)"
                     class="p-1 text-purple-300 hover:text-white hover:bg-white/10 rounded transition-colors"
-                    title="载入并播放此超集 (背景队列)"
                   >
                     <Play class="w-3 h-3 fill-current" />
                   </button>
                   <button
                     @click.stop="playerStore.loadSuperset(sup.id, 'fg', true)"
                     class="p-1 text-pink-300 hover:text-white hover:bg-white/10 rounded transition-colors"
-                    title="一键开启全屏自动连播此超集"
                   >
                     <Tv class="w-3 h-3" />
                   </button>
                   <button
                     @click.stop="handleDeleteSuperset(sup, $event)"
                     class="p-1 text-red-400 hover:text-red-200 hover:bg-red-500/20 rounded transition-colors"
-                    title="删除此虚拟超集 (不破坏物理文件)"
                   >
                     <Trash2 class="w-3 h-3" />
                   </button>
@@ -1199,24 +1199,22 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             <div class="flex items-center justify-between text-xs font-semibold text-gray-300 mb-2.5 px-1">
               <div class="flex items-center gap-2 min-w-0">
                 <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: mediaStore.lensTreeData?.color || '#a855f7' }" />
-                <span class="truncate font-semibold">{{ mediaStore.lensTreeData?.display_name || '透镜树' }}</span>
+                <span class="truncate font-semibold">{{ tFacet(mediaStore.activeLens, mediaStore.lensTreeData?.display_name || '透镜树') }}</span>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
                 <span
-                  class="text-[10px] px-2 py-0.5 rounded-full font-mono"
+                  class="text-[10px] px-2 py-0.5 rounded-full font-mono whitespace-nowrap"
                   :class="[
                     (mediaStore.lensTreeData?.coverage_percent || 0) >= 80
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                       : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                   ]"
-                  title="当前标签元类在全库资产中的打标完备度"
                 >
-                  完备度 {{ mediaStore.lensTreeData?.coverage_percent ?? 0 }}%
+                  {{ t('workplace.coverage', { pct: mediaStore.lensTreeData?.coverage_percent ?? 0 }) }}
                 </span>
                 <button
                   @click="mediaStore.loadLensTree(mediaStore.activeLens)"
                   class="text-gray-400 hover:text-white p-1 rounded transition-colors"
-                  title="重新计算透镜树"
                 >
                   <RefreshCw :class="['w-3.5 h-3.5', mediaStore.lensTreeLoading ? 'animate-spin' : '']" />
                 </button>
@@ -1226,7 +1224,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             <!-- Loading Spinner -->
             <div v-if="mediaStore.lensTreeLoading" class="py-8 flex justify-center items-center text-xs text-purple-300">
               <RefreshCw class="w-4 h-4 animate-spin mr-2" />
-              <span>正在构建虚拟透镜拓扑...</span>
+              <span>{{ t('workplace.buildingLens') }}</span>
             </div>
 
             <div v-else class="flex flex-col gap-2 flex-grow overflow-y-auto max-h-[560px] pr-1">
@@ -1278,14 +1276,14 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               v-model="mediaStore.searchQuery"
               @input="handleSearch"
               type="text"
-              placeholder="搜索作品标题 / 目录..."
+              :placeholder="t('workplace.searchPlaceholder')"
               class="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors"
             />
             <button
               v-if="mediaStore.searchQuery"
               @click="mediaStore.searchQuery = ''; handleSearch()"
               class="absolute right-2.5 top-2.5 text-gray-400 hover:text-white transition-colors"
-              title="清除搜索"
+              :title="t('workplace.clearSearch')"
             >
               <X class="w-3.5 h-3.5" />
             </button>
@@ -1296,27 +1294,27 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             <button
               @click="handleSelectAllRoot"
               :class="[
-                'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+                'px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
                 !mediaStore.selectedMissingFacet
                   ? 'bg-purple-600/30 text-purple-200 shadow-sm'
                   : 'text-gray-400 hover:text-gray-200'
               ]"
-              title="显示全部作品"
+              :title="t('workplace.filterAllTip')"
             >
-              全部
+              {{ t('workplace.filterAll') }}
             </button>
             <button
               v-if="totalUntaggedCount > 0"
               @click="handleToggleMissingFacet(vacuumFacets[0]?.code)"
               :class="[
-                'px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5',
+                'px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap',
                 mediaStore.selectedMissingFacet
                   ? 'bg-amber-500/30 text-amber-200 border border-amber-500/40 shadow-sm'
                   : 'text-amber-400/80 hover:text-amber-300 hover:bg-white/5'
               ]"
-              title="筛选尚未打标或缺少关键属性的作品"
+              :title="t('workplace.filterInboxTip')"
             >
-              <span>待整理</span>
+              <span>{{ t('workplace.filterInbox') }}</span>
               <span class="text-[10px] font-mono px-1 rounded-full bg-amber-500/20 text-amber-300">
                 {{ totalUntaggedCount }}
               </span>
@@ -1334,7 +1332,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
                   : 'bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/10'
               ]"
-              :title="isBatchMode ? '退出批量多选模式' : '进入批量多选模式'"
+              :title="isBatchMode ? t('workplace.batchModeExit') : t('workplace.batchModeEnter')"
             >
               <CheckSquare class="w-4 h-4" />
             </button>
@@ -1344,7 +1342,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               @click="handleSyncChanges"
               :disabled="isSyncing"
               class="p-2 rounded-xl bg-white/5 hover:bg-emerald-500/15 border border-white/10 hover:border-emerald-500/30 text-emerald-300 transition-all text-xs disabled:opacity-50"
-              title="增量同步：快速检测并挂载本地媒体库变更"
+              :title="t('workplace.syncChangesTip')"
             >
               <RefreshCw :class="['w-4 h-4 text-emerald-400', isSyncing ? 'animate-spin' : '']" />
             </button>
@@ -1353,16 +1351,17 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             <button
               @click="mediaStore.openTaxonomyWorkspace(mediaStore.activeLens !== 'physical' ? mediaStore.activeLens : null)"
               class="p-2 rounded-xl bg-white/5 hover:bg-teal-500/15 border border-white/10 hover:border-teal-500/30 text-teal-300 transition-all text-xs cursor-pointer"
-              title="分类与标签中心 (专页)"
+              :title="t('workplace.tagCenterTip')"
             >
               <Tag class="w-4 h-4 text-teal-400" />
             </button>
 
             <!-- Pipeline Organizer -->
             <button
+              data-testid="workplace-pipeline-btn"
               @click="showPipelineModal = true"
               class="p-2 rounded-xl bg-white/5 hover:bg-blue-500/15 border border-white/10 hover:border-blue-500/30 text-blue-300 transition-all text-xs"
-              title="整理规则流水线 (自定义物理目录结构)"
+              :title="t('workplace.pipelineTip')"
             >
               <FolderCog class="w-4 h-4 text-blue-400" />
             </button>
@@ -1377,7 +1376,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                     ? 'bg-white/15 border-purple-500/50 text-white'
                     : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
                 ]"
-                title="更多工具与设置"
+                :title="t('workplace.moreToolsTip')"
               >
                 <MoreHorizontal class="w-4 h-4" />
               </button>
@@ -1391,11 +1390,10 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 <button
                   @click="showMCPModal = true"
                   class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-gray-200 hover:bg-purple-600/20 hover:text-purple-200 transition-colors"
-                  title="通过标准 MCP 协议让外部 AI 助手治理媒体库"
                 >
                   <Bot class="w-4 h-4 text-purple-400" />
                   <div class="flex-grow">
-                    <div class="font-medium">AI 助手接入 (MCP)</div>
+                    <div class="font-medium">{{ t('workplace.mcpMenuTitle') }}</div>
                     <div class="text-[10px] text-gray-400">Claude / Cursor / Antigravity</div>
                   </div>
                 </button>
@@ -1403,12 +1401,11 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   @click="handleReindexAll"
                   :disabled="isSyncing"
                   class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-gray-200 hover:bg-red-500/20 hover:text-red-300 transition-colors"
-                  title="全量重扫媒体库建立索引 (不修改磁盘文件)"
                 >
                   <Trash2 class="w-4 h-4 text-red-400" />
                   <div class="flex-grow">
-                    <div class="font-medium">重新扫描全库索引...</div>
-                    <div class="text-[10px] text-gray-400">全量重置索引 (不改物理文件)</div>
+                    <div class="font-medium">{{ t('workplace.reindexMenuTitle') }}</div>
+                    <div class="text-[10px] text-gray-400">{{ t('workplace.reindexMenuSub') }}</div>
                   </div>
                 </button>
               </div>
@@ -1424,17 +1421,16 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <div class="flex items-center gap-2 text-xs text-amber-300 min-w-0 truncate">
             <Clock class="w-4 h-4 text-amber-400 shrink-0" />
             <span class="truncate">
-              当前筛选：<strong>待整理作品</strong>
-              <span class="text-[11px] text-amber-400/80 font-mono ml-1.5">({{ displayItems.length }} 部)</span>
+              {{ t('workplace.currentFilter') }}<strong>{{ t('workplace.unorganized') }}</strong>
+              <span class="text-[11px] text-amber-400/80 font-mono ml-1.5">{{ t('workplace.itemsCount', { count: displayItems.length }) }}</span>
             </span>
           </div>
           <button
             @click="handleToggleMissingFacet(mediaStore.selectedMissingFacet)"
-            class="text-gray-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/5 transition-colors text-xs flex items-center gap-1 shrink-0 ml-2"
-            title="清除筛选，显示全部"
+            class="text-gray-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/5 transition-colors text-xs flex items-center gap-1 shrink-0 ml-2 whitespace-nowrap"
           >
             <X class="w-3.5 h-3.5" />
-            <span>返回全部</span>
+            <span>{{ t('workplace.backToAll') }}</span>
           </button>
         </div>
 
@@ -1448,15 +1444,14 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             <AlertCircle v-if="currentLensContext.is_unassigned" class="w-4 h-4 text-amber-400 shrink-0" />
             <Tag v-else class="w-4 h-4 text-purple-400 shrink-0" />
             <span class="truncate">
-              分类筛选: <strong>{{ currentLensContext.title }}</strong>
-              <span class="text-[10px] ml-1.5 opacity-80 font-mono">({{ displayItems.length }} 项作品)</span>
+              {{ t('workplace.lensFilter') }} <strong>{{ currentLensContext.title }}</strong>
+              <span class="text-[10px] ml-1.5 opacity-80 font-mono">{{ t('workplace.lensItemsCount', { count: displayItems.length }) }}</span>
             </span>
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <button
               @click="handleSelectAllRoot"
               class="text-gray-400 hover:text-white p-1 rounded transition-colors"
-              title="返回全量作品视图"
             >
               <X class="w-3.5 h-3.5" />
             </button>
@@ -1470,21 +1465,19 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
         >
           <div class="flex items-center gap-2 text-xs text-pink-300 min-w-0 truncate">
             <Sparkles class="w-4 h-4 text-pink-400 shrink-0" />
-            <span class="truncate">当前虚拟超集: <strong>{{ currentSuperset.name }}</strong> ({{ displayItems.length }}项)</span>
+            <span class="truncate">{{ t('workplace.activeSuperset') }} <strong>{{ tData(currentSuperset.name) }}</strong> ({{ displayItems.length }})</span>
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <button
               @click="playerStore.loadSuperset(currentSuperset.id, 'fg', true)"
-              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-pink-600 hover:bg-pink-500 text-white text-[11px] font-medium transition-all active:scale-95 shadow-sm"
-              title="一键开启当前超集全屏自动连播"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-pink-600 hover:bg-pink-500 text-white text-[11px] font-medium transition-all active:scale-95 shadow-sm whitespace-nowrap"
             >
               <Play class="w-3 h-3 fill-current" />
-              <span>全屏连播</span>
+              <span>{{ t('workplace.fullscreenSlideshow') }}</span>
             </button>
             <button
               @click="handleSelectSuperset(null)"
               class="text-gray-400 hover:text-white p-1 rounded transition-colors"
-              title="返回全部资产视图"
             >
               <X class="w-3.5 h-3.5" />
             </button>
@@ -1506,55 +1499,51 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             </div>
             <div class="truncate">
               <div class="font-semibold text-white truncate flex items-center gap-2">
-                <span>{{ currentCollection.name }}</span>
-                <span class="text-[10px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded font-mono">{{ displayItems.length }} 项</span>
+                <span>{{ tData(currentCollection.name) }}</span>
+                <span class="text-[10px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded font-mono">{{ displayItems.length }}</span>
               </div>
               <div class="flex items-center gap-2 mt-0.5">
                 <span v-if="currentCollection.audio_count > 0" class="text-[10px] text-emerald-400 font-mono">
-                  🎧 {{ currentCollection.audio_count }} 音轨
+                  🎧 {{ t('stream.badgeAudioCount', { count: currentCollection.audio_count }) }}
                 </span>
                 <span v-if="currentCollection.image_count > 0" class="text-[10px] text-amber-400 font-mono">
-                  🖼️ {{ currentCollection.image_count }} 附赠插画
+                  🖼️ {{ t('stream.badgeImageCount', { count: currentCollection.image_count }) }}
                 </span>
                 <span v-if="currentCollection.video_count > 0" class="text-[10px] text-blue-400 font-mono">
-                  🎬 {{ currentCollection.video_count }} 视频
+                  🎬 {{ t('stream.badgeVideoCount', { count: currentCollection.video_count }) }}
                 </span>
               </div>
               <p class="text-[11px] text-gray-400 truncate mt-0.5" v-if="currentCollection.description">
-                {{ currentCollection.description }}
+                {{ tData(currentCollection.description) }}
               </p>
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <button
               @click="handlePlayCollectionAll"
-              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-medium transition-all active:scale-95 shadow-sm"
-              title="一键播放此专辑/系列全部曲目"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-medium transition-all active:scale-95 shadow-sm whitespace-nowrap"
             >
               <Play class="w-3 h-3 fill-current" />
-              <span>播放系列</span>
+              <span>{{ t('workplace.playCollection') }}</span>
             </button>
             <button
               v-if="currentCollection.folder_path"
               @click="mediaStore.openPhysicalOrganizer(currentCollection.folder_path)"
-              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-200 text-[11px] font-medium transition-all shadow-sm"
-              title="为此系列所在目录进行物理重组、规范改名与发售时间戳对齐"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-200 text-[11px] font-medium transition-all shadow-sm whitespace-nowrap"
             >
               <FolderCog class="w-3.5 h-3.5 text-amber-400" />
-              <span>物理整理</span>
+              <span>{{ t('workplace.physicalOrganize') }}</span>
             </button>
             <button
               @click="handleEnqueueCollection"
-              class="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 text-[11px] font-medium transition-all"
-              title="将全部音轨加入背景播放队列"
+              class="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 text-[11px] font-medium transition-all whitespace-nowrap"
             >
               <ListPlus class="w-3.5 h-3.5 text-purple-300" />
-              <span>入队</span>
+              <span>{{ t('workplace.enqueue') }}</span>
             </button>
             <button
               @click="handleSelectCollection(null)"
               class="text-gray-400 hover:text-white p-1 rounded transition-colors"
-              title="返回全部资产视图"
             >
               <X class="w-3.5 h-3.5" />
             </button>
@@ -1566,52 +1555,52 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <button
             @click="collectionMediaType = 'all'"
             :class="[
-              'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+              'px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
               collectionMediaType === 'all'
                 ? 'bg-blue-600 text-white shadow'
                 : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
             ]"
           >
-            全部 ({{ currentCollection.total_count || displayItems.length }})
+            {{ t('workplace.tabAll', { count: currentCollection.total_count || displayItems.length }) }}
           </button>
           <button
             v-if="currentCollection.audio_count > 0"
             @click="collectionMediaType = 'audio'"
             :class="[
-              'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+              'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
               collectionMediaType === 'audio'
                 ? 'bg-emerald-600 text-white shadow'
                 : 'bg-white/5 text-emerald-400 hover:text-white hover:bg-white/10'
             ]"
           >
             <Music class="w-3.5 h-3.5" />
-            <span>音轨 ({{ currentCollection.audio_count }})</span>
+            <span>{{ t('workplace.tabAudio', { count: currentCollection.audio_count }) }}</span>
           </button>
           <button
             v-if="currentCollection.image_count > 0"
             @click="collectionMediaType = 'image'"
             :class="[
-              'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+              'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
               collectionMediaType === 'image'
                 ? 'bg-amber-600 text-white shadow'
                 : 'bg-white/5 text-amber-400 hover:text-white hover:bg-white/10'
             ]"
           >
             <ImageIcon class="w-3.5 h-3.5" />
-            <span>插画画廊 ({{ currentCollection.image_count }})</span>
+            <span>{{ t('workplace.tabGallery', { count: currentCollection.image_count }) }}</span>
           </button>
           <button
             v-if="currentCollection.video_count > 0"
             @click="collectionMediaType = 'video'"
             :class="[
-              'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+              'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
               collectionMediaType === 'video'
                 ? 'bg-blue-600 text-white shadow'
                 : 'bg-white/5 text-blue-400 hover:text-white hover:bg-white/10'
             ]"
           >
             <Video class="w-3.5 h-3.5" />
-            <span>视频 ({{ currentCollection.video_count }})</span>
+            <span>{{ t('workplace.tabVideo', { count: currentCollection.video_count }) }}</span>
           </button>
         </div>
 
@@ -1621,12 +1610,13 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             v-if="displayItems.length === 0"
             class="text-center py-16 text-gray-500 text-xs"
           >
-            暂无匹配的资产单元
+            {{ t('workplace.noMatchingUnits') }}
           </div>
 
           <div
             v-for="item in displayItems"
             :key="item.id"
+            :data-testid="`workplace-item-row-${item.id}`"
             @click="handleItemClick(item)"
             @dblclick="handleDoubleClick(item)"
             :class="[
@@ -1670,22 +1660,22 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
 
               <div class="min-w-0 flex-1">
                 <div class="text-xs font-medium flex items-center gap-2 min-w-0">
-                  <span class="truncate">{{ item.title }}</span>
+                  <span class="truncate">{{ tData(item.title) }}</span>
                   <span
                     v-if="item.dynamic_attributes?.track_count > 1"
                     class="bg-purple-500/20 text-purple-300 text-[10px] px-1.5 py-0.2 rounded border border-purple-500/30 shrink-0 whitespace-nowrap font-mono"
                   >
-                    {{ item.dynamic_attributes.track_count }} 轨<template v-if="item.dynamic_attributes?.image_count > 0"> · {{ item.dynamic_attributes.image_count }} 插画</template>
+                    {{ t('workplace.tracksBadge', { tracks: item.dynamic_attributes.track_count }) }}<template v-if="item.dynamic_attributes?.image_count > 0">{{ t('workplace.artBadge', { images: item.dynamic_attributes.image_count }) }}</template>
                   </span>
                   <span
                     v-else-if="item.unit_type === 'bundle'"
                     class="bg-purple-500/20 text-purple-300 text-[10px] px-1.5 py-0.2 rounded border border-purple-500/30 shrink-0 whitespace-nowrap"
                   >
-                    复合包 ({{ item.files?.length || 1 }}文件)
+                    {{ t('workplace.bundleFilesBadge', { count: item.files?.length || 1 }) }}
                   </span>
                 </div>
                 <div class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-2 overflow-hidden">
-                  <span class="truncate max-w-[130px]">{{ item.collection_name || '散落文件' }}</span>
+                  <span class="truncate max-w-[130px]">{{ tData(item.collection_name) || t('stream.uncategorized') }}</span>
                   <span v-if="item.width && item.height && !selectedItem" class="whitespace-nowrap shrink-0">{{ item.width }}x{{ item.height }}</span>
                   <span v-if="item.files?.length > 0" class="whitespace-nowrap shrink-0">{{ formatBytes(item.files[0]?.file_size) }}</span>
 
@@ -1693,7 +1683,6 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   <span
                     v-if="item.rating > 0"
                     class="flex items-center gap-0.5 text-amber-400 font-mono text-[10px] font-semibold bg-amber-400/10 px-1.5 py-0.2 rounded border border-amber-400/20 shrink-0 whitespace-nowrap"
-                    :title="`有效评分星级: ${Number(item.rating).toFixed(1)} 星`"
                   >
                     ★ {{ Number(item.rating).toFixed(1) }}
                   </span>
@@ -1702,10 +1691,9 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   <span
                     v-if="item.composite_score > 0 && !selectedItem"
                     class="flex items-center gap-1 text-purple-300 font-mono text-[10px] font-semibold bg-purple-500/15 px-1.5 py-0.2 rounded border border-purple-500/25 shrink-0 whitespace-nowrap"
-                    :title="`推荐算法综合偏好得分: ${Number(item.composite_score).toFixed(1)} 分`"
                   >
                     <Sparkles class="w-2.5 h-2.5" />
-                    <span>偏好 {{ Number(item.composite_score).toFixed(1) }}</span>
+                    <span>{{ t('workplace.scoreBadge', { score: Number(item.composite_score).toFixed(1) }) }}</span>
                   </span>
                 </div>
               </div>
@@ -1720,14 +1708,13 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   :key="t.id || t.name"
                   class="text-[10px] px-1.5 py-0.5 rounded-md font-medium border truncate max-w-[120px] whitespace-nowrap shrink-0"
                   :class="getTagBadgeStyle(t.class_code)"
-                  :title="t.display_path || t.name"
+                  :title="tData(t.display_path || t.name)"
                 >
-                  {{ t.name }}
+                  {{ tData(t.name) }}
                 </span>
                 <span
                   v-if="getRowCleanTags(item).length > (selectedItem ? 2 : 3)"
                   class="text-[9px] text-gray-500 font-mono whitespace-nowrap shrink-0"
-                  :title="getRowCleanTags(item).slice(selectedItem ? 2 : 3).map(t => t.name).join(' · ')"
                 >
                   +{{ getRowCleanTags(item).length - (selectedItem ? 2 : 3) }}
                 </span>
@@ -1738,7 +1725,6 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 v-if="mediaStore.selectedSupersetId"
                 @click.stop="handleRemoveFromCurrentSuperset(item, $event)"
                 class="p-1.5 text-gray-400 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
-                title="从当前虚拟超集中移出"
               >
                 <MinusCircle class="w-4 h-4" />
               </button>
@@ -1746,7 +1732,6 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               <button
                 @click.stop="playerStore.addToBgQueue(item)"
                 class="p-1.5 text-gray-400 hover:text-purple-300 rounded-lg hover:bg-white/10 transition-colors"
-                title="加入背景播放队列"
               >
                 <ListPlus class="w-4 h-4" />
               </button>
@@ -1768,14 +1753,14 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             <button
               @click="handlePrevItem"
               class="p-1.5 rounded-lg hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-              title="上一部 (方向键 ←)"
+              :title="t('workplace.prevItem')"
             >
               <ChevronLeft class="w-4 h-4" />
             </button>
             <button
               @click="handleNextItem"
               class="p-1.5 rounded-lg hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-              title="下一部 (方向键 →)"
+              :title="t('workplace.nextItem')"
             >
               <ChevronRight class="w-4 h-4" />
             </button>
@@ -1786,15 +1771,15 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               v-if="mediaStore.selectedMissingFacet || totalUntaggedCount > 0"
               @click="handleNextUntaggedItem"
               class="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-amber-300/90 hover:text-amber-200 hover:bg-amber-500/10 transition-colors cursor-pointer"
-              title="极速补标：跳转到下一部待整理作品"
+              :title="t('workplace.nextUntaggedTitle')"
             >
               <ArrowRight class="w-3 h-3 text-amber-400" />
-              <span>待整理</span>
+              <span>{{ t('workplace.untaggedBtn') }}</span>
             </button>
             <button
               @click="selectedItem = null"
               class="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-              title="关闭详情 (Esc)"
+              :title="t('workplace.closeInspector')"
             >
               <X class="w-4 h-4" />
             </button>
@@ -1826,12 +1811,12 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
         <!-- 3. Title & Concise Metadata Line -->
         <div>
           <h3 class="text-sm font-semibold text-white break-words leading-snug">
-            {{ selectedItem.title }}
+            {{ tData(selectedItem.title) }}
           </h3>
-          <div class="flex items-center gap-2 text-[11px] text-gray-400 mt-1 font-mono">
-            <span class="capitalize">{{ selectedItem.unit_type === 'bundle' ? '合辑' : selectedItem.unit_type }}</span>
+          <div class="flex items-center gap-2 text-[11px] text-gray-400 mt-1 font-mono whitespace-nowrap">
+            <span class="capitalize">{{ selectedItem.unit_type === 'bundle' ? t('workplace.typeBundle') : selectedItem.unit_type }}</span>
             <span>·</span>
-            <span>{{ selectedItem.files?.length || 1 }} 个文件</span>
+            <span>{{ t('workplace.filesCount', { count: selectedItem.files?.length || 1 }) }}</span>
             <span v-if="selectedItem.files?.[0]?.file_size">· {{ formatBytes(selectedItem.files[0].file_size) }}</span>
           </div>
         </div>
@@ -1843,26 +1828,26 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs py-2 px-3 rounded-xl shadow-sm transition-all font-medium active:scale-95 cursor-pointer"
           >
             <Play class="w-3.5 h-3.5 fill-current" />
-            <span>主屏播放</span>
+            <span>{{ t('workplace.playMain') }}</span>
           </button>
           <button
             @click="playerStore.addToBgQueue(selectedItem)"
             class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
-            title="加入播放队列"
+            :title="t('workplace.addToQueue')"
           >
             <ListPlus class="w-4 h-4" />
           </button>
           <button
             @click="revealInExplorer({ unit_id: selectedItem.id })"
             class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
-            title="在系统文件管理器中定位"
+            :title="t('workplace.revealInExplorer')"
           >
             <FolderOpen class="w-4 h-4" />
           </button>
           <button
             @click="openWithDefaultApp({ unit_id: selectedItem.id })"
             class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
-            title="使用系统默认程序打开"
+            :title="t('workplace.openDefaultApp')"
           >
             <ExternalLink class="w-4 h-4" />
           </button>
@@ -1870,7 +1855,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             v-if="mediaStore.selectedSupersetId"
             @click="handleRemoveFromCurrentSuperset(selectedItem, $event)"
             class="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-300 border border-white/10 transition-colors cursor-pointer"
-            title="从当前超集移出"
+            :title="t('workplace.removeFromSuperset')"
           >
             <MinusCircle class="w-4 h-4" />
           </button>
@@ -1879,40 +1864,40 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
         <!-- 5. Tags Section (极简标签胶囊流，彻底去除大号告警框与繁杂嵌套卡片) -->
         <div class="space-y-2 pt-2 border-t border-white/5">
           <div class="flex items-center justify-between text-xs text-gray-400 select-none">
-            <span class="font-medium text-gray-300">分类与标签</span>
+            <span class="font-medium text-gray-300">{{ t('workplace.tagsSectionTitle') }}</span>
             <button
               @click="mediaStore.openTaxonomyWorkspace(mediaStore.activeLens !== 'physical' ? mediaStore.activeLens : null)"
               class="text-[11px] text-gray-500 hover:text-purple-300 transition-colors cursor-pointer"
-              title="进入分类与标签中心专页"
+              :title="t('workplace.manageTagsTitle')"
             >
-              管理 →
+              {{ t('workplace.manageTags') }}
             </button>
           </div>
 
           <!-- Clean Horizontal Pills Wrap (Color-coded by TagClass) -->
           <div class="flex flex-wrap items-center gap-1.5">
             <span
-              v-for="t in selectedItemTags"
-              :key="t.tag_id"
+              v-for="tItem in selectedItemTags"
+              :key="tItem.tag_id"
               class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors select-none"
               :class="[
-                getTagBadgeStyle(t.class_code),
-                t.is_primary_landing ? 'ring-1 ring-purple-400/50 shadow-xs' : ''
+                getTagBadgeStyle(tItem.class_code),
+                tItem.is_primary_landing ? 'ring-1 ring-purple-400/50 shadow-xs' : ''
               ]"
-              :title="`[${t.class_name || t.class_code}] ${t.display_path || t.name}${t.is_primary_landing ? ' · 主落点标签' : ''}`"
+              :title="`[${tFacet(tItem.class_code, tItem.class_name)}] ${tData(tItem.display_path || tItem.name)}${tItem.is_primary_landing ? t('workplace.primaryTagSuffix') : ''}`"
             >
-              <span v-if="t.is_primary_landing" class="text-[9px] opacity-80">★</span>
+              <span v-if="tItem.is_primary_landing" class="text-[9px] opacity-80">★</span>
               <button
-                @click="handleTogglePrimaryLanding(t)"
+                @click="handleTogglePrimaryLanding(tItem)"
                 class="hover:opacity-80 cursor-pointer"
-                :title="t.is_primary_landing ? '当前为主标签 (点击取消)' : '点击设为主标签'"
+                :title="tItem.is_primary_landing ? t('workplace.unsetPrimaryTitle') : t('workplace.setPrimaryTitle')"
               >
-                {{ t.name }}
+                {{ tData(tItem.name) }}
               </button>
               <button
-                @click="handleRemoveTag(t)"
+                @click="handleRemoveTag(tItem)"
                 class="opacity-60 hover:opacity-100 hover:text-red-300 transition-colors cursor-pointer ml-0.5"
-                title="移除标签"
+                :title="t('workplace.removeTagTitle')"
               >
                 <X class="w-3 h-3" />
               </button>
@@ -1923,10 +1908,10 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               v-if="!isAddingTag"
               @click="openAddTagInput"
               class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gray-400 hover:text-white bg-white/[0.03] hover:bg-white/10 border border-dashed border-white/15 hover:border-purple-400/40 transition-colors cursor-pointer"
-              title="添加标签"
+              :title="t('workplace.addTagBtnTitle')"
             >
               <Plus class="w-3 h-3" />
-              <span>标签</span>
+              <span>{{ t('workplace.addTagBtn') }}</span>
             </button>
           </div>
 
@@ -1937,7 +1922,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 ref="tagInputRef"
                 v-model="tagSearchQuery"
                 type="text"
-                placeholder="搜索或输入新标签..."
+                :placeholder="t('workplace.searchNewTagPlaceholder')"
                 class="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
                 @keyup.enter="handleCreateAndAssignTag"
               />
@@ -1956,8 +1941,8 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 @click="handleAssignTag(sug)"
                 class="w-full flex items-center justify-between px-2 py-1 rounded-md bg-white/5 hover:bg-purple-600/25 text-left text-xs text-gray-200 transition-colors cursor-pointer"
               >
-                <span class="truncate">{{ sug.display_path || sug.name }}</span>
-                <span class="text-[10px] text-gray-500 shrink-0 ml-1">{{ sug.class_name }}</span>
+                <span class="truncate">{{ tData(sug.display_path || sug.name) }}</span>
+                <span class="text-[10px] text-gray-500 shrink-0 ml-1">{{ tFacet(sug.class_code, sug.class_name) }}</span>
               </button>
             </div>
             <div v-else-if="tagSearchQuery.trim()">
@@ -1965,14 +1950,14 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 @click="handleCreateAndAssignTag"
                 class="w-full text-center py-1 text-xs text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg transition-colors cursor-pointer"
               >
-                + 新建「{{ tagSearchQuery.trim() }}」
+                {{ t('workplace.createNewTagBtn', { name: tagSearchQuery.trim() }) }}
               </button>
             </div>
           </div>
 
           <!-- Subtle Quick Suggestions (轻量秒标，仅展示极高置信度候选) -->
           <div v-if="unitSuggestions?.suggestions?.length > 0" class="flex flex-wrap items-center gap-1 pt-1 text-[11px]">
-            <span class="text-[10px] text-gray-500">建议:</span>
+            <span class="text-[10px] text-gray-500">{{ t('workplace.suggestedPrefix') }}</span>
             <button
               v-for="sug in unitSuggestions.suggestions.slice(0, 4)"
               :key="sug.tag_id"
@@ -1980,14 +1965,14 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-purple-500/10 hover:bg-purple-500/25 text-purple-300 border border-purple-500/20 text-[10px] transition-colors cursor-pointer"
               :title="sug.reason"
             >
-              <span>+ {{ sug.tag_name }}</span>
+              <span>+ {{ tData(sug.tag_name) }}</span>
             </button>
           </div>
         </div>
 
         <!-- 6. Rating & Favorites (简洁星级交互) -->
         <div class="flex items-center justify-between pt-2 border-t border-white/5 text-xs select-none">
-          <span class="font-medium text-gray-300">喜好评分</span>
+          <span class="font-medium text-gray-300">{{ t('workplace.ratingLabel') }}</span>
           <div class="flex items-center gap-1.5">
             <div class="flex items-center gap-0.5">
               <button
@@ -1995,7 +1980,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 :key="s"
                 @click="handleWorkplaceAppendRate(s)"
                 class="p-0.5 hover:scale-110 transition-transform cursor-pointer"
-                :title="`打分 ${s} 星`"
+                :title="t('workplace.rateStarTitle', { s })"
               >
                 <Star
                   :class="[
@@ -2016,7 +2001,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
         <!-- 7. Attached Files (仅多文件复合包时展开展示，单文件直接在元数据呈现不冗余) -->
         <div v-if="selectedItem.files && selectedItem.files.length > 1" class="space-y-1.5 pt-2 border-t border-white/5">
           <div class="text-xs font-medium text-gray-300 select-none">
-            包含文件 ({{ selectedItem.files.length }})
+            {{ t('workplace.attachedFilesCount', { count: selectedItem.files.length }) }}
           </div>
           <div class="space-y-1 max-h-36 overflow-y-auto pr-1">
             <div
@@ -2031,7 +2016,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   @click="revealInExplorer({ file_id: f.id })"
                   class="text-blue-400 hover:underline text-[10px] cursor-pointer"
                 >
-                  定位
+                  {{ t('workplace.revealBtn') }}
                 </button>
               </div>
             </div>
@@ -2040,7 +2025,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
 
         <!-- 8. Supersets Quick Link (如有虚拟超集) -->
         <div v-if="mediaStore.supersets.length > 0" class="pt-2 border-t border-white/5 space-y-1.5 select-none">
-          <div class="text-xs font-medium text-gray-300">加入超集</div>
+          <div class="text-xs font-medium text-gray-300">{{ t('workplace.addToSupersetSection') }}</div>
           <div class="flex flex-wrap gap-1">
             <button
               v-for="sup in mediaStore.supersets"
@@ -2049,7 +2034,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               class="text-[10px] bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 border border-pink-500/25 px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 cursor-pointer"
             >
               <Plus class="w-2.5 h-2.5" />
-              <span>{{ sup.name }}</span>
+              <span>{{ tData(sup.name) }}</span>
             </button>
           </div>
         </div>
@@ -2060,22 +2045,22 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             @click="showAlgoDetails = !showAlgoDetails"
             class="w-full flex items-center justify-between text-[10px] text-gray-500 hover:text-gray-300 transition-colors py-1 cursor-pointer"
           >
-            <span>算法分析指标 (综合得分 {{ Number(selectedItem.composite_score || itemAlgorithmStats.composite_score || 0).toFixed(1) }})</span>
+            <span>{{ t('workplace.algoMetricsBtn', { score: Number(selectedItem.composite_score || itemAlgorithmStats.composite_score || 0).toFixed(1) }) }}</span>
             <ChevronDown :class="['w-3 h-3 transition-transform', showAlgoDetails ? 'rotate-180' : '']" />
           </button>
           
           <div v-if="showAlgoDetails" class="mt-2 p-2.5 rounded-xl bg-black/40 border border-white/5 text-[10px] space-y-1.5 font-mono text-gray-400">
             <div class="flex justify-between">
-              <span>显式评分贡献:</span>
-              <span class="text-purple-300">+{{ itemAlgorithmStats.explicit.total }} 分</span>
+              <span>{{ t('workplace.explicitScore') }}</span>
+              <span class="text-purple-300">+{{ itemAlgorithmStats.explicit.total }} pts</span>
             </div>
             <div class="flex justify-between">
-              <span>隐式停留贡献:</span>
-              <span class="text-blue-300">+{{ itemAlgorithmStats.implicit.total }} 分 ({{ Math.round(itemAlgorithmStats.implicit.dwell_seconds) }}s)</span>
+              <span>{{ t('workplace.implicitScore') }}</span>
+              <span class="text-blue-300">+{{ itemAlgorithmStats.implicit.total }} pts ({{ Math.round(itemAlgorithmStats.implicit.dwell_seconds) }}s)</span>
             </div>
             <div class="flex justify-between text-gray-500 pt-1 border-t border-white/5">
-              <span>状态:</span>
-              <span>{{ itemAlgorithmStats.is_in_cooldown ? '冷却中' : (itemAlgorithmStats.is_fatigued ? '过热衰减' : '活跃') }}</span>
+              <span>{{ t('workplace.statusLabel') }}</span>
+              <span>{{ itemAlgorithmStats.is_in_cooldown ? t('workplace.statusCooldown') : (itemAlgorithmStats.is_fatigued ? t('workplace.statusFatigued') : t('workplace.statusActive')) }}</span>
             </div>
           </div>
         </div>
@@ -2097,12 +2082,12 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
       >
         <!-- Selection Count & Select All -->
         <div class="flex items-center gap-2 pr-3 border-r border-white/10 shrink-0">
-          <span class="font-semibold text-white">已选择 <span class="text-purple-400 font-mono">{{ selectedIds.size }}</span> 项</span>
+          <span class="font-semibold text-white">{{ t('batch.selectedCount', { count: selectedIds.size }) }}</span>
           <button
             @click="toggleSelectAll"
             class="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-gray-200 hover:text-white transition-colors text-[11px]"
           >
-            {{ isAllSelected ? '取消全选' : '全选' }}
+            {{ isAllSelected ? t('batch.deselectAll') : t('batch.selectAll') }}
           </button>
         </div>
 
@@ -2112,47 +2097,47 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <button
             @click="openBatchSupersetModal"
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-medium shadow-md shadow-pink-600/30 transition-all active:scale-95"
-            title="批量加入或创建超集"
+            :title="t('batch.addToSuperset')"
           >
             <BookmarkPlus class="w-3.5 h-3.5" />
-            <span>加入超集</span>
+            <span>{{ t('batch.addToSuperset') }}</span>
           </button>
 
           <!-- Add to Background Queue -->
           <button
             @click="handleBatchAddToQueue"
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-medium shadow-md shadow-purple-600/30 transition-all active:scale-95"
-            title="批量加入背景播放队列"
+            :title="t('batch.addToQueue')"
           >
             <ListPlus class="w-3.5 h-3.5" />
-            <span>加入播放队列</span>
+            <span>{{ t('batch.addToQueue') }}</span>
           </button>
 
           <!-- Batch Tagging Button -->
           <button
             @click="openBatchTagModal"
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-medium shadow-md shadow-purple-600/30 transition-all active:scale-95"
-            title="为所选资产批量打上指定标签"
+            :title="t('batch.batchTag')"
           >
             <Tag class="w-3.5 h-3.5" />
-            <span>批量打标</span>
+            <span>{{ t('batch.batchTag') }}</span>
           </button>
 
           <!-- Batch Continuous Slideshow -->
           <button
             @click="handleBatchPlaySlideshow"
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30 transition-all active:scale-95"
-            title="立即连播所选项"
+            :title="t('batch.playSelected')"
           >
             <Play class="w-3.5 h-3.5 fill-current" />
-            <span>连播已选项</span>
+            <span>{{ t('batch.playSelected') }}</span>
           </button>
 
           <!-- Exit / Cancel -->
           <button
             @click="selectedIds = new Set(); isBatchMode = false"
             class="p-1.5 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-colors ml-1"
-            title="取消多选"
+            :title="t('batch.cancelSelection')"
           >
             <X class="w-4 h-4" />
           </button>
@@ -2181,7 +2166,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <div class="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
             <h3 class="text-sm font-semibold text-white flex items-center gap-2">
               <BookmarkPlus class="w-4 h-4 text-pink-400" />
-              <span>批量收纳至超集 (共 {{ selectedIds.size }} 项)</span>
+              <span>{{ t('batch.batchSupersetTitle', { count: selectedIds.size }) }}</span>
             </h3>
             <button
               @click="showBatchSupersetModal = false"
@@ -2194,7 +2179,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <!-- Existing Supersets List -->
           <div class="mb-4">
             <label class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-              选择已有超集
+              {{ t('batch.selectExistingSuperset') }}
             </label>
             <div v-if="mediaStore.supersets.length > 0" class="max-h-48 overflow-y-auto space-y-1.5 pr-1">
               <button
@@ -2203,25 +2188,25 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 @click="handleBatchAddToSuperset(sup)"
                 class="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-pink-600/20 hover:border-pink-500/30 border border-transparent text-gray-200 hover:text-pink-200 transition-all text-xs font-medium"
               >
-                <span>{{ sup.name }}</span>
-                <span class="text-[11px] text-gray-500 font-mono">{{ sup.unit_count }} 项</span>
+                <span>{{ tData(sup.name) }}</span>
+                <span class="text-[11px] text-gray-500 font-mono">{{ sup.unit_count }}</span>
               </button>
             </div>
             <div v-else class="text-xs text-gray-400 py-2">
-              目前还没有创建任何超集，请在下方直接新建：
+              {{ t('batch.noSupersetYet') }}
             </div>
           </div>
 
           <!-- Create New Superset and Batch Add -->
           <div class="pt-3 border-t border-white/10">
             <label class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-              新建超集并存入
+              {{ t('batch.createAndAddSuperset') }}
             </label>
             <div class="flex items-center gap-2">
               <input
                 v-model="batchNewSupersetName"
                 type="text"
-                placeholder="输入新超集名称 (例如: 精选二次元插画)..."
+                :placeholder="t('batch.newSupersetPlaceholder')"
                 class="flex-grow bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-pink-500"
                 @keyup.enter="handleBatchCreateAndAddSuperset"
               />
@@ -2229,7 +2214,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 @click="handleBatchCreateAndAddSuperset"
                 class="bg-pink-600 hover:bg-pink-500 text-white text-xs font-medium px-4 py-2 rounded-xl transition-all shrink-0"
               >
-                新建并存入
+                {{ t('batch.createAndSaveBtn') }}
               </button>
             </div>
           </div>
@@ -2258,7 +2243,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <div class="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
             <h3 class="text-sm font-semibold text-white flex items-center gap-2">
               <Tag class="w-4 h-4 text-purple-400" />
-              <span>批量为 {{ selectedIds.size }} 部作品打标</span>
+              <span>{{ t('batch.batchTagModalTitle', { count: selectedIds.size }) }}</span>
             </h3>
             <button
               @click="showBatchTagModal = false"
@@ -2271,7 +2256,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <!-- Category Selector Tabs -->
           <div class="mb-3">
             <label class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1.5">
-              1. 选择标签类目
+              {{ t('batch.step1SelectCategory') }}
             </label>
             <div class="grid grid-cols-4 gap-1 p-1 bg-black/30 rounded-xl border border-white/5 text-xs">
               <button
@@ -2294,31 +2279,31 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <!-- Tag Search & Selection List -->
           <div class="mb-4">
             <label class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1.5">
-              2. 选择要打上的标签
+              {{ t('batch.step2SelectTag') }}
             </label>
             <input
               v-model="batchTagSearchQuery"
               type="text"
-              placeholder="搜索标签名称..."
+              :placeholder="t('batch.searchTagPlaceholder')"
               class="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 mb-2"
             />
             <div class="max-h-48 overflow-y-auto space-y-1 pr-1">
               <button
-                v-for="t in batchFilteredTags"
-                :key="t.id"
-                @click="batchSelectedTagId = t.id"
+                v-for="tItem in batchFilteredTags"
+                :key="tItem.id"
+                @click="batchSelectedTagId = tItem.id"
                 :class="[
                   'w-full flex items-center justify-between p-2 rounded-xl text-xs transition-all text-left border',
-                  batchSelectedTagId === t.id
+                  batchSelectedTagId === tItem.id
                     ? 'bg-purple-600/30 text-purple-200 border-purple-500/50 font-semibold'
                     : 'bg-white/5 border-white/5 text-gray-300 hover:bg-white/10 hover:text-white'
                 ]"
               >
-                <span class="truncate">{{ t.display_path || t.name }}</span>
-                <span class="text-[10px] text-gray-400 font-mono">{{ t.class_name || t.class_code }}</span>
+                <span class="truncate">{{ tData(tItem.display_path || tItem.name) }}</span>
+                <span class="text-[10px] text-gray-400 font-mono">{{ tFacet(tItem.class_code, tItem.class_name) }}</span>
               </button>
               <div v-if="batchFilteredTags.length === 0" class="text-xs text-gray-500 text-center py-4">
-                未找到匹配标签
+                {{ t('batch.noMatchingTag') }}
               </div>
             </div>
           </div>
@@ -2332,7 +2317,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               class="rounded bg-white/10 border-white/20 text-purple-600 focus:ring-purple-500"
             />
             <label for="batchPrimaryLanding" class="text-xs text-gray-300 cursor-pointer select-none">
-              同时设为该类别的主归档标签
+              {{ t('batch.setPrimaryCheckbox') }}
             </label>
           </div>
 
@@ -2342,14 +2327,14 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               @click="showBatchTagModal = false"
               class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs transition-colors"
             >
-              取消
+              {{ t('common.cancel') }}
             </button>
             <button
               @click="handleConfirmBatchTag"
               :disabled="!batchSelectedTagId"
               class="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white font-medium text-xs shadow-md shadow-purple-600/30 transition-all active:scale-95"
             >
-              确认批量打标
+              {{ t('batch.confirmBatchTag') }}
             </button>
           </div>
         </div>

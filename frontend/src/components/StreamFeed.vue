@@ -2,6 +2,7 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useMediaStore } from '../stores/mediaStore'
 import { usePlayerStore } from '../stores/playerStore'
+import { useI18nStore } from '../stores/i18nStore'
 import {
   Play,
   Heart,
@@ -52,6 +53,8 @@ import {
 
 const mediaStore = useMediaStore()
 const playerStore = usePlayerStore()
+const i18n = useI18nStore()
+const { t, tData, tFacet, tAlgo, tAlgoDesc } = i18n
 
 const algoMeta = {
   resonance: {
@@ -139,11 +142,11 @@ const handleCardAddToSuperset = async (superset) => {
   if (!activePopoverUnit.value) return
   try {
     await addItemToSuperset(superset.id, activePopoverUnit.value.id)
-    playerStore.showToast(`已将「${activePopoverUnit.value.title}」加入超集「${superset.name}」`)
+    playerStore.showToast(t('stream.toastAddedToSuperset', { title: tData(activePopoverUnit.value.title), superset: tData(superset.name) }))
     await mediaStore.loadSupersets()
     activePopoverUnit.value = null
   } catch (err) {
-    playerStore.showToast('加入超集失败：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast((err.response?.data?.detail || err.message))
   }
 }
 
@@ -152,12 +155,12 @@ const handleCardCreateAndAddSuperset = async () => {
   try {
     const newSup = await createSuperset({ name: cardNewSupersetName.value.trim() })
     await addItemToSuperset(newSup.id, activePopoverUnit.value.id)
-    playerStore.showToast(`已创建超集「${newSup.name}」并成功加入`)
+    playerStore.showToast(t('stream.toastCreatedSuperset', { superset: tData(newSup.name) }))
     cardNewSupersetName.value = ''
     activePopoverUnit.value = null
     await mediaStore.loadSupersets()
   } catch (err) {
-    playerStore.showToast('创建超集失败：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast((err.response?.data?.detail || err.message))
   }
 }
 
@@ -187,13 +190,13 @@ const handleBatchAddToSuperset = async (superset) => {
   try {
     const ids = Array.from(selectedIds.value)
     await addItemsBatchToSuperset(superset.id, ids)
-    playerStore.showToast(`已将 ${ids.length} 项批量加入超集「${superset.name}」`)
+    playerStore.showToast(t('stream.toastBatchAddedSuperset', { count: ids.length, superset: tData(superset.name) }))
     await mediaStore.loadSupersets()
     showBatchSupersetModal.value = false
     selectedIds.value = new Set()
     isBatchMode.value = false
   } catch (err) {
-    playerStore.showToast('批量添加失败：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast((err.response?.data?.detail || err.message))
   }
 }
 
@@ -203,14 +206,14 @@ const handleBatchCreateAndAddSuperset = async () => {
     const newSup = await createSuperset({ name: batchNewSupersetName.value.trim() })
     const ids = Array.from(selectedIds.value)
     await addItemsBatchToSuperset(newSup.id, ids)
-    playerStore.showToast(`已创建超集「${newSup.name}」并存入 ${ids.length} 项`)
+    playerStore.showToast(t('stream.toastBatchCreatedSuperset', { count: ids.length, superset: tData(newSup.name) }))
     batchNewSupersetName.value = ''
     showBatchSupersetModal.value = false
     selectedIds.value = new Set()
     isBatchMode.value = false
     await mediaStore.loadSupersets()
   } catch (err) {
-    playerStore.showToast('创建超集失败：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast((err.response?.data?.detail || err.message))
   }
 }
 
@@ -302,7 +305,9 @@ const displayItems = computed(() => {
     const q = mediaStore.searchQuery.trim().toLowerCase()
     items = items.filter(u =>
       (u.title && u.title.toLowerCase().includes(q)) ||
-      (u.collection_name && u.collection_name.toLowerCase().includes(q))
+      (u.collection_name && u.collection_name.toLowerCase().includes(q)) ||
+      (tData(u.title || '').toLowerCase().includes(q)) ||
+      (tData(u.collection_name || '').toLowerCase().includes(q))
     )
   }
 
@@ -342,11 +347,11 @@ const availableFacets = computed(() => {
     ? mediaStore.allTags
     : mediaStore.feedItems.flatMap(i => i.tags || [])
 
-  for (const t of sourceTags) {
-    if (!t.name || t.name.length > 30) continue
-    const code = t.class_code || 'domain'
-    const metaCfg = FACET_META[code] || { name: t.class_name || '分类标签', icon: Sparkles, color: '#c084fc' }
-    const displayName = t.class_name || metaCfg.name
+  for (const tObj of sourceTags) {
+    if (!tObj.name || tObj.name.length > 30) continue
+    const code = tObj.class_code || 'domain'
+    const metaCfg = FACET_META[code] || { name: tObj.class_name || '分类标签', icon: Sparkles, color: '#c084fc' }
+    const displayName = tFacet(code, tObj.class_name || metaCfg.name)
     const iconComp = metaCfg.icon
 
     if (!facetMap.has(code)) {
@@ -358,15 +363,15 @@ const availableFacets = computed(() => {
         options: new Set()
       })
     }
-    facetMap.get(code).options.add(t.name)
-    const metaKey = `${code}::${t.name}`
+    facetMap.get(code).options.add(tObj.name)
+    const metaKey = `${code}::${tObj.name}`
     if (!tagMetaMap.has(metaKey)) {
       tagMetaMap.set(metaKey, {
-        name: t.name,
-        parent_name: t.parent_name,
-        parent_id: t.parent_id,
-        full_path: t.full_path,
-        unit_count: t.unit_count || 0,
+        name: tObj.name,
+        parent_name: tObj.parent_name,
+        parent_id: tObj.parent_id,
+        full_path: tObj.full_path,
+        unit_count: tObj.unit_count || 0,
       })
     }
   }
@@ -380,7 +385,7 @@ const availableFacets = computed(() => {
         const depth = fullPath.split(' / ').length - 1
         return {
           value: name,
-          label: name,
+          label: tData(name),
           parent_name: meta.parent_name,
           parent_id: meta.parent_id,
           full_path: fullPath,
@@ -812,7 +817,7 @@ const handleAddSeriesToQueue = async (card) => {
         const playable = full.filter(u => isAudioUnit(u) || u.unit_type === 'video' || u.unit_type === 'bundle')
         const toAdd = playable.length > 0 ? playable : full
         playerStore.addMultipleToBgQueue(toAdd)
-        playerStore.showToast(`已将系列「${card.title}」共 ${toAdd.length} 项加入队列`)
+        playerStore.showToast(t('stream.toastSeriesQueued', { title: tData(card.title), count: toAdd.length }))
         return
       }
     } catch (e) {}
@@ -840,7 +845,7 @@ const handleReveal = async (e, card) => {
   try {
     await revealInExplorer({ unit_id: targetId })
   } catch (err) {
-    playerStore.showToast('无法在资源管理器中定位：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast((err.response?.data?.detail || err.message))
   }
 }
 
@@ -850,7 +855,7 @@ const handleOpenExternal = async (e, card) => {
   try {
     await openWithDefaultApp({ unit_id: targetId })
   } catch (err) {
-    playerStore.showToast('无法用外部程序打开：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast((err.response?.data?.detail || err.message))
   }
 }
 
@@ -876,14 +881,14 @@ const handleAppendRate = async (e, card, stars) => {
     card.rating = updated.rating
   }
   const finalRating = Number(card.rating || stars).toFixed(1)
-  playerStore.showToast(`✨ 追加 ${stars} 星好评 (当前有效评分: ${finalRating}★)`)
+  playerStore.showToast(t('stream.toastRated', { stars, rating: finalRating }))
 }
 
 const handleCooldown = async (e, card) => {
   e.stopPropagation()
   const targetId = card.representative_unit_id || card.id
   await mediaStore.addToCooldown(targetId, 14, '听腻了')
-  playerStore.showToast('已加入冷却池 (未来 14 天不再推荐)')
+  playerStore.showToast(t('stream.toastCooldown'))
 }
 
 const handleToggleFavorite = (e, card) => {
@@ -891,7 +896,7 @@ const handleToggleFavorite = (e, card) => {
   const targetId = card.representative_unit_id || card.id
   mediaStore.toggleFavorite(targetId)
   card.is_favorite = !card.is_favorite
-  playerStore.showToast(card.is_favorite ? '已加入喜爱收藏' : '已取消收藏')
+  playerStore.showToast(card.is_favorite ? t('stream.toastFavorited') : t('stream.toastUnfavorited'))
 }
 </script>
 
@@ -910,7 +915,7 @@ const handleToggleFavorite = (e, card) => {
               ? 'bg-purple-600/20 text-purple-200 border-purple-500/40 shadow-sm'
               : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
           ]"
-          :title="mediaStore.sidebarOpen ? '收起分类边栏' : '展开分类边栏'"
+          :title="mediaStore.sidebarOpen ? t('stream.collapseSidebarTitle') : t('stream.expandSidebarTitle')"
         >
           <component :is="mediaStore.sidebarOpen ? PanelLeftClose : PanelLeftOpen" class="w-4 h-4 text-purple-400" />
           <span
@@ -931,9 +936,9 @@ const handleToggleFavorite = (e, card) => {
                 ? 'bg-purple-600/30 text-purple-200 shadow-sm'
                 : 'text-gray-400 hover:text-gray-200'
             ]"
-            title="系列聚合视图：同一系列打包成单张卡片"
+            :title="t('stream.seriesModeTitle')"
           >
-            系列聚合
+            {{ t('stream.seriesMode') }}
           </button>
           <button
             @click="mediaStore.setFeedDisplayMode('flat')"
@@ -943,9 +948,9 @@ const handleToggleFavorite = (e, card) => {
                 ? 'bg-purple-600/30 text-purple-200 shadow-sm'
                 : 'text-gray-400 hover:text-gray-200'
             ]"
-            title="单篇平铺视图：所有分集独立平铺"
+            :title="t('stream.flatModeTitle')"
           >
-            单篇平铺
+            {{ t('stream.flatMode') }}
           </button>
         </div>
 
@@ -954,10 +959,10 @@ const handleToggleFavorite = (e, card) => {
           v-if="displayItems.length > 0"
           @click="startSlideshowAll"
           class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-purple-200 bg-white/5 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500/30 transition-all cursor-pointer"
-          title="开启当前列表自动连播"
+          :title="t('stream.autoplayBtnTitle')"
         >
           <Play class="w-3.5 h-3.5 fill-current text-purple-400" />
-          <span>连播</span>
+          <span>{{ t('stream.autoplayBtn') }}</span>
         </button>
 
         <!-- Batch Selection Mode Toggle -->
@@ -970,7 +975,7 @@ const handleToggleFavorite = (e, card) => {
               ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
               : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
           ]"
-          :title="isBatchMode ? '退出批量多选' : '进入批量多选'"
+          :title="isBatchMode ? t('stream.exitBatchTitle') : t('stream.enterBatchTitle')"
         >
           <CheckSquare class="w-4 h-4" />
         </button>
@@ -988,14 +993,14 @@ const handleToggleFavorite = (e, card) => {
               : 'bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/10 hover:border-white/20'
           ]"
           :style="isAlgoDropdownOpen ? { borderColor: 'var(--accent-border)' } : {}"
-          title="切换推荐算法策略"
+          :title="t('stream.switchAlgoTitle')"
         >
           <component
             :is="algoMeta[mediaStore.selectedAlgorithm]?.icon || Sparkles"
             class="w-3.5 h-3.5 transition-transform"
             :style="{ color: algoMeta[mediaStore.selectedAlgorithm]?.color || 'var(--accent-color)' }"
           />
-          <span class="font-medium tracking-wide">{{ currentAlgo.display_name }}</span>
+          <span class="font-medium tracking-wide">{{ tAlgo(currentAlgo.name, currentAlgo.display_name) }}</span>
           <ChevronDown
             class="w-3.5 h-3.5 text-gray-400 transition-transform duration-200"
             :class="{ 'rotate-180': isAlgoDropdownOpen }"
@@ -1017,7 +1022,7 @@ const handleToggleFavorite = (e, card) => {
             style="background-color: var(--bg-surface-elevated);"
           >
             <div class="px-2.5 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-white/5 mb-1">
-              推荐算法分流策略
+              {{ t('stream.algoMenuTitle') }}
             </div>
 
             <div class="space-y-1">
@@ -1048,7 +1053,7 @@ const handleToggleFavorite = (e, card) => {
                 <div class="flex-grow min-w-0">
                   <div class="flex items-center justify-between">
                     <span class="text-xs font-semibold tracking-wide">
-                      {{ algo.display_name }}
+                      {{ tAlgo(algo.name, algo.display_name) }}
                     </span>
                     <Check
                       v-if="mediaStore.selectedAlgorithm === algo.name"
@@ -1057,7 +1062,7 @@ const handleToggleFavorite = (e, card) => {
                     />
                   </div>
                   <p class="text-[11px] text-gray-400 mt-0.5 leading-snug">
-                    {{ algoMeta[algo.name]?.desc || algo.description }}
+                    {{ tAlgoDesc(algo.name, algoMeta[algo.name]?.desc || algo.description) }}
                   </p>
                 </div>
               </div>
@@ -1082,14 +1087,14 @@ const handleToggleFavorite = (e, card) => {
               <FolderTree class="w-4 h-4" />
             </div>
             <span class="text-xs font-bold tracking-wide uppercase" style="color: var(--text-main);">
-              分类与标签
+              {{ t('stream.sidebarTitle') }}
             </span>
             <span
               v-if="activeFilterList.length > 0"
               class="text-[10px] px-2 py-0.5 rounded-full font-bold text-white shadow-xs"
               style="background: var(--accent-color);"
             >
-              已选 {{ activeFilterList.length }}
+              {{ t('stream.selectedBadge', { count: activeFilterList.length }) }}
             </span>
           </div>
 
@@ -1098,15 +1103,15 @@ const handleToggleFavorite = (e, card) => {
               v-if="mediaStore.hasAnyActiveFacet()"
               @click="mediaStore.clearFacetFilters()"
               class="text-[11px] text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2 py-1 rounded-lg transition-colors flex items-center gap-1"
-              title="清空所有分类筛选"
+              :title="t('stream.clearAllFacetsTitle')"
             >
               <RotateCcw class="w-3 h-3" />
-              <span>清空</span>
+              <span>{{ t('stream.clearBtn') }}</span>
             </button>
             <button
               @click="mediaStore.sidebarOpen = false"
               class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
-              title="收起分类边栏"
+              :title="t('stream.collapseSidebarTitle')"
             >
               <PanelLeftClose class="w-3.5 h-3.5" />
             </button>
@@ -1120,7 +1125,7 @@ const handleToggleFavorite = (e, card) => {
             <input
               v-model="sidebarSearch"
               type="text"
-              placeholder="过滤分类标签..."
+              :placeholder="t('stream.filterTagsPlaceholder')"
               class="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/60 transition-colors"
             />
             <button
@@ -1147,12 +1152,12 @@ const handleToggleFavorite = (e, card) => {
           <!-- Empty state if no tags found -->
           <div v-else-if="availableFacets.length === 0" class="p-6 text-center text-xs text-gray-500">
             <TagIcon class="w-6 h-6 mx-auto mb-2 opacity-40 text-purple-400" />
-            <p>未发现已分类标签</p>
+            <p>{{ t('stream.noTagsFound') }}</p>
             <button
               @click="mediaStore.loadTags()"
               class="mt-2 text-purple-400 hover:text-purple-300 underline text-[11px]"
             >
-              重新同步标签树
+              {{ t('stream.resyncTagsBtn') }}
             </button>
           </div>
 
@@ -1211,7 +1216,7 @@ const handleToggleFavorite = (e, card) => {
                     class="w-3.5 h-3.5 shrink-0 transition-colors"
                     :class="(!mediaStore.activeFacetFilters.media_kind || mediaStore.activeFacetFilters.media_kind.length === 0) ? 'text-purple-400' : 'text-gray-600 group-hover:text-gray-400'"
                   />
-                  <span class="truncate font-medium">全部形态 (不限)</span>
+                  <span class="truncate font-medium">{{ t('stream.allMediaKinds') }}</span>
                 </div>
                 <span
                   class="text-[10px] font-mono px-1.5 py-0.2 rounded-full shrink-0 ml-1.5"
@@ -1237,7 +1242,7 @@ const handleToggleFavorite = (e, card) => {
                       v-if="opt.hasChildren"
                       @click.stop="toggleNodeCollapse(opt.value, $event, opt.depth)"
                       class="p-0.5 rounded hover:bg-white/10 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
-                      :title="isNodeCollapsed(opt.value, opt.depth) ? '展开子标签' : '折叠子标签'"
+                      :title="isNodeCollapsed(opt.value, opt.depth) ? t('stream.expandSubTagsTitle') : t('stream.collapseSubTagsTitle')"
                     >
                       <ChevronRight
                         class="w-3 h-3 transition-transform duration-150"
@@ -1254,7 +1259,7 @@ const handleToggleFavorite = (e, card) => {
                     />
 
                     <!-- Label -->
-                    <span class="truncate" :title="opt.full_path">{{ opt.label }}</span>
+                    <span class="truncate" :title="tData(opt.full_path)">{{ opt.label }}</span>
                   </div>
 
                   <!-- Match count badge -->
@@ -1273,7 +1278,7 @@ const handleToggleFavorite = (e, card) => {
                 @click.stop="toggleSectionShowAll(group.key)"
                 class="w-full py-1.5 px-2 text-[11px] text-gray-400 hover:text-purple-300 hover:bg-white/5 rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer mt-0.5"
               >
-                <span>{{ isSectionFullyExpanded(group.key) ? '收起部分标签' : `展开其余 ${getHiddenOptionCount(group)} 个标签` }}</span>
+                <span>{{ isSectionFullyExpanded(group.key) ? t('stream.showLessTags') : t('stream.showMoreTags', { count: getHiddenOptionCount(group) }) }}</span>
                 <component :is="isSectionFullyExpanded(group.key) ? ChevronUp : ChevronDown" class="w-3 h-3" />
               </button>
             </div>
@@ -1291,7 +1296,7 @@ const handleToggleFavorite = (e, card) => {
         >
           <div class="flex items-center gap-1.5 text-xs font-semibold text-gray-400 mr-1">
             <Filter class="w-3.5 h-3.5 text-purple-400" />
-            <span>已生效筛选 ({{ activeFilterList.length }}):</span>
+            <span>{{ t('stream.activeFiltersLabel', { count: activeFilterList.length }) }}</span>
           </div>
 
           <div
@@ -1300,11 +1305,11 @@ const handleToggleFavorite = (e, card) => {
             class="flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium text-white shadow-xs border border-purple-400/40 bg-purple-600/30 backdrop-blur-sm"
           >
             <span class="text-[10px] text-purple-300 font-normal">[{{ flt.categoryName }}]</span>
-            <span>{{ flt.value }}</span>
+            <span>{{ tData(flt.value) }}</span>
             <button
               @click="mediaStore.toggleFacetFilter(flt.category, flt.value)"
               class="hover:bg-white/20 rounded-full p-0.5 ml-0.5 text-purple-200 hover:text-white transition-colors"
-              title="移除此标签"
+              :title="t('stream.removeFilterTitle')"
             >
               <X class="w-3 h-3" />
             </button>
@@ -1315,17 +1320,17 @@ const handleToggleFavorite = (e, card) => {
             class="ml-auto text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
           >
             <RotateCcw class="w-3 h-3" />
-            <span>清空全部</span>
+            <span>{{ t('stream.clearAllBtn') }}</span>
           </button>
         </div>
 
         <!-- Feed Header Stats -->
         <div class="flex items-center justify-between mb-4 px-1 text-xs text-gray-400">
           <div>
-            找到 <span class="font-bold text-white font-mono">{{ displayItems.length }}</span> 项结果
+            {{ t('stream.foundResults', { count: displayItems.length }) }}
           </div>
           <div v-if="mediaStore.searchQuery" class="text-purple-400">
-            包含关键词「{{ mediaStore.searchQuery }}」
+            {{ t('stream.containsKeyword', { query: mediaStore.searchQuery }) }}
           </div>
         </div>
 
@@ -1337,15 +1342,15 @@ const handleToggleFavorite = (e, card) => {
       <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 text-purple-400">
         <Sparkles class="w-8 h-8" />
       </div>
-      <h3 class="text-lg font-medium text-white mb-2">暂无已索引的媒体内容</h3>
+      <h3 class="text-lg font-medium text-white mb-2">{{ t('stream.emptyMediaTitle') }}</h3>
       <p class="text-sm text-gray-400 max-w-md mb-6">
-        你的媒体库目前是空的。点击上方“纳管目录”扫描本地照片、Vlog 工程或音乐文件夹，立即体验算法信息流！
+        {{ t('stream.emptyMediaDesc') }}
       </p>
       <button
         @click="mediaStore.scanModalOpen = true"
         class="bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl shadow-lg shadow-purple-600/30 transition-all"
       >
-        立刻纳管本地目录
+        {{ t('stream.emptyMediaBtn') }}
       </button>
     </div>
 
@@ -1357,15 +1362,15 @@ const handleToggleFavorite = (e, card) => {
       <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 text-gray-400">
         <SearchX class="w-8 h-8" />
       </div>
-      <h3 class="text-base font-medium text-white mb-1.5">未找到匹配结果</h3>
+      <h3 class="text-base font-medium text-white mb-1.5">{{ t('stream.searchEmptyTitle') }}</h3>
       <p class="text-xs text-gray-400 mb-4">
-        没有找到包含「{{ mediaStore.searchQuery }}」的媒体文件或系列
+        {{ t('stream.searchEmptyDesc', { query: mediaStore.searchQuery }) }}
       </p>
       <button
         @click="mediaStore.searchQuery = ''"
         class="text-xs bg-white/10 hover:bg-white/20 text-gray-300 px-3.5 py-1.5 rounded-lg transition-colors"
       >
-        清除搜索关键词
+        {{ t('stream.clearSearchBtn') }}
       </button>
     </div>
 
@@ -1377,15 +1382,15 @@ const handleToggleFavorite = (e, card) => {
       <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 text-purple-400">
         <Filter class="w-8 h-8" />
       </div>
-      <h3 class="text-base font-medium text-white mb-1.5">当前筛选组合下暂无内容</h3>
+      <h3 class="text-base font-medium text-white mb-1.5">{{ t('stream.filterEmptyTitle') }}</h3>
       <p class="text-xs text-gray-400 mb-4">
-        已应用的多维标签组合较严格，可尝试取消部分标签以扩大探索范围
+        {{ t('stream.filterEmptyDesc') }}
       </p>
       <button
         @click="mediaStore.clearFacetFilters()"
         class="text-xs bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 rounded-lg transition-colors font-medium shadow-sm"
       >
-        清空标签筛选
+        {{ t('stream.clearFilterBtn') }}
       </button>
     </div>
 
@@ -1430,7 +1435,7 @@ const handleToggleFavorite = (e, card) => {
           <div class="flex items-center justify-between border-b border-white/10 pb-1.5">
             <span class="font-semibold text-pink-300 flex items-center gap-1.5">
               <BookmarkPlus class="w-3.5 h-3.5" />
-              <span>收纳至超集</span>
+              <span>{{ t('stream.saveToSuperset') }}</span>
             </span>
             <button
               @click.stop="activePopoverUnit = null"
@@ -1448,12 +1453,12 @@ const handleToggleFavorite = (e, card) => {
               @click.stop="handleCardAddToSuperset(sup)"
               class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-pink-600/20 hover:border-pink-500/30 border border-transparent text-gray-300 hover:text-pink-200 transition-colors text-left"
             >
-              <span class="truncate font-medium">{{ sup.name }}</span>
-              <span class="text-[10px] text-gray-500 font-mono">{{ sup.unit_count }}项</span>
+              <span class="truncate font-medium">{{ tData(sup.name) }}</span>
+              <span class="text-[10px] text-gray-500 font-mono">{{ sup.unit_count }}</span>
             </button>
           </div>
           <div v-else class="text-[11px] text-gray-400 py-1">
-            暂无超集，输入名称即可创建新超集：
+            {{ t('stream.noSupersetInline') }}
           </div>
 
           <!-- Quick Create New Superset -->
@@ -1461,7 +1466,7 @@ const handleToggleFavorite = (e, card) => {
             <input
               v-model="cardNewSupersetName"
               type="text"
-              placeholder="新建超集名称..."
+              :placeholder="t('stream.newSupersetInlinePlaceholder')"
               class="flex-grow bg-white/10 border border-white/10 rounded-lg px-2 py-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-pink-400"
               @keyup.enter="handleCardCreateAndAddSuperset"
             />
@@ -1469,7 +1474,7 @@ const handleToggleFavorite = (e, card) => {
               @click.stop="handleCardCreateAndAddSuperset"
               class="bg-pink-600 hover:bg-pink-500 text-white text-xs px-2.5 py-1 rounded-lg shrink-0 font-medium transition-colors"
             >
-              存入
+              {{ t('stream.saveInlineBtn') }}
             </button>
           </div>
         </div>
@@ -1504,7 +1509,7 @@ const handleToggleFavorite = (e, card) => {
 
           <img
             :src="card.is_series && card.collection_id ? `/api/stream/collection_thumbnail/${card.collection_id}` : `/api/stream/thumbnail/${card.representative_unit_id || card.id}`"
-            :alt="card.title"
+            :alt="tData(card.title)"
             loading="lazy"
             class="relative z-10 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             @error="(e) => e.target.style.display = 'none'"
@@ -1535,28 +1540,28 @@ const handleToggleFavorite = (e, card) => {
                 class="flex items-center gap-1 bg-emerald-600/90 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
               >
                 <Music class="w-3 h-3" />
-                <span>{{ card.audio_count }} 音轨</span>
+                <span>{{ t('stream.badgeTracks', { count: card.audio_count }) }}</span>
               </span>
               <span
                 v-if="card.video_count > 0"
                 class="flex items-center gap-1 bg-blue-600/90 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
               >
                 <Video class="w-3 h-3" />
-                <span>{{ card.video_count }} 视频</span>
+                <span>{{ t('stream.badgeVideos', { count: card.video_count }) }}</span>
               </span>
               <span
                 v-if="card.image_count > 0"
                 class="flex items-center gap-1 bg-amber-600/90 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
               >
                 <ImageIcon class="w-3 h-3" />
-                <span>{{ card.image_count }} 插画</span>
+                <span>{{ t('stream.badgeArtworks', { count: card.image_count }) }}</span>
               </span>
               <span
                 v-if="!card.audio_count && !card.video_count && !card.image_count"
                 class="flex items-center gap-1 bg-purple-600/90 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
               >
                 <Layers class="w-3 h-3" />
-                <span>{{ card.unit_count }} 选集</span>
+                <span>{{ t('stream.badgeEpisodes', { count: card.unit_count }) }}</span>
               </span>
             </template>
             <template v-else>
@@ -1565,28 +1570,28 @@ const handleToggleFavorite = (e, card) => {
                 class="flex items-center gap-1 bg-purple-600/80 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
               >
                 <Layers class="w-3 h-3" />
-                <span>复合包</span>
+                <span>{{ t('stream.badgeBundle') }}</span>
               </span>
               <span
                 v-else-if="card.unit_type === 'video'"
                 class="flex items-center gap-1 bg-blue-600/80 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
               >
                 <Video class="w-3 h-3" />
-                <span>视频</span>
+                <span>{{ t('stream.badgeVideo') }}</span>
               </span>
               <span
                 v-else-if="card.unit_type === 'audio'"
                 class="flex items-center gap-1 bg-emerald-600/80 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
               >
                 <Music class="w-3 h-3" />
-                <span>音频</span>
+                <span>{{ t('stream.badgeAudio') }}</span>
               </span>
               <span
                 v-else
                 class="flex items-center gap-1 bg-amber-600/80 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
               >
                 <ImageIcon class="w-3 h-3" />
-                <span>图片</span>
+                <span>{{ t('stream.badgeImage') }}</span>
               </span>
             </template>
           </div>
@@ -1605,7 +1610,7 @@ const handleToggleFavorite = (e, card) => {
             <!-- Quick Add to Superset -->
             <button
               @click.stop="(e) => openQuickSuperset(e, card)"
-              title="收纳至虚拟超集"
+              :title="t('stream.cardSaveSupersetTitle')"
               class="p-1.5 rounded-full bg-black/60 hover:bg-black/90 text-gray-200 hover:text-pink-300 backdrop-blur-md transition-colors"
             >
               <BookmarkPlus class="w-3.5 h-3.5" />
@@ -1614,7 +1619,7 @@ const handleToggleFavorite = (e, card) => {
             <button
               v-if="card.is_series && card.unit_count > 1"
               @click.stop="handleAddSeriesToQueue(card)"
-              :title="`将整个系列 (${card.unit_count}项) 加入背景播放队列`"
+              :title="t('stream.cardQueueSeriesTitle', { count: card.unit_count })"
               class="p-1.5 rounded-full bg-black/60 hover:bg-black/90 text-gray-200 hover:text-purple-300 backdrop-blur-md transition-colors"
             >
               <ListPlus class="w-3.5 h-3.5" />
@@ -1622,21 +1627,21 @@ const handleToggleFavorite = (e, card) => {
             <button
               v-else
               @click.stop="playerStore.addToBgQueue(card)"
-              title="加入背景播放队列"
+              :title="t('stream.cardQueueUnitTitle')"
               class="p-1.5 rounded-full bg-black/60 hover:bg-black/90 text-gray-200 hover:text-purple-300 backdrop-blur-md transition-colors"
             >
               <ListPlus class="w-3.5 h-3.5" />
             </button>
             <button
               @click="(e) => handleReveal(e, card)"
-              title="在系统文件管理器中查看"
+              :title="t('stream.cardRevealTitle')"
               class="p-1.5 rounded-full bg-black/60 hover:bg-black/90 text-gray-200 hover:text-white backdrop-blur-md transition-colors"
             >
               <FolderOpen class="w-3.5 h-3.5" />
             </button>
             <button
               @click="(e) => handleOpenExternal(e, card)"
-              title="使用系统默认程序打开"
+              :title="t('stream.cardOpenExternalTitle')"
               class="p-1.5 rounded-full bg-black/60 hover:bg-black/90 text-gray-200 hover:text-white backdrop-blur-md transition-colors"
             >
               <ExternalLink class="w-3.5 h-3.5" />
@@ -1648,53 +1653,53 @@ const handleToggleFavorite = (e, card) => {
         <div class="p-3.5 flex flex-col justify-between flex-grow">
           <div>
             <!-- Title -->
-            <h4 class="text-sm font-medium text-gray-100 truncate group-hover:text-purple-300 transition-colors" :title="card.title">
-              {{ card.title }}
+            <h4 class="text-sm font-medium text-gray-100 truncate group-hover:text-purple-300 transition-colors" :title="tData(card.title)">
+              {{ tData(card.title) }}
             </h4>
 
             <!-- Collection Info -->
             <div class="flex items-center justify-between text-[11px] text-gray-400 mt-1">
               <span v-if="card.is_series && card.unit_count > 1 && (card.audio_count > 0 || card.image_count > 0 || card.video_count > 0)" class="text-purple-400 font-mono text-[11px] font-semibold truncate max-w-[200px]">
                 <template v-if="card.audio_count > 0 && card.image_count > 0">
-                  全 {{ card.audio_count }} 选集 · 附 {{ card.image_count }} 张画册
+                  {{ t('stream.seriesMetaAudioArt', { audio: card.audio_count, image: card.image_count }) }}
                 </template>
                 <template v-else-if="card.audio_count > 0">
-                  全 {{ card.audio_count }} 选集 · 连播
+                  {{ t('stream.seriesMetaAudioOnly', { audio: card.audio_count }) }}
                 </template>
                 <template v-else-if="card.image_count > 0">
-                  全 {{ card.image_count }} 张画册
+                  {{ t('stream.seriesMetaArtOnly', { image: card.image_count }) }}
                 </template>
                 <template v-else-if="card.video_count > 0">
-                  全 {{ card.video_count }} 选集 · 视频
+                  {{ t('stream.seriesMetaVideoOnly', { video: card.video_count }) }}
                 </template>
                 <template v-else>
-                  全 {{ card.unit_count }} 选集
+                  {{ t('stream.seriesMetaDefault', { count: card.unit_count }) }}
                 </template>
               </span>
               <span v-else class="truncate max-w-[150px]">
-                {{ card.collection_name || '散落文件' }}
+                {{ tData(card.collection_name) || t('stream.scatteredFiles') }}
               </span>
               <span v-if="card.view_count > 0" class="text-gray-500 font-mono">
-                {{ card.view_count }} 次浏览
+                {{ t('stream.viewsCount', { count: card.view_count }) }}
               </span>
             </div>
 
             <!-- Tag Badges on Card (High-entropy, color-coded, clickable to filter) -->
             <div v-if="getCleanCardTags(card).length > 0" class="flex flex-wrap items-center gap-1 mt-2">
               <button
-                v-for="t in getCleanCardTags(card).slice(0, 3)"
-                :key="t.id || t.name"
-                @click.stop="mediaStore.toggleFacetFilter(t.class_code || 'domain', t.name)"
+                v-for="tItem in getCleanCardTags(card).slice(0, 3)"
+                :key="tItem.id || tItem.name"
+                @click.stop="mediaStore.toggleFacetFilter(tItem.class_code || 'domain', tItem.name)"
                 class="text-[10px] px-1.5 py-0.5 rounded-md font-medium border transition-colors cursor-pointer"
-                :class="getCardTagBadgeClass(t.class_code)"
-                :title="`点击按「${t.name}」筛选`"
+                :class="getCardTagBadgeClass(tItem.class_code)"
+                :title="t('stream.filterByTagTitle', { name: tData(tItem.name) })"
               >
-                {{ t.name }}
+                {{ tData(tItem.name) }}
               </button>
               <span
                 v-if="getCleanCardTags(card).length > 3"
                 class="text-[9px] px-1 py-0.5 rounded text-gray-500 hover:text-gray-300 font-mono cursor-help transition-colors"
-                :title="getCleanCardTags(card).slice(3).map(t => t.name).join(' · ')"
+                :title="getCleanCardTags(card).slice(3).map(tItem => tData(tItem.name)).join(' · ')"
               >
                 +{{ getCleanCardTags(card).length - 3 }}
               </span>
@@ -1708,7 +1713,7 @@ const handleToggleFavorite = (e, card) => {
               <div
                 v-if="card.rating > 0"
                 class="flex items-center gap-1 text-[11px] font-mono font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20"
-                :title="`有效评分: ${Number(card.rating).toFixed(1)} 星`"
+                :title="t('stream.effectiveRatingTitle', { rating: Number(card.rating).toFixed(1) })"
               >
                 <Star class="w-3 h-3 fill-amber-400 text-amber-400" />
                 <span>{{ Number(card.rating).toFixed(1) }}</span>
@@ -1717,10 +1722,10 @@ const handleToggleFavorite = (e, card) => {
                 v-else
                 class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-gray-500 hover:text-amber-400 cursor-pointer"
                 @click.stop="(e) => handleAppendRate(e, card, 5)"
-                title="点击评 5 星"
+                :title="t('stream.clickRate5Title')"
               >
                 <Star class="w-3.5 h-3.5" />
-                <span class="text-[10px]">评分</span>
+                <span class="text-[10px]">{{ t('stream.rateBtn') }}</span>
               </div>
             </div>
 
@@ -1730,7 +1735,7 @@ const handleToggleFavorite = (e, card) => {
               <button
                 @click.stop="(e) => handleCooldown(e, card)"
                 class="p-1 text-gray-500 opacity-0 group-hover:opacity-60 hover:opacity-100 hover:text-sky-400 transition-all rounded-lg hover:bg-white/5"
-                title="听腻了 / 冷却 14 天 (沉淀至冷却池，暂不推荐)"
+                :title="t('stream.cooldownBtnTitle')"
               >
                 <Snowflake class="w-3.5 h-3.5 transition-transform active:scale-125" />
               </button>
@@ -1744,7 +1749,7 @@ const handleToggleFavorite = (e, card) => {
                     ? 'text-rose-500'
                     : 'text-gray-500 opacity-0 group-hover:opacity-80 hover:opacity-100 hover:text-rose-400'
                 ]"
-                :title="card.is_favorite ? '已收藏' : '标记喜欢'"
+                :title="card.is_favorite ? t('stream.favoritedTitle') : t('stream.markFavoriteTitle')"
               >
                 <Heart
                   :class="[
@@ -1772,11 +1777,11 @@ const handleToggleFavorite = (e, card) => {
       >
         <span v-if="mediaStore.loadingMore" class="w-4 h-4 rounded-full border-2 border-purple-400 border-t-transparent animate-spin" />
         <Layers v-else class="w-4 h-4 text-purple-400" />
-        <span>{{ mediaStore.loadingMore ? '正在填充下一批单轨...' : '加载更多分集单轨 (流式填充)' }}</span>
+        <span>{{ mediaStore.loadingMore ? t('stream.loadingMoreTracks') : t('stream.loadMoreTracksBtn') }}</span>
       </button>
       <div v-else class="flex items-center gap-1.5 text-gray-500 font-mono">
         <Check class="w-4 h-4 text-emerald-400" />
-        <span>已展示全库全部 {{ displayItems.length }} 轨内容（零遗漏）</span>
+        <span>{{ t('stream.allTracksLoaded', { count: displayItems.length }) }}</span>
       </div>
     </div>
 
@@ -1785,7 +1790,7 @@ const handleToggleFavorite = (e, card) => {
       v-else-if="mediaStore.feedDisplayMode === 'series' && !mediaStore.loading && displayItems.length > 0"
       class="mt-10 py-6 flex items-center justify-center border-t border-white/5 text-xs text-gray-500 font-mono"
     >
-      <span>已全景陈列全库全部 {{ displayItems.length }} 个作品系列</span>
+      <span>{{ t('stream.allSeriesLoaded', { count: displayItems.length }) }}</span>
     </div>
 
       </div> <!-- End of Right Main Area: flex-grow min-w-0 -->
@@ -1806,12 +1811,12 @@ const handleToggleFavorite = (e, card) => {
       >
         <!-- Selection Count & Select All -->
         <div class="flex items-center gap-2 pr-3 border-r border-white/10 shrink-0">
-          <span class="font-semibold text-white">已选择 <span class="text-purple-400 font-mono">{{ selectedIds.size }}</span> 项</span>
+          <span class="font-semibold text-white">{{ t('batch.selectedCount', { count: selectedIds.size }) }}</span>
           <button
             @click="toggleSelectAll"
             class="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-gray-200 hover:text-white transition-colors text-[11px]"
           >
-            {{ isAllSelected ? '取消全选' : '全选' }}
+            {{ isAllSelected ? t('batch.deselectAll') : t('batch.selectAll') }}
           </button>
         </div>
 
@@ -1821,37 +1826,37 @@ const handleToggleFavorite = (e, card) => {
           <button
             @click="openBatchSupersetModal"
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-medium shadow-md shadow-pink-600/30 transition-all active:scale-95"
-            title="批量加入或创建超集"
+            :title="t('batch.addToSuperset')"
           >
             <BookmarkPlus class="w-3.5 h-3.5" />
-            <span>加入超集</span>
+            <span>{{ t('batch.addToSuperset') }}</span>
           </button>
 
           <!-- Add to Background Queue -->
           <button
             @click="handleBatchAddToQueue"
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-medium shadow-md shadow-purple-600/30 transition-all active:scale-95"
-            title="批量加入背景播放队列"
+            :title="t('batch.addToQueue')"
           >
             <ListPlus class="w-3.5 h-3.5" />
-            <span>加入播放队列</span>
+            <span>{{ t('batch.addToQueue') }}</span>
           </button>
 
           <!-- Batch Continuous Slideshow -->
           <button
             @click="handleBatchPlaySlideshow"
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30 transition-all active:scale-95"
-            title="立即连播所选项"
+            :title="t('batch.playSelected')"
           >
             <Play class="w-3.5 h-3.5 fill-current" />
-            <span>连播已选项</span>
+            <span>{{ t('batch.playSelected') }}</span>
           </button>
 
           <!-- Exit / Cancel -->
           <button
             @click="selectedIds = new Set(); isBatchMode = false"
             class="p-1.5 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-colors ml-1"
-            title="取消多选"
+            :title="t('batch.cancelSelection')"
           >
             <X class="w-4 h-4" />
           </button>
@@ -1880,7 +1885,7 @@ const handleToggleFavorite = (e, card) => {
           <div class="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
             <h3 class="text-sm font-semibold text-white flex items-center gap-2">
               <BookmarkPlus class="w-4 h-4 text-pink-400" />
-              <span>批量收纳至超集 (共 {{ selectedIds.size }} 项)</span>
+              <span>{{ t('batch.batchSupersetTitle', { count: selectedIds.size }) }}</span>
             </h3>
             <button
               @click="showBatchSupersetModal = false"
@@ -1893,7 +1898,7 @@ const handleToggleFavorite = (e, card) => {
           <!-- Existing Supersets List -->
           <div class="mb-4">
             <label class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-              选择已有超集
+              {{ t('batch.selectExistingSuperset') }}
             </label>
             <div v-if="mediaStore.supersets.length > 0" class="max-h-48 overflow-y-auto space-y-1.5 pr-1">
               <button
@@ -1902,25 +1907,25 @@ const handleToggleFavorite = (e, card) => {
                 @click="handleBatchAddToSuperset(sup)"
                 class="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-pink-600/20 hover:border-pink-500/30 border border-transparent text-gray-200 hover:text-pink-200 transition-all text-xs font-medium"
               >
-                <span>{{ sup.name }}</span>
-                <span class="text-[11px] text-gray-500 font-mono">{{ sup.unit_count }} 项</span>
+                <span>{{ tData(sup.name) }}</span>
+                <span class="text-[11px] text-gray-500 font-mono">{{ sup.unit_count }}</span>
               </button>
             </div>
             <div v-else class="text-xs text-gray-400 py-2">
-              目前还没有创建任何超集，请在下方直接新建：
+              {{ t('batch.noSupersetYet') }}
             </div>
           </div>
 
           <!-- Create New Superset and Batch Add -->
           <div class="pt-3 border-t border-white/10">
             <label class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-              新建超集并存入
+              {{ t('batch.createAndAddSuperset') }}
             </label>
             <div class="flex items-center gap-2">
               <input
                 v-model="batchNewSupersetName"
                 type="text"
-                placeholder="输入新超集名称 (例如: 精选二次元插画)..."
+                :placeholder="t('batch.newSupersetPlaceholder')"
                 class="flex-grow bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-pink-500"
                 @keyup.enter="handleBatchCreateAndAddSuperset"
               />
@@ -1928,7 +1933,7 @@ const handleToggleFavorite = (e, card) => {
                 @click="handleBatchCreateAndAddSuperset"
                 class="bg-pink-600 hover:bg-pink-500 text-white text-xs font-medium px-4 py-2 rounded-xl transition-all shrink-0"
               >
-                新建并存入
+                {{ t('batch.createAndSaveBtn') }}
               </button>
             </div>
           </div>

@@ -13,9 +13,9 @@
             </svg>
           </div>
           <div>
-            <h3 class="text-base font-bold" style="color: var(--text-main);">分类与标签中心 (Tags & Taxonomy)</h3>
+            <h3 class="text-base font-bold" style="color: var(--text-main);">{{ t('tagMgr.title') }}</h3>
             <p class="text-xs" style="color: var(--text-muted);">
-              管理多维分类维度与树形标签体系 · 物理落点锚定
+              {{ t('tagMgr.subtitle') }}
             </p>
           </div>
         </div>
@@ -37,7 +37,7 @@
         <div class="w-60 border-r p-4 shrink-0 flex flex-col gap-2 overflow-y-auto" style="border-color: var(--border-color); background: var(--bg-surface);">
           <div class="flex items-center justify-between mb-1 gap-2">
             <div class="text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap" style="color: var(--text-muted);">
-              分类维度 ({{ tagClasses.length }})
+              {{ t('workplace.dimensions', { count: tagClasses.length }) }}
             </div>
             <div class="flex items-center gap-1 shrink-0">
               <button 
@@ -68,7 +68,7 @@
           >
             <div class="flex items-center gap-2 truncate">
               <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: tc.color || '#a855f7' }"></span>
-              <span class="truncate">{{ tc.display_name }}</span>
+              <span class="truncate">{{ tFacet(tc.code, tc.display_name) }}</span>
               <span v-if="tc.code === 'media_kind'" class="text-[9px] text-blue-400 font-mono px-1 py-0.2 bg-blue-500/10 rounded" title="核心物理形态">物理</span>
               <span v-else-if="tc.is_required" class="text-[9px] text-amber-400 font-bold" title="必要标签族">⭐</span>
             </div>
@@ -387,6 +387,7 @@ import {
   deleteTagApi
 } from '../api'
 import { useMediaStore } from '../stores/mediaStore'
+import { t, tFacet } from '../i18n'
 
 const mediaStore = useMediaStore()
 

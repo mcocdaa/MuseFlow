@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useMediaStore } from '../stores/mediaStore'
+import { t } from '../i18n'
 import { X, FolderSearch, CheckCircle2, AlertCircle, Sparkles } from 'lucide-vue-next'
 
 const mediaStore = useMediaStore()
@@ -65,8 +66,8 @@ onUnmounted(() => {
           <FolderSearch class="w-5 h-5" />
         </div>
         <div>
-          <h3 class="text-base font-semibold text-white">纳管物理媒体目录</h3>
-          <p class="text-xs text-gray-400">非破坏性递归索引，不会移动或更改你的物理文件</p>
+          <h3 class="text-base font-semibold text-white">{{ t('scan.title') }}</h3>
+          <p class="text-xs text-gray-400">{{ t('scan.subtitle') }}</p>
         </div>
       </div>
 
@@ -74,13 +75,13 @@ onUnmounted(() => {
       <div class="space-y-4">
         <div>
           <label class="block text-xs font-medium text-gray-300 mb-1.5">
-            输入本地绝对路径 (Windows 路径如 D:\Photos 或 Linux 路径)
+            {{ t('scan.inputLabel') }}
           </label>
           <div class="flex items-center gap-2">
             <input
               v-model="scanPath"
               type="text"
-              placeholder="/path/to/media 或 D:\Media"
+              :placeholder="t('scan.placeholder')"
               class="flex-grow bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
               @keyup.enter="() => handleStartScan()"
             />
@@ -89,8 +90,8 @@ onUnmounted(() => {
               :disabled="scanning || !scanPath.trim()"
               class="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white text-xs font-medium px-4 py-2 rounded-xl transition-all shadow-md shrink-0"
             >
-              <span v-if="scanning">扫描中...</span>
-              <span v-else>开始纳管</span>
+              <span v-if="scanning">{{ t('scan.scanningBtn') }}</span>
+              <span v-else>{{ t('scan.startBtn') }}</span>
             </button>
           </div>
         </div>
@@ -99,14 +100,14 @@ onUnmounted(() => {
         <div class="bg-white/5 rounded-xl p-3 border border-white/5">
           <div class="text-[11px] font-medium text-gray-400 mb-2 flex items-center gap-1.5">
             <Sparkles class="w-3.5 h-3.5 text-purple-400" />
-            <span>快速纳管测试库 (Sample Library)</span>
+            <span>{{ t('scan.quickSampleTitle') }}</span>
           </div>
           <div class="flex flex-wrap gap-2">
             <button
               @click="handleStartScan('sample_media')"
               class="text-xs bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-200 px-3 py-1.5 rounded-lg transition-colors"
             >
-              📁 MuseFlow 内置测试样本集 (sample_media)
+              {{ t('scan.sampleBtn') }}
             </button>
           </div>
         </div>
@@ -118,9 +119,9 @@ onUnmounted(() => {
         >
           <CheckCircle2 class="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
           <div>
-            <div class="font-semibold">纳管成功！</div>
+            <div class="font-semibold">{{ t('scan.successTitle') }}</div>
             <div class="text-[11px] text-emerald-200/80 mt-0.5">
-              已扫描物理文件 {{ scanResult.total_files }} 个，智能构建原子消费单元 {{ scanResult.total_units }} 个。
+              {{ t('scan.successDesc', { files: scanResult.total_files, units: scanResult.total_units }) }}
             </div>
           </div>
         </div>

@@ -13,9 +13,9 @@
             </svg>
           </div>
           <div>
-            <h3 class="text-lg font-bold" style="color: var(--text-main);">智能文件夹整理规则</h3>
+            <h3 class="text-lg font-bold" style="color: var(--text-main);">{{ t('pipeline.title') }}</h3>
             <p class="text-xs" style="color: var(--text-muted);">
-              自定义多层文件夹收纳结构与文件命名模版 · 规范本地媒体目录
+              {{ t('pipeline.subtitle') }}
             </p>
           </div>
         </div>
@@ -37,36 +37,36 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="p-4 rounded-xl border space-y-2 md:col-span-2" style="background: var(--bg-surface); border-color: var(--border-color);">
             <label class="text-xs font-semibold tracking-wider block" style="color: var(--text-muted);">
-              ⭐ 快速套用收纳预设模板
+              {{ t('pipeline.presetsLabel') }}
             </label>
             <div class="flex flex-wrap gap-2">
               <button 
                 v-for="p in presets" 
                 :key="p.id"
                 @click="applyPreset(p)"
-                class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 whitespace-nowrap"
                 :style="activePresetId === p.id 
                   ? 'background: var(--accent-color); color: #fff; border-color: var(--accent-color);' 
                   : 'background: var(--bg-surface-elevated); color: var(--text-main); border-color: var(--border-color);'"
               >
-                <span>{{ p.name }}</span>
+                <span>{{ tData(p.name) }}</span>
               </button>
             </div>
-            <p class="text-[11px]" style="color: var(--text-muted);">{{ activePresetDesc }}</p>
+            <p class="text-[11px]" style="color: var(--text-muted);">{{ tData(activePresetDesc) }}</p>
           </div>
 
           <div class="p-4 rounded-xl border space-y-2" style="background: var(--bg-surface); border-color: var(--border-color);">
             <label class="text-xs font-semibold tracking-wider block" style="color: var(--text-muted);">
-              🎯 整理目标作用域
+              {{ t('pipeline.scopeLabel') }}
             </label>
             <select 
               v-model="selectedCollectionId" 
               class="w-full text-xs px-3 py-2 rounded-lg border outline-none font-medium"
               style="background: var(--bg-surface-elevated); border-color: var(--border-color); color: var(--text-main);"
             >
-              <option :value="null">全部已纳管资产 (前 300 部)</option>
+              <option :value="null">{{ t('pipeline.allIndexedOption') }}</option>
               <option v-for="col in collections" :key="col.id" :value="col.id">
-                {{ col.name }} ({{ col.unit_count || 0 }}项)
+                {{ tData(col.name) }} ({{ col.unit_count || 0 }})
               </option>
             </select>
           </div>
@@ -76,14 +76,14 @@
         <div class="p-4 rounded-xl border space-y-3" style="background: var(--bg-surface); border-color: var(--border-color);">
           <div class="flex items-center justify-between">
             <label class="text-xs font-semibold tracking-wider flex items-center gap-2" style="color: var(--text-muted);">
-              <span>🔨 文件夹层级卡槽链（从左至右代表从外向内的子目录）</span>
+              <span>{{ t('pipeline.blueprintLabel') }}</span>
             </label>
             <button 
               @click="addLevel"
-              class="px-2.5 py-1 text-xs rounded-lg border transition-colors flex items-center gap-1"
+              class="px-2.5 py-1 text-xs rounded-lg border transition-colors flex items-center gap-1 whitespace-nowrap"
               style="background: var(--bg-surface-elevated); border-color: var(--border-color); color: var(--accent-color);"
             >
-              <span>+ 添加中间层级</span>
+              <span>{{ t('pipeline.addLevelBtn') }}</span>
             </button>
           </div>
 
@@ -95,26 +95,23 @@
                 style="background: var(--bg-surface-elevated); border-color: var(--border-color);"
               >
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-color);">
-                    {{ idx === pipelineLevels.length - 1 && lvl.naming ? '最终文件名规则' : `第 ${idx + 1} 层目录` }}
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-color);">
+                    {{ idx === pipelineLevels.length - 1 && lvl.naming ? t('pipeline.leafRuleBadge') : t('pipeline.levelBadge', { level: idx + 1 }) }}
                   </span>
                   <div class="flex items-center gap-1">
                     <button 
                       v-if="idx > 0 && !lvl.naming" 
                       @click="moveLevel(idx, -1)" 
-                      title="左移层级"
                       class="p-1 hover:text-white text-gray-400 text-xs"
                     >◀</button>
                     <button 
                       v-if="idx < pipelineLevels.length - 2 && !lvl.naming" 
                       @click="moveLevel(idx, 1)" 
-                      title="右移层级"
                       class="p-1 hover:text-white text-gray-400 text-xs"
                     >▶</button>
                     <button 
                       v-if="pipelineLevels.length > 2 && !lvl.naming" 
                       @click="removeLevel(idx)" 
-                      title="删除此层"
                       class="p-1 hover:text-red-400 text-gray-400 text-xs"
                     >×</button>
                   </div>
@@ -122,11 +119,10 @@
 
                 <!-- 命名模式 -->
                 <div v-if="lvl.naming" class="space-y-1">
-                  <span class="text-xs font-medium block" style="color: var(--text-main);">实体命名模版</span>
+                  <span class="text-xs font-medium block" style="color: var(--text-main);">{{ t('pipeline.namingTemplateLabel') }}</span>
                   <input 
                     v-model="lvl.naming" 
                     type="text" 
-                    title="支持模版变量：{unit.title}、{meta.code}、{unit.id}、%unique{} 自适应消歧"
                     class="w-full text-xs px-2.5 py-1.5 rounded border outline-none font-mono"
                     style="background: var(--bg-surface); border-color: var(--border-color); color: var(--text-main);"
                   />
@@ -134,17 +130,15 @@
 
                 <!-- 条件分支模式 -->
                 <div v-else-if="lvl.condition !== undefined && lvl.folder_name !== undefined" class="space-y-2">
-                  <span class="text-xs font-medium block" style="color: var(--text-main);">条件分支分流</span>
+                  <span class="text-xs font-medium block" style="color: var(--text-main);">{{ t('pipeline.conditionalBranchLabel') }}</span>
                   <input 
                     v-model="lvl.folder_name" 
-                    placeholder="如: 待翻译"
                     type="text" 
                     class="w-full text-xs px-2.5 py-1.5 rounded border outline-none"
                     style="background: var(--bg-surface); border-color: var(--border-color); color: var(--text-main);"
                   />
                   <input 
                     v-model="lvl.condition" 
-                    placeholder="条件表达式 (如 not unit['has_translation'])"
                     type="text" 
                     class="w-full text-[11px] px-2.5 py-1 rounded border outline-none font-mono text-gray-400"
                     style="background: var(--bg-surface); border-color: var(--border-color);"
@@ -153,20 +147,21 @@
 
                 <!-- 标签族提取模式 -->
                 <div v-else class="space-y-2">
-                  <span class="text-xs font-medium block" style="color: var(--text-main);">标签族属性映射</span>
+                  <span class="text-xs font-medium block" style="color: var(--text-main);">{{ t('pipeline.facetMappingLabel') }}</span>
                   <select 
                     v-model="lvl.facet" 
                     class="w-full text-xs px-2.5 py-1.5 rounded border outline-none"
                     style="background: var(--bg-surface); border-color: var(--border-color); color: var(--text-main);"
                   >
                     <option v-for="tc in projectableTagClasses" :key="tc.code" :value="`tag.${tc.code}`">
-                      {{ tc.display_name }}
+                      {{ tFacet(tc.code, tc.display_name) }}
                     </option>
-                    <option value="collection.name">📁 原系列合集名</option>
+                    <option value="collection.name">{{ t('pipeline.collectionNameOption') }}</option>
                   </select>
                   <input 
-                    v-model="lvl.fallback" 
-                    placeholder="缺失备选 (如: 未分类)"
+                    :value="tData(lvl.fallback)"
+                    @input="lvl.fallback = $event.target.value"
+                    :placeholder="t('pipeline.fallbackPlaceholder')"
                     type="text" 
                     class="w-full text-[11px] px-2.5 py-1 rounded border outline-none"
                     style="background: var(--bg-surface); border-color: var(--border-color); color: var(--text-muted);"
@@ -184,23 +179,24 @@
         <div class="p-4 rounded-xl border space-y-2" style="background: var(--bg-surface); border-color: var(--border-color);">
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold tracking-wider" style="color: var(--text-muted);">
-              🌲 实时收纳目录结构图例
+              {{ t('pipeline.livePreviewLabel') }}
             </span>
             <button 
+              data-testid="pipeline-dryrun-btn"
               @click="runEvaluation" 
               :disabled="evaluating"
-              class="px-4 py-1.5 rounded-lg text-xs font-bold text-white shadow-md transition-all flex items-center gap-1.5"
+              class="px-4 py-1.5 rounded-lg text-xs font-bold text-white shadow-md transition-all flex items-center gap-1.5 whitespace-nowrap"
               style="background: var(--accent-color);"
             >
               <svg v-if="evaluating" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span>{{ evaluating ? '体检演算中...' : '🔍 执行整理体检预演' }}</span>
+              <span>{{ evaluating ? t('pipeline.runningDryRun') : t('pipeline.runDryRunBtn') }}</span>
             </button>
           </div>
           <div class="font-mono text-xs p-3 rounded-lg border overflow-x-auto space-y-1" style="background: rgba(0, 0, 0, 0.3); border-color: var(--border-color); color: var(--text-main);">
-            <div>📁 媒体库根目录/</div>
+            <div>{{ t('pipeline.libraryRoot') }}</div>
             <div class="pl-4">├── 📁 {{ previewSampleSegment(0) }}/</div>
             <div class="pl-8">└── 📁 {{ previewSampleSegment(1) }}/</div>
             <div class="pl-12">└── 🎬 {{ previewSampleLeaf() }}</div>
@@ -213,36 +209,36 @@
           <div class="grid grid-cols-3 gap-3">
             <div class="p-3 rounded-xl border flex items-center justify-between" style="background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.3);">
               <div>
-                <span class="text-xs text-green-400 font-bold block">🟢 完全安全</span>
-                <span class="text-lg font-extrabold text-green-300">{{ evaluationResult.stats?.safe_count || 0 }} 项</span>
+                <span class="text-xs text-green-400 font-bold block whitespace-nowrap">{{ t('pipeline.safeLabel') }}</span>
+                <span class="text-lg font-extrabold text-green-300 whitespace-nowrap">{{ t('pipeline.itemsUnit', { count: evaluationResult.stats?.safe_count || 0 }) }}</span>
               </div>
-              <span class="text-xs text-green-500 font-mono">毫秒级原子迁移</span>
+              <span class="text-xs text-green-500 font-mono whitespace-nowrap">{{ t('pipeline.safeSub') }}</span>
             </div>
 
             <div class="p-3 rounded-xl border flex items-center justify-between" style="background: rgba(234, 179, 8, 0.08); border-color: rgba(234, 179, 8, 0.3);">
               <div>
-                <span class="text-xs text-yellow-400 font-bold block">🟡 备选归档提示</span>
-                <span class="text-lg font-extrabold text-yellow-300">{{ evaluationResult.stats?.warning_count || 0 }} 项</span>
+                <span class="text-xs text-yellow-400 font-bold block whitespace-nowrap">{{ t('pipeline.fallbackLabel') }}</span>
+                <span class="text-lg font-extrabold text-yellow-300 whitespace-nowrap">{{ t('pipeline.itemsUnit', { count: evaluationResult.stats?.warning_count || 0 }) }}</span>
               </div>
-              <span class="text-xs text-yellow-500 font-mono">自动归入备选目录</span>
+              <span class="text-xs text-yellow-500 font-mono whitespace-nowrap">{{ t('pipeline.fallbackSub') }}</span>
             </div>
 
             <div class="p-3 rounded-xl border flex items-center justify-between" style="background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3);">
               <div>
-                <span class="text-xs text-red-400 font-bold block">🔴 冲突阻断</span>
-                <span class="text-lg font-extrabold text-red-300">{{ evaluationResult.stats?.conflict_count || 0 }} 项</span>
+                <span class="text-xs text-red-400 font-bold block whitespace-nowrap">{{ t('pipeline.conflictsLabel') }}</span>
+                <span class="text-lg font-extrabold text-red-300 whitespace-nowrap">{{ t('pipeline.itemsUnit', { count: evaluationResult.stats?.conflict_count || 0 }) }}</span>
               </div>
-              <span class="text-xs text-red-500 font-mono">禁止覆盖</span>
+              <span class="text-xs text-red-500 font-mono whitespace-nowrap">{{ t('pipeline.conflictsSub') }}</span>
             </div>
           </div>
 
           <!-- 缺失分面降级提示条 (未分类资产降级提醒) -->
-          <div v-if="evaluationResult.stats?.degraded_count > 0" class="p-2.5 rounded-xl border flex items-center justify-between text-xs bg-amber-500/10 border-amber-500/30 text-amber-200">
-            <div class="flex items-center gap-2">
-              <span class="text-amber-400 font-bold text-sm">⚠️</span>
-              <span>有 <strong>{{ evaluationResult.stats.degraded_count }}</strong> 部作品缺少当前流水线所需的分类标签，已安全归入备选目录。</span>
+          <div v-if="evaluationResult.stats?.degraded_count > 0" class="p-2.5 rounded-xl border flex items-center justify-between text-xs bg-amber-500/10 border-amber-500/30 text-amber-200 gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-amber-400 font-bold text-sm shrink-0">⚠️</span>
+              <span class="truncate">{{ t('pipeline.degradedNotice', { count: evaluationResult.stats.degraded_count }) }}</span>
             </div>
-            <span class="text-[11px] text-amber-300/80">可在工作台通过「待整理」视图快速补齐标签</span>
+            <span class="text-[11px] text-amber-300/80 shrink-0 whitespace-nowrap">{{ t('pipeline.degradedHint') }}</span>
           </div>
 
           <!-- 详细对比表格 -->
@@ -251,10 +247,10 @@
               <table class="w-full text-left text-xs">
                 <thead class="sticky top-0 border-b font-semibold" style="background: var(--bg-surface); border-color: var(--border-color); color: var(--text-muted);">
                   <tr>
-                    <th class="p-2.5 w-12 text-center">状态</th>
-                    <th class="p-2.5">文件名称</th>
-                    <th class="p-2.5">整理前目录位置</th>
-                    <th class="p-2.5">➔ 整理后目标位置</th>
+                    <th class="p-2.5 w-14 text-center whitespace-nowrap">{{ t('pipeline.colStatus') }}</th>
+                    <th class="p-2.5 whitespace-nowrap">{{ t('pipeline.colFileName') }}</th>
+                    <th class="p-2.5 whitespace-nowrap">{{ t('pipeline.colSourcePath') }}</th>
+                    <th class="p-2.5 whitespace-nowrap">{{ t('pipeline.colTargetPath') }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y" style="divide-color: var(--border-color);">
@@ -264,7 +260,7 @@
                     class="hover:bg-white/5 transition-colors"
                   >
                     <td class="p-2 text-center">
-                      <span v-if="act.risk_level === 'safe'" class="text-green-400 font-bold" title="安全">🟢</span>
+                      <span v-if="act.risk_level === 'safe'" class="text-green-400 font-bold">🟢</span>
                       <span v-else-if="act.risk_level === 'warning'" class="text-yellow-400 font-bold cursor-help" :title="act.risk_messages?.join(';\n')">🟡</span>
                       <span v-else class="text-red-400 font-bold cursor-help" :title="act.risk_messages?.join(';\n')">🔴</span>
                     </td>
@@ -272,7 +268,7 @@
                       <div class="truncate">{{ act.file_name }}</div>
                       <div v-if="act.missing_facets?.length > 0" class="flex flex-wrap gap-1 mt-0.5">
                         <span v-for="mf in act.missing_facets" :key="mf" class="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 whitespace-nowrap">
-                          待补{{ formatFacetName(mf) }}
+                          {{ t('pipeline.missingFacetPrefix') }}{{ formatFacetName(mf) }}
                         </span>
                       </div>
                     </td>
@@ -293,22 +289,22 @@
       <!-- Footer Actions -->
       <div class="flex items-center justify-between px-6 py-4 border-t shrink-0" style="border-color: var(--border-color); background: var(--bg-surface);">
         <div class="text-xs" style="color: var(--text-muted);">
-          <span>🛡️ 整理过程安全可逆，采用非破坏性事务保护，绝不损坏原始文件。</span>
+          <span>{{ t('pipeline.footerSafeHint') }}</span>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 shrink-0">
           <button 
             @click="close"
-            class="px-4 py-2 rounded-xl text-xs font-medium border hover:bg-white/10 transition-colors cursor-pointer"
+            class="px-4 py-2 rounded-xl text-xs font-medium border hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
             style="border-color: var(--border-color); color: var(--text-main);"
           >
-            取消
+            {{ t('pipeline.cancelBtn') }}
           </button>
 
           <button 
             @click="confirmExecution"
             :disabled="executing || !evaluationResult || evaluationResult.stats?.conflict_count > 0 || evaluationResult.total_actions === 0"
-            class="px-5 py-2 rounded-xl text-xs font-bold text-white shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+            class="px-5 py-2 rounded-xl text-xs font-bold text-white shadow-lg transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap"
             :style="!evaluationResult || evaluationResult.stats?.conflict_count > 0 || evaluationResult.total_actions === 0
               ? 'background: #6b7280; opacity: 0.5; cursor: not-allowed;' 
               : 'background: linear-gradient(135deg, var(--accent-color), #10b981);'"
@@ -317,7 +313,7 @@
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
             </svg>
-            <span>{{ executing ? '物理迁移与自愈中...' : `🚀 确认安全执行整理 (${evaluationResult?.total_actions || 0})` }}</span>
+            <span>{{ executing ? t('pipeline.executingBtn') : t('pipeline.applyOrganizeBtn', { count: evaluationResult?.total_actions || 0 }) }}</span>
           </button>
         </div>
       </div>
@@ -329,6 +325,7 @@
 import { ref, nextTick, onMounted, onUnmounted, computed } from 'vue'
 import { fetchPipelinePresets, evaluatePipeline, executeTriagePlan, fetchCollections, fetchTagClasses } from '../api'
 import { useMediaStore } from '../stores/mediaStore'
+import { locale, t, tData, tFacet, tPath } from '../i18n'
 
 const mediaStore = useMediaStore()
 const dryRunSectionRef = ref(null)
@@ -425,43 +422,48 @@ function moveLevel(idx, offset) {
 function previewSampleSegment(idx) {
   if (idx >= pipelineLevels.value.length) return '...'
   const lvl = pipelineLevels.value[idx]
-  if (lvl.folder_name) return lvl.folder_name
+  if (lvl.folder_name) return tData(lvl.folder_name)
   if (lvl.facet?.startsWith('tag.')) {
     const code = lvl.facet.split('.')[1]
     const tc = tagClasses.value.find(c => c.code === code)
-    return tc?.display_name ? `示例${tc.display_name}` : code
+    const name = tFacet(code, tc?.display_name || code)
+    return locale.value === 'en' ? `Sample ${name}` : `示例${name}`
   }
-  if (lvl.facet === 'collection.name') return '原系列目录'
-  return '分类目录'
+  if (lvl.facet === 'collection.name') return locale.value === 'en' ? 'Collection Folder' : '原系列目录'
+  return locale.value === 'en' ? 'Category Folder' : '分类目录'
 }
 
 function previewSampleLeaf() {
+  const sampleWork = locale.value === 'en' ? 'Sample_Media_Unit' : '示例作品'
   const last = pipelineLevels.value[pipelineLevels.value.length - 1]
   if (last?.naming) {
     return last.naming
       .replace(/%unique\{[^}]*\}/g, '')
-      .replace(/\{unit\.title\}/g, '示例作品')
-      .replace(/\{title\}/g, '示例作品')
+      .replace(/\{unit\.title\}/g, sampleWork)
+      .replace(/\{title\}/g, sampleWork)
       .replace(/\{meta\.code\}/g, 'ID001')
       .replace(/\{unit\.id\}/g, '101')
-      .trim() || '示例作品'
+      .trim() || sampleWork
   }
-  return '示例作品'
+  return sampleWork
 }
 
 function formatFacetName(code) {
   const tc = tagClasses.value.find(c => c.code === code)
-  return tc?.display_name || code
+  return tFacet(code, tc?.display_name || code)
 }
 
 function formatDisplayPath(fullPath) {
   if (!fullPath) return ''
   const root = evaluationResult.value?.target_root
+  let formatted = fullPath
   if (root && fullPath.startsWith(root)) {
     const rel = fullPath.slice(root.length).replace(/^\/+/, '')
-    return `/媒体库/${rel}`
+    formatted = `/媒体库/${rel}`
+  } else {
+    formatted = fullPath.replace(/^\/mnt\/media\/library\/?/, '/媒体库/')
   }
-  return fullPath.replace(/^\/mnt\/media\/library\/?/, '/媒体库/')
+  return tPath(formatted)
 }
 
 async function runEvaluation() {

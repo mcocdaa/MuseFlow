@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { useMediaStore } from '../stores/mediaStore'
+import { t } from '../i18n'
 import {
   X,
   Bot,
@@ -105,14 +106,14 @@ const handleClose = () => {
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <h3 class="text-base font-bold text-white">AI 智能目录拓扑重组中枢</h3>
+              <h3 class="text-base font-bold text-white">{{ t('aiOrg.title') }}</h3>
               <span class="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-mono">
                 <Cpu class="w-3 h-3 text-purple-400" />
                 <span>{{ aiSettings?.model || 'grok-4.7' }}</span>
               </span>
             </div>
             <p class="text-xs text-gray-400 mt-0.5">
-              识别跨层级嵌套子系列、智能解决散落音画字幕/伴侣文件配对，生成零破坏重组方案
+              {{ t('aiOrg.subtitle') }}
             </p>
           </div>
         </div>

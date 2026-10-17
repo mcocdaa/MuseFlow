@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import { useMediaStore } from './stores/mediaStore'
 import { useThemeStore } from './stores/themeStore'
 import { usePlayerStore } from './stores/playerStore'
+import { t } from './i18n'
 import Navbar from './components/Navbar.vue'
 import StreamFeed from './components/StreamFeed.vue'
 import Workplace from './components/Workplace.vue'
@@ -49,11 +50,11 @@ onMounted(() => {
       >
         <div class="flex items-center gap-2 max-w-5xl mx-auto w-full">
           <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
-          <span class="font-semibold tracking-wide">⚠️ 存储物理重组中：</span>
+          <span class="font-semibold tracking-wide">{{ t('app.maintenanceTitle') }}</span>
           <span class="truncate">
             {{ mediaStore.maintenanceLocks.map(l => l.reason || l.folder_path).join('；') }}
           </span>
-          <span class="text-amber-300/70 ml-2 hidden sm:inline">（受影响目录作品展示与流媒体传输可能短暂刷新，其他区域不受影响）</span>
+          <span class="text-amber-300/70 ml-2 hidden sm:inline">{{ t('app.maintenanceHint') }}</span>
         </div>
       </div>
     </Transition>

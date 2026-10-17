@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { ChevronRight, ChevronDown, Tag, AlertCircle, Folder, Hash } from 'lucide-vue-next'
+import { tData } from '../i18n'
 
 const props = defineProps({
   node: {
@@ -67,7 +68,7 @@ const handleNodeClick = () => {
             : 'text-gray-300 hover:bg-white/5 hover:text-white'
       ]"
       :style="{ paddingLeft: `${8 + depth * 14}px` }"
-      :title="node.display_path || node.name"
+      :title="tData(node.display_path || node.name)"
     >
       <div class="flex items-center gap-1.5 min-w-0 truncate">
         <!-- Expand / Collapse chevron if children exist -->
@@ -97,7 +98,7 @@ const handleNodeClick = () => {
 
         <!-- Title -->
         <span class="truncate" :class="{ 'font-semibold': depth === 0 || node.is_unassigned }">
-          {{ node.name }}
+          {{ tData(node.name) }}
         </span>
       </div>
 
@@ -112,7 +113,6 @@ const handleNodeClick = () => {
                 ? 'bg-purple-500/30 text-purple-200'
                 : 'bg-white/5 text-gray-400 group-hover/node:text-gray-300'
           ]"
-          :title="hasChildren ? `包含子孙累计: ${node.unit_count} 项 (直属: ${node.direct_count || 0})` : `${node.unit_count} 项`"
         >
           {{ node.unit_count }}
         </span>

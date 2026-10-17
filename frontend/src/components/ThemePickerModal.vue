@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
 import { useThemeStore, THEMES } from '../stores/themeStore'
+import { t, tData } from '../i18n'
 import { X, Palette, Check, Sparkles, Moon, Sun } from 'lucide-vue-next'
 
 const themeStore = useThemeStore()
@@ -52,13 +53,13 @@ onUnmounted(() => {
         </div>
         <div>
           <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <span>个性化主题配色</span>
+            <span>{{ t('theme.title') }}</span>
             <span class="text-xs px-2 py-0.5 rounded-full font-normal border" style="border-color: var(--accent-border); color: var(--accent-text);">
-              共 {{ THEMES.length }} 款
+              {{ t('theme.countBadge', { count: THEMES.length }) }}
             </span>
           </h3>
           <p class="text-xs text-gray-400 mt-0.5">
-            为 MuseFlow 定制专属氛围，即点即生效，随时随地沉浸欣赏
+            {{ t('theme.subtitle') }}
           </p>
         </div>
       </div>
@@ -79,11 +80,11 @@ onUnmounted(() => {
           <div class="flex items-start justify-between gap-2">
             <div>
               <div class="text-sm font-bold text-white flex items-center gap-1.5">
-                <span>{{ theme.name }}</span>
+                <span>{{ tData(theme.name) }}</span>
                 <span class="text-[10px] text-gray-400 font-mono font-normal">({{ theme.subname }})</span>
               </div>
               <p class="text-[11px] text-gray-400 mt-0.5 leading-relaxed">
-                {{ theme.desc }}
+                {{ tData(theme.desc) }}
               </p>
             </div>
 
@@ -104,20 +105,18 @@ onUnmounted(() => {
               <div
                 class="w-5 h-5 rounded-lg border border-white/20 shadow-inner"
                 :style="{ backgroundColor: theme.bgColor }"
-                title="主背景色"
               ></div>
               <!-- Surface Swatch -->
               <div
                 class="w-5 h-5 rounded-lg border border-white/20 shadow-inner"
                 :style="{ backgroundColor: theme.surfaceColor }"
-                title="卡片/面板色"
               ></div>
               <!-- Accent Gradient Pill -->
               <div
                 class="h-5 px-3 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
                 :style="{ backgroundColor: theme.accentColor }"
               >
-                主基调
+                {{ t('theme.accentLabel') }}
               </div>
             </div>
 
@@ -125,7 +124,7 @@ onUnmounted(() => {
             <span class="text-[10px] text-gray-500 font-mono flex items-center gap-1">
               <Moon v-if="theme.isDark" class="w-3 h-3 text-purple-400" />
               <Sun v-else class="w-3 h-3 text-amber-400" />
-              <span>{{ theme.isDark ? '暗色' : '浅色' }}</span>
+              <span>{{ theme.isDark ? t('theme.dark') : t('theme.light') }}</span>
             </span>
           </div>
         </div>
@@ -135,14 +134,14 @@ onUnmounted(() => {
       <div class="mt-5 pt-4 border-t flex items-center justify-between text-xs text-gray-400" style="border-color: var(--border-color);">
         <span class="flex items-center gap-1.5">
           <Sparkles class="w-3.5 h-3.5" style="color: var(--accent-color);" />
-          <span>配色方案会自动同步保存至本地浏览器缓存</span>
+          <span>{{ t('theme.footerHint') }}</span>
         </span>
         <button
           @click="themeStore.themePickerOpen = false"
           class="px-4 py-1.5 rounded-xl font-medium text-white shadow-md transition-all text-xs"
           style="background-color: var(--accent-color);"
         >
-          完成
+          {{ t('theme.doneBtn') }}
         </button>
       </div>
     </div>

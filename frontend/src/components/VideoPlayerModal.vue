@@ -2,6 +2,7 @@
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { usePlayerStore } from '../stores/playerStore'
 import { useMediaStore } from '../stores/mediaStore'
+import { t, tData } from '../i18n'
 import {
   X,
   Heart,
@@ -300,7 +301,7 @@ const addToCooldown = async () => {
         <button
           @click="showSubtitleSettings = !showSubtitleSettings"
           class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
-          title="字幕显示与拖拽设置"
+          :title="t('player.subtitleSettingsTip')"
         >
           <Sliders class="w-5 h-5" />
         </button>
@@ -310,7 +311,7 @@ const addToCooldown = async () => {
           class="absolute right-0 top-full mt-2 w-64 p-3 bg-neutral-900 border border-white/15 rounded-2xl shadow-2xl backdrop-blur-xl text-xs space-y-3 z-50"
         >
           <div class="font-semibold text-white flex items-center justify-between pb-1.5 border-b border-white/10">
-            <span>字幕样式与位置</span>
+            <span>{{ t('player.subtitlePanelTitle') }}</span>
             <button @click="showSubtitleSettings = false" class="text-gray-400 hover:text-white">
               <X class="w-3.5 h-3.5" />
             </button>
@@ -320,7 +321,7 @@ const addToCooldown = async () => {
           <div class="flex items-center justify-between text-gray-300">
             <span class="flex items-center gap-1.5">
               <MoveVertical class="w-3.5 h-3.5 text-purple-400" />
-              <span>垂直高度 (可直接拖动字幕):</span>
+              <span>{{ t('player.verticalHeight') }}</span>
             </span>
             <span class="font-mono text-purple-300 font-semibold">{{ playerStore.subtitleConfig.verticalPercent }}%</span>
           </div>
@@ -329,15 +330,15 @@ const addToCooldown = async () => {
           <div>
             <div class="text-[11px] text-gray-400 mb-1.5 flex items-center gap-1">
               <Type class="w-3.5 h-3.5" />
-              <span>字体大小:</span>
+              <span>{{ t('player.fontSize') }}</span>
             </div>
             <div class="grid grid-cols-4 gap-1">
               <button
                 v-for="size in [
-                  { id: 'sm', label: '小' },
-                  { id: 'md', label: '中' },
-                  { id: 'lg', label: '大' },
-                  { id: 'xl', label: '特大' }
+                  { id: 'sm', label: t('player.sizeSm') },
+                  { id: 'md', label: t('player.sizeMd') },
+                  { id: 'lg', label: t('player.sizeLg') },
+                  { id: 'xl', label: t('player.sizeXl') }
                 ]"
                 :key="size.id"
                 @click="playerStore.setSubtitleFontSize(size.id)"
@@ -355,7 +356,7 @@ const addToCooldown = async () => {
 
           <!-- Background Style Selector -->
           <div>
-            <div class="text-[11px] text-gray-400 mb-1.5">背景模式:</div>
+            <div class="text-[11px] text-gray-400 mb-1.5">{{ t('player.bgMode') }}</div>
             <div class="grid grid-cols-2 gap-1.5">
               <button
                 @click="playerStore.setSubtitleStyle('shadow')"
@@ -366,7 +367,7 @@ const addToCooldown = async () => {
                     : 'bg-white/5 text-gray-300 hover:bg-white/10'
                 ]"
               >
-                文字描边
+                {{ t('player.styleOutline') }}
               </button>
               <button
                 @click="playerStore.setSubtitleStyle('glass')"
@@ -377,7 +378,7 @@ const addToCooldown = async () => {
                     : 'bg-white/5 text-gray-300 hover:bg-white/10'
                 ]"
               >
-                半透明底框
+                {{ t('player.styleGlass') }}
               </button>
             </div>
           </div>
@@ -388,12 +389,11 @@ const addToCooldown = async () => {
       <button
         v-if="playerStore.videoQueue.length > 1"
         @click="playerStore.toggleVideoDrawer()"
-        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-colors"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-colors whitespace-nowrap"
         :class="playerStore.videoDrawerOpen ? 'bg-purple-600 text-white font-medium shadow-md' : 'bg-white/10 hover:bg-white/20 text-white/90'"
-        title="查看本系列选集列表"
       >
         <ListVideo class="w-4 h-4" />
-        <span>选集 ({{ playerStore.videoQueue.length }})</span>
+        <span>{{ t('player.episodesBtn', { count: playerStore.videoQueue.length }) }}</span>
       </button>
 
       <!-- Interactive Volume Control Slider -->
@@ -401,7 +401,6 @@ const addToCooldown = async () => {
         <button
           @click="playerStore.toggleVideoMute()"
           class="p-1 rounded-full text-white/80 hover:text-white transition-colors"
-          :title="playerStore.videoVolume === 0 ? '取消静音 (M)' : '静音 (M)'"
         >
           <VolumeX v-if="playerStore.videoVolume === 0" class="w-4 h-4 text-rose-400" />
           <Volume1 v-else-if="playerStore.videoVolume < 0.5" class="w-4 h-4 text-purple-300" />
@@ -415,7 +414,6 @@ const addToCooldown = async () => {
           :value="playerStore.videoVolume"
           @input="playerStore.setVideoVolume($event.target.value)"
           class="w-16 md:w-24 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-purple-400 hover:accent-purple-300"
-          :title="`音量: ${Math.round(playerStore.videoVolume * 100)}% (↑/↓ 键)`"
         />
         <span class="text-[11px] font-mono text-gray-300 w-8 text-right select-none">
           {{ Math.round(playerStore.videoVolume * 100) }}%
@@ -426,7 +424,7 @@ const addToCooldown = async () => {
       <button
         @click="playerStore.minimizeVideoToPiP()"
         class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
-        title="小窗化悬浮播放 (P) — 可继续浏览相册/网页"
+        :title="t('player.pipTip')"
       >
         <PictureInPicture2 class="w-5 h-5 text-indigo-400" />
       </button>
@@ -435,16 +433,17 @@ const addToCooldown = async () => {
       <button
         @click="toggleFullscreen"
         class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
-        title="全屏 (F)"
+        :title="t('player.fullscreenTip')"
       >
         <Maximize class="w-5 h-5" />
       </button>
 
       <!-- Close button -->
       <button
+        data-testid="video-close-btn"
         @click="playerStore.closeVideo()"
         class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
-        title="关闭 (Esc)"
+        :title="t('player.closeTip')"
       >
         <X class="w-6 h-6" />
       </button>
@@ -474,7 +473,7 @@ const addToCooldown = async () => {
             :src="subtitleStreamUrl"
             kind="subtitles"
             srclang="zh"
-            label="中文/默认字幕"
+            label="Subtitles"
             default
           />
         </video>
@@ -485,7 +484,7 @@ const addToCooldown = async () => {
           @mousedown.prevent="startSubtitleDrag"
           class="absolute inset-x-0 flex justify-center z-30 select-none cursor-ns-resize group/sub pointer-events-auto"
           :style="{ bottom: `${Math.max(15, playerStore.subtitleConfig.verticalPercent)}%` }"
-          title="按住鼠标上下拖拽调整字幕位置"
+          :title="t('player.dragSubtitleTip')"
         >
           <div
             class="transition-all duration-100 px-4 py-1.5 rounded-xl max-w-2xl text-center leading-relaxed font-sans"
@@ -499,7 +498,7 @@ const addToCooldown = async () => {
               isDraggingSubtitle ? 'ring-2 ring-purple-500 scale-105' : 'group-hover/sub:ring-1 group-hover/sub:ring-white/30'
             ]"
           >
-            {{ activeCueText }}
+            {{ tData(activeCueText) }}
           </div>
         </div>
       </div>
@@ -508,7 +507,7 @@ const addToCooldown = async () => {
       <div class="w-full max-w-4xl mt-3 px-1 flex items-center justify-between gap-4">
         <div class="flex items-center gap-3 min-w-0">
           <h2 class="text-base font-bold text-white truncate">
-            {{ currentUnit.title }}
+            {{ tData(currentUnit.title) }}
           </h2>
           <div class="flex items-center gap-1.5 shrink-0">
             <span
@@ -516,17 +515,17 @@ const addToCooldown = async () => {
               class="flex items-center gap-1 bg-purple-600/90 text-white text-[11px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap"
             >
               <Layers class="w-3 h-3" />
-              <span>复合包</span>
+              <span>{{ t('player.bundleBadge') }}</span>
             </span>
             <span
               v-if="subtitleFile"
               class="flex items-center gap-1 bg-emerald-600/90 text-white text-[11px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap"
             >
               <Subtitles class="w-3 h-3" />
-              <span>智能挂载字幕</span>
+              <span>{{ t('player.autoSubtitlesBadge') }}</span>
             </span>
             <span class="text-xs text-gray-400 font-medium whitespace-nowrap">
-              {{ currentUnit.collection_name || '未归类' }}
+              {{ tData(currentUnit.collection_name) || t('player.uncategorized') }}
             </span>
           </div>
         </div>
@@ -542,7 +541,7 @@ const addToCooldown = async () => {
             'p-2.5 rounded-full bg-white/10 text-white backdrop-blur-md transition-all',
             playerStore.videoQueueIndex <= 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/20 active:scale-95'
           ]"
-          title="上一个 (↑)"
+          :title="t('player.prevTip')"
         >
           <ChevronUp class="w-5 h-5" />
         </button>
@@ -554,7 +553,7 @@ const addToCooldown = async () => {
             'p-2.5 rounded-full bg-white/10 text-white backdrop-blur-md transition-all',
             playerStore.videoQueueIndex >= playerStore.videoQueue.length - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/20 active:scale-95'
           ]"
-          title="下一个 (↓)"
+          :title="t('player.nextTip')"
         >
           <ChevronDown class="w-5 h-5" />
         </button>
@@ -572,14 +571,13 @@ const addToCooldown = async () => {
               ]"
             />
           </div>
-          <span class="text-[10px] text-gray-300">喜欢</span>
+          <span class="text-[10px] text-gray-300 whitespace-nowrap">{{ t('player.like') }}</span>
         </button>
 
         <!-- Star Rating Action -->
         <button
           @click="setRating(currentUnit.rating >= 5 ? 1 : Math.floor(currentUnit.rating) + 1)"
           class="flex flex-col items-center gap-1 text-white cursor-pointer"
-          :title="currentUnit.rating > 0 ? `当前有效评分: ${Number(currentUnit.rating).toFixed(1)} 星 (点击追加)` : '点击评分 (1-5星)'"
         >
           <div class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all active:scale-125">
             <Star
@@ -589,8 +587,8 @@ const addToCooldown = async () => {
               ]"
             />
           </div>
-          <span class="text-[10px] text-gray-300 font-mono">
-            {{ currentUnit.rating > 0 ? Number(currentUnit.rating).toFixed(1) : '评分' }}
+          <span class="text-[10px] text-gray-300 font-mono whitespace-nowrap">
+            {{ currentUnit.rating > 0 ? Number(currentUnit.rating).toFixed(1) : t('player.rate') }}
           </span>
         </button>
 
@@ -598,7 +596,6 @@ const addToCooldown = async () => {
         <button
           @click="revealInExplorer({ unit_id: currentUnit.id })"
           class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all"
-          title="在资源管理器中定位"
         >
           <FolderOpen class="w-4 h-4 text-blue-400" />
         </button>
@@ -607,7 +604,6 @@ const addToCooldown = async () => {
         <button
           @click="openWithDefaultApp({ unit_id: currentUnit.id })"
           class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all"
-          title="系统默认播放器打开"
         >
           <ExternalLink class="w-4 h-4 text-purple-400" />
         </button>
@@ -633,13 +629,13 @@ const addToCooldown = async () => {
           <div>
             <div class="flex items-center gap-2">
               <ListVideo class="w-4 h-4 text-purple-400" />
-              <span class="text-sm font-semibold text-white">系列选集列表</span>
+              <span class="text-sm font-semibold text-white">{{ t('player.episodesDrawerTitle') }}</span>
               <span class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-purple-300 font-mono">
                 {{ playerStore.videoQueue.length }}
               </span>
             </div>
             <p class="text-[11px] text-gray-400 mt-1 truncate max-w-[240px]">
-              {{ currentUnit.collection_name || '当前系列' }}
+              {{ tData(currentUnit.collection_name) }}
             </p>
           </div>
           <button
@@ -655,10 +651,9 @@ const addToCooldown = async () => {
           <button
             @click="playerStore.addMultipleToBgQueue(playerStore.videoQueue)"
             class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-purple-200 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 transition-all"
-            title="将整个系列的视频追加到背景队列"
           >
             <Plus class="w-3.5 h-3.5 text-purple-400" />
-            <span>全系列加入背景队列</span>
+            <span>{{ t('player.enqueueSeriesBtn') }}</span>
           </button>
         </div>
 
@@ -679,8 +674,8 @@ const addToCooldown = async () => {
               <span class="text-[11px] font-mono text-gray-500 w-5 text-center shrink-0">
                 {{ (idx + 1).toString().padStart(2, '0') }}
               </span>
-              <span class="text-xs font-medium truncate" :title="unit.title">
-                {{ unit.title }}
+              <span class="text-xs font-medium truncate" :title="tData(unit.title)">
+                {{ tData(unit.title) }}
               </span>
             </div>
 

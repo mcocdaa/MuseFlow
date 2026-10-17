@@ -3,6 +3,7 @@ import { ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { useMediaStore } from '../stores/mediaStore'
 import { useThemeStore } from '../stores/themeStore'
 import { usePlayerStore } from '../stores/playerStore'
+import { toggleLocale, t, tData } from '../i18n'
 import {
   Compass,
   FolderOpen,
@@ -87,7 +88,7 @@ const handleRefresh = () => {
         <div
           class="flex items-center gap-2.5 cursor-pointer select-none group"
           @click="mediaStore.currentMode = 'stream'"
-          title="MuseFlow 灵眸流"
+          :title="t('nav.brandTitle')"
         >
           <div
             class="w-8 h-8 rounded-xl flex items-center justify-center shadow-md text-white transition-transform group-hover:scale-105 active:scale-95"
@@ -101,6 +102,7 @@ const handleRefresh = () => {
         <!-- Mode Toggle Segmented Control (Icon only with tooltips) -->
         <div class="flex items-center p-0.5 bg-white/5 rounded-xl border border-white/10">
           <button
+            data-testid="nav-mode-stream"
             @click="mediaStore.currentMode = 'stream'"
             :class="[
               'p-1.5 rounded-lg transition-all duration-200 cursor-pointer',
@@ -109,11 +111,12 @@ const handleRefresh = () => {
                 : 'text-gray-400 hover:text-gray-200'
             ]"
             :style="mediaStore.currentMode === 'stream' ? { backgroundColor: 'var(--accent-color)' } : {}"
-            title="沉浸流"
+            :title="t('nav.modeStream')"
           >
             <Sparkles class="w-4 h-4" />
           </button>
           <button
+            data-testid="nav-mode-workplace"
             @click="mediaStore.currentMode = 'workplace'; mediaStore.workplaceView = 'assets'; mediaStore.loadWorkplaceItems()"
             :class="[
               'p-1.5 rounded-lg transition-all duration-200 cursor-pointer',
@@ -122,11 +125,12 @@ const handleRefresh = () => {
                 : 'text-gray-400 hover:text-gray-200'
             ]"
             :style="mediaStore.currentMode === 'workplace' && mediaStore.workplaceView !== 'taxonomy' ? { backgroundColor: 'var(--accent-color)' } : {}"
-            title="资产工作台"
+            :title="t('nav.modeWorkplace')"
           >
             <FolderOpen class="w-4 h-4" />
           </button>
           <button
+            data-testid="nav-mode-taxonomy"
             @click="mediaStore.openTaxonomyWorkspace()"
             :class="[
               'p-1.5 rounded-lg transition-all duration-200 cursor-pointer',
@@ -135,7 +139,7 @@ const handleRefresh = () => {
                 : 'text-gray-400 hover:text-gray-200'
             ]"
             :style="mediaStore.currentMode === 'workplace' && mediaStore.workplaceView === 'taxonomy' ? { backgroundColor: 'var(--accent-color)' } : {}"
-            title="分类与标签中心"
+            :title="t('nav.modeTaxonomy')"
           >
             <Tags class="w-4 h-4" />
           </button>
@@ -156,7 +160,7 @@ const handleRefresh = () => {
           <button
             @click="playerStore.setBgViewMode(playerStore.bgViewMode === 'mini' ? 'disc' : 'mini')"
             class="relative flex items-center justify-center w-6 h-6 rounded-full bg-purple-600/30 border border-purple-400/40 text-purple-200 shrink-0 hover:scale-110 transition-transform"
-            :title="`背景伴音: ${playerStore.activeBgUnit.title} (点击切换小窗/唱片模式)`"
+            :title="t('nav.bgAudioTitle', { title: tData(playerStore.activeBgUnit.title) })"
           >
             <Music
               class="w-3 h-3 text-purple-300"
@@ -168,9 +172,9 @@ const handleRefresh = () => {
           <span
             @click="playerStore.setBgViewMode('mini')"
             class="text-xs text-gray-200 truncate cursor-pointer hover:text-purple-300 transition-colors font-medium max-w-[100px] sm:max-w-[130px]"
-            :title="playerStore.activeBgUnit.title"
+            :title="tData(playerStore.activeBgUnit.title)"
           >
-            {{ playerStore.activeBgUnit.title }}
+            {{ tData(playerStore.activeBgUnit.title) }}
           </span>
 
           <!-- Inline Transport Controls -->
@@ -178,7 +182,7 @@ const handleRefresh = () => {
             <button
               @click.stop="playerStore.togglePlayAudio"
               class="p-1 hover:text-white text-gray-400 transition-colors"
-              :title="playerStore.isBgPlaying ? '暂停背景音乐' : '播放背景音乐'"
+              :title="playerStore.isBgPlaying ? t('nav.pauseBg') : t('nav.playBg')"
             >
               <Pause v-if="playerStore.isBgPlaying" class="w-3.5 h-3.5 fill-current" />
               <Play v-else class="w-3.5 h-3.5 fill-current" />
@@ -186,7 +190,7 @@ const handleRefresh = () => {
             <button
               @click.stop="playerStore.nextAudio"
               class="p-1 hover:text-white text-gray-400 transition-colors"
-              title="下一首"
+              :title="t('nav.nextTrack')"
             >
               <SkipForward class="w-3 h-3" />
             </button>
@@ -197,7 +201,7 @@ const handleRefresh = () => {
             @click.stop="playerStore.toggleQueueDrawer()"
             class="p-1 hover:text-purple-300 text-gray-400 transition-colors relative"
             :class="playerStore.queueDrawerOpen ? 'text-purple-300 bg-white/10 rounded' : ''"
-            :title="`打开背景播放队列 (${playerStore.bgQueue.length} 首)`"
+            :title="t('nav.openBgQueue', { count: playerStore.bgQueue.length })"
           >
             <ListMusic class="w-3.5 h-3.5" />
             <span
@@ -210,7 +214,7 @@ const handleRefresh = () => {
           <button
             @click.stop="playerStore.stopAndExitBgPlayback()"
             class="p-1 hover:text-amber-400 text-gray-400 transition-colors"
-            title="停止并退出背景播放"
+            :title="t('nav.stopBg')"
           >
             <Power class="w-3.5 h-3.5" />
           </button>
@@ -221,14 +225,14 @@ const handleRefresh = () => {
           v-else-if="playerStore.bgQueue.length > 0"
           @click="playerStore.toggleQueueDrawer()"
           class="flex items-center gap-1.5 cursor-pointer hover:text-purple-300 text-gray-300 text-xs px-1.5 py-0.5 rounded-lg hover:bg-white/5 transition-colors"
-          :title="`打开背景播放队列 (共 ${playerStore.bgQueue.length} 项)`"
+          :title="t('nav.openBgQueue', { count: playerStore.bgQueue.length })"
         >
           <ListMusic class="w-3.5 h-3.5 text-purple-400" />
-          <span class="font-mono text-[11px]">队列 ({{ playerStore.bgQueue.length }})</span>
+          <span class="font-mono text-[11px]">{{ t('nav.queuePill', { count: playerStore.bgQueue.length }) }}</span>
           <button
             @click.stop="playerStore.playAudio(playerStore.bgQueue[0], playerStore.bgQueue, 'disc')"
             class="p-1 hover:text-white text-purple-300 rounded ml-0.5"
-            title="开始播放队列"
+            :title="t('nav.startQueue')"
           >
             <Play class="w-3 h-3 fill-current" />
           </button>
@@ -240,12 +244,12 @@ const handleRefresh = () => {
           class="flex items-center gap-1.5 pl-2 border-l border-white/10 shrink-0 text-pink-300 text-xs font-medium"
         >
           <Tv class="w-3.5 h-3.5 text-pink-400" />
-          <span class="font-mono text-[11px]">连播 {{ playerStore.fgTimeRemaining }}s</span>
+          <span class="font-mono text-[11px]">{{ t('nav.slideshowPill', { sec: playerStore.fgTimeRemaining }) }}</span>
         </div>
       </div>
 
       <!-- Right: Minimalist Icon Actions with Tooltips -->
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1.5 shrink-0">
         <!-- Expandable Search -->
         <div class="relative flex items-center">
           <div
@@ -257,7 +261,7 @@ const handleRefresh = () => {
               ref="searchInputRef"
               v-model="mediaStore.searchQuery"
               type="text"
-              placeholder="搜索资产..."
+              :placeholder="t('nav.searchPlaceholder')"
               class="bg-transparent w-full text-xs text-white placeholder-gray-500 focus:outline-none"
               @blur="onSearchBlur"
               @keydown.esc="onSearchEsc"
@@ -266,7 +270,7 @@ const handleRefresh = () => {
               v-if="mediaStore.searchQuery"
               @click="mediaStore.searchQuery = ''"
               class="text-gray-400 hover:text-white shrink-0 ml-1 p-0.5"
-              title="清空"
+              :title="t('nav.clearSearch')"
             >
               <X class="w-3 h-3" />
             </button>
@@ -275,7 +279,7 @@ const handleRefresh = () => {
             v-else
             @click="toggleSearch"
             class="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all border border-transparent hover:border-white/10"
-            title="搜索 (快捷键 /)"
+            :title="t('nav.searchTooltip')"
           >
             <Search class="w-4 h-4" />
           </button>
@@ -284,7 +288,7 @@ const handleRefresh = () => {
         <!-- Agent External (MCP) Plugin Hub -->
         <button
           @click="mediaStore.openAgentMCP()"
-          title="MCP 外部 Agent 插件"
+          :title="t('nav.mcpTooltip')"
           class="p-2 text-purple-400 hover:text-purple-300 hover:bg-white/10 rounded-xl transition-all border border-transparent hover:border-white/10 cursor-pointer"
         >
           <Bot class="w-4 h-4" />
@@ -294,7 +298,7 @@ const handleRefresh = () => {
         <button
           @click="themeStore.themePickerOpen = true"
           class="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition-all border border-transparent hover:border-white/10 cursor-pointer"
-          :title="`主题色彩 (当前: ${themeStore.currentTheme.name})`"
+          :title="t('nav.themeTooltip', { name: tData(themeStore.currentTheme.name) })"
         >
           <Palette class="w-4 h-4" style="color: var(--accent-color);" />
         </button>
@@ -303,7 +307,7 @@ const handleRefresh = () => {
         <button
           @click="mediaStore.scanModalOpen = true"
           class="p-2 text-indigo-400 hover:text-indigo-300 hover:bg-white/10 rounded-xl transition-all border border-transparent hover:border-white/10 cursor-pointer"
-          title="添加本地媒体文件夹"
+          :title="t('nav.scanTooltip')"
         >
           <FolderSearch class="w-4 h-4" />
         </button>
@@ -311,10 +315,21 @@ const handleRefresh = () => {
         <!-- Refresh Button -->
         <button
           @click="handleRefresh"
-          title="刷新视图"
+          :title="t('nav.refreshTooltip')"
           class="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all border border-transparent hover:border-white/10 cursor-pointer"
         >
           <RefreshCw :class="['w-4 h-4', mediaStore.loading ? 'animate-spin' : '']" />
+        </button>
+
+        <!-- Compact Bilingual Toggle Button -->
+        <button
+          data-testid="lang-toggle-btn"
+          @click="toggleLocale()"
+          :title="t('nav.langTooltip')"
+          class="px-2.5 py-1.5 text-xs font-semibold text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 hover:border-purple-400/40 cursor-pointer select-none"
+          style="white-space: nowrap; flex-shrink: 0;"
+        >
+          {{ t('nav.langToggle') }}
         </button>
       </div>
     </div>
