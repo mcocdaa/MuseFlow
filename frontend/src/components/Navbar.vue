@@ -285,15 +285,6 @@ const handleRefresh = () => {
           </button>
         </div>
 
-        <!-- Agent External (MCP) Plugin Hub -->
-        <button
-          @click="mediaStore.openAgentMCP()"
-          :title="t('nav.mcpTooltip')"
-          class="p-2 text-purple-400 hover:text-purple-300 hover:bg-white/10 rounded-xl transition-all border border-transparent hover:border-white/10 cursor-pointer"
-        >
-          <Bot class="w-4 h-4" />
-        </button>
-
         <!-- Theme Picker Button -->
         <button
           @click="themeStore.themePickerOpen = true"

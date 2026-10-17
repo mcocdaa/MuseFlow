@@ -853,6 +853,9 @@ const MESSAGES = {
     'common.done': '完成',
     'common.save': '保存',
     'common.loading': '加载中...',
+    'stream.noMatch': '无匹配项',
+    'player.subtitlesTrackLabel': '字幕',
+    'workplace.ptsUnit': '分',
     'player.toastMuted': '已静音',
     'player.toastVolume': '音量: {pct}%',
     'player.toastLoadError': '视频加载失败：存储路径不可达或读取超时',
@@ -1291,7 +1294,6 @@ const MESSAGES = {
     'batch.batchTagModalTitle': 'Batch Tag {count} Items',
     'batch.step1SelectCategory': '1. Select Tag Category',
     'batch.step2SelectTag': '2. Select Tag to Apply',
-    'stream.noMatch': 'No matching tags',
     'batch.searchTagPlaceholder': 'Search tag name...',
     'batch.noMatchingTag': 'No matching tags found',
     'batch.setPrimaryCheckbox': 'Set as primary landing tag for this category',
@@ -1807,6 +1809,8 @@ const MESSAGES = {
     'common.save': 'Save',
     'common.loading': 'Loading...',
     'stream.noMatch': 'No matching media units',
+    'player.subtitlesTrackLabel': 'Subtitles',
+    'workplace.ptsUnit': 'pts',
     'player.toastMuted': 'Muted',
     'player.toastVolume': 'Volume: {pct}%',
     'player.toastLoadError': 'Video load failed: Storage path unreachable or read timeout',
@@ -2170,11 +2174,35 @@ export function t(key, params = {}) {
 export function tData(str) {
   if (!str || locale.value !== 'en') return str
   if (EN_DATA_MAP[str]) return EN_DATA_MAP[str]
-  if (typeof str === 'string' && str.includes(' / ')) {
-    return str
-      .split(' / ')
-      .map(part => EN_DATA_MAP[part.trim()] || part.trim())
-      .join(' / ')
+  if (typeof str === 'string') {
+    if (/^修改文件夹时间为官方发布日期[：:]\s*/.test(str)) {
+      return str.replace(/^修改文件夹时间为官方发布日期[：:]\s*/, 'Sync folder timestamp to release date: ')
+    }
+    if (/^创建待翻译专用目录[：:]\s*/.test(str)) {
+      return str.replace(/^创建待翻译专用目录[：:]\s*(.*)$/, (_, folder) => {
+        const trimmed = folder.trim()
+        return `Create untracked translation folder: ${EN_DATA_MAP[trimmed] || trimmed}`
+      })
+    }
+    const planSummaryMatch = str.match(
+      /^在作用域「(.+?)」内对\s*(\d+)\s*个作品执行物理整理(?:[（(]预演模式[：:]\s*(.+?)[）)])?$/
+    )
+    if (planSummaryMatch) {
+      const [, scope, count, mode] = planSummaryMatch
+      const enScope = EN_DATA_MAP[scope] || scope
+      return mode
+        ? `Dry-run physical organization across ${count} works in scope "${enScope}" (dry_run: ${mode})`
+        : `Physical organization across ${count} works in scope "${enScope}"`
+    }
+    if (str.includes('文本命中「')) {
+      return str.replace(/文本命中「([^」]+)」/g, (_, kw) => `Matched text "${EN_DATA_MAP[kw] || kw}"`)
+    }
+    if (str.includes(' / ')) {
+      return str
+        .split(' / ')
+        .map(part => EN_DATA_MAP[part.trim()] || part.trim())
+        .join(' / ')
+    }
   }
   return str
 }

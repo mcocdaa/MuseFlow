@@ -252,14 +252,6 @@
 
           <div class="flex items-center gap-1 shrink-0">
             <button
-              @click="handleCopyMCPColumnPrompt(currentClass)"
-              class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-500 hover:text-purple-300 hover:bg-purple-500/15 transition-all cursor-pointer"
-              :title="t('tax.copyMcpPromptTip', { name: tFacet(currentClass.code, currentClass.display_name) })"
-            >
-              <Bot class="w-3.5 h-3.5" />
-            </button>
-
-            <button
               v-if="currentClass.code !== 'media_kind'"
               @click="handleToggleRequired(currentClass)"
               class="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer"

@@ -2,7 +2,7 @@
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { usePlayerStore } from '../stores/playerStore'
 import { useMediaStore } from '../stores/mediaStore'
-import { t, tData } from '../i18n'
+import { locale, t, tData } from '../i18n'
 import {
   X,
   Heart,
@@ -472,8 +472,8 @@ const addToCooldown = async () => {
             v-if="subtitleFile"
             :src="subtitleStreamUrl"
             kind="subtitles"
-            srclang="zh"
-            label="Subtitles"
+            :srclang="locale === 'en' ? 'en' : 'zh'"
+            :label="t('player.subtitlesTrackLabel')"
             default
           />
         </video>

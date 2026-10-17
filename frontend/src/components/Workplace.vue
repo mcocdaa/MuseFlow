@@ -1388,16 +1388,6 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 @click="showMoreTools = false"
               >
                 <button
-                  @click="showMCPModal = true"
-                  class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-gray-200 hover:bg-purple-600/20 hover:text-purple-200 transition-colors"
-                >
-                  <Bot class="w-4 h-4 text-purple-400" />
-                  <div class="flex-grow">
-                    <div class="font-medium">{{ t('workplace.mcpMenuTitle') }}</div>
-                    <div class="text-[10px] text-gray-400">Claude / Cursor / Antigravity</div>
-                  </div>
-                </button>
-                <button
                   @click="handleReindexAll"
                   :disabled="isSyncing"
                   class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-gray-200 hover:bg-red-500/20 hover:text-red-300 transition-colors"
@@ -1963,7 +1953,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               :key="sug.tag_id"
               @click="handleQuickAssignSuggestion(sug)"
               class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-purple-500/10 hover:bg-purple-500/25 text-purple-300 border border-purple-500/20 text-[10px] transition-colors cursor-pointer"
-              :title="sug.reason"
+              :title="tData(sug.reason)"
             >
               <span>+ {{ tData(sug.tag_name) }}</span>
             </button>
@@ -2052,11 +2042,11 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <div v-if="showAlgoDetails" class="mt-2 p-2.5 rounded-xl bg-black/40 border border-white/5 text-[10px] space-y-1.5 font-mono text-gray-400">
             <div class="flex justify-between">
               <span>{{ t('workplace.explicitScore') }}</span>
-              <span class="text-purple-300">+{{ itemAlgorithmStats.explicit.total }} pts</span>
+              <span class="text-purple-300">+{{ itemAlgorithmStats.explicit.total }} {{ t('workplace.ptsUnit') }}</span>
             </div>
             <div class="flex justify-between">
               <span>{{ t('workplace.implicitScore') }}</span>
-              <span class="text-blue-300">+{{ itemAlgorithmStats.implicit.total }} pts ({{ Math.round(itemAlgorithmStats.implicit.dwell_seconds) }}s)</span>
+              <span class="text-blue-300">+{{ itemAlgorithmStats.implicit.total }} {{ t('workplace.ptsUnit') }} ({{ Math.round(itemAlgorithmStats.implicit.dwell_seconds) }}s)</span>
             </div>
             <div class="flex justify-between text-gray-500 pt-1 border-t border-white/5">
               <span>{{ t('workplace.statusLabel') }}</span>

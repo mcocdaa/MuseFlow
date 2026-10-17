@@ -297,7 +297,7 @@ const getActionTypeName = (actionType) => {
 
           <!-- Dry-Run Preview Table -->
           <div v-if="planResult" class="space-y-2.5">
-            <div class="flex items-center justify-between" :title="planResult.summary">
+            <div class="flex items-center justify-between" :title="tData(planResult.summary)">
               <div class="flex items-center gap-1.5">
                 <FileCheck class="w-3.5 h-3.5 text-emerald-400" />
                 <span class="font-semibold text-gray-200">{{ t('physOrg.previewListTitle', { count: planResult.total_actions }) }}</span>
@@ -327,14 +327,14 @@ const getActionTypeName = (actionType) => {
                     <td class="py-2 px-3 text-amber-300/90 truncate max-w-sm">
                       <div v-if="act.action_type === 'set_mtime'" class="flex items-center gap-1 text-amber-400">
                         <Clock class="w-3 h-3" />
-                        <span>{{ act.description }}</span>
+                        <span>{{ tData(act.description) }}</span>
                       </div>
                       <div v-else-if="act.dst_path" class="flex items-center gap-1.5">
                         <ArrowRight class="w-3 h-3 text-gray-500 shrink-0" />
                         <span class="text-white truncate" :title="act.dst_path">{{ act.dst_path.split('/').pop() }}</span>
                       </div>
                       <div v-else class="text-gray-400">
-                        {{ act.description }}
+                        {{ tData(act.description) }}
                       </div>
                     </td>
                   </tr>
