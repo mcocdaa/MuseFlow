@@ -9,6 +9,7 @@ import {
 } from 'lucide-vue-next'
 import { fetchMCPConfig } from '../api'
 import { usePlayerStore } from '../stores/playerStore'
+import { t, tData } from '../i18n'
 
 const props = defineProps({
   isOpen: {
@@ -25,26 +26,23 @@ const mcpData = ref(null)
 const loading = ref(false)
 const copiedKey = ref('')
 
-const agentPlaybooks = [
+const agentPlaybooks = computed(() => [
   {
     id: 'taxonomy',
-    label: '深度整理标签列（同义词合并 · 树形上下位归纳 · 跨维度纠偏）',
-    prompt:
-      '请调用 museflow MCP 的 get_taxonomy_tree 工具读取所有分类维度的标签树，深入分析同义词、上下位父子关系与错位标签，并调用 organize_tag_column 批量无损合并同义词、构建树形继承层级及清理杂质标签。',
+    label: t('mcp.pbTaxonomyLabel'),
+    prompt: t('mcp.pbTaxonomyPrompt'),
   },
   {
     id: 'series',
-    label: '深入分析并拆分混乱系列（嵌套子系列提取 · 音画字幕复合包配对）',
-    prompt:
-      '请调用 museflow MCP 的 list_collections 与 analyze_collection_topology 工具，检查混乱目录结构，识别应提取为独立子系列的子文件夹及跨目录同名音画字幕文件，并调用 restructure_collection_series 无损重组。',
+    label: t('mcp.pbSeriesLabel'),
+    prompt: t('mcp.pbSeriesPrompt'),
   },
   {
     id: 'untagged',
-    label: '全库未打标作品智能补全（题材 · 创作者 · 演职员推断）',
-    prompt:
-      '请调用 museflow MCP 的 get_untagged_assets 工具获取缺少标签的作品，结合文件路径与标题语义推断其核心题材、创作者与演职员，并调用 batch_assign_tags 批量完成打标。',
+    label: t('mcp.pbUntaggedLabel'),
+    prompt: t('mcp.pbUntaggedPrompt'),
   },
-]
+])
 
 const handleKeyDown = (e) => {
   if (e.key === 'Escape' && props.isOpen) {
@@ -87,7 +85,7 @@ const copyText = async (text, key, toastMsg) => {
       if (copiedKey.value === key) copiedKey.value = ''
     }, 1800)
   } catch (e) {
-    playerStore.showToast('复制失败，请手动复制')
+    playerStore.showToast(t('mcp.toastCopyFailed'))
   }
 }
 </script>
@@ -114,7 +112,7 @@ const copyText = async (text, key, toastMsg) => {
         <div class="px-5 py-3.5 border-b border-white/5 flex items-center justify-between shrink-0">
           <div
             class="flex items-center gap-2.5"
-            title="通过标准 Model Context Protocol (MCP) 将 Claude Desktop、Cursor、Antigravity、AEFlow 等外部 AI 作为插件接入"
+            :title="t('mcp.headerTip')"
           >
             <div
               class="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0"
@@ -122,7 +120,7 @@ const copyText = async (text, key, toastMsg) => {
             >
               <Bot class="w-4 h-4 text-white" />
             </div>
-            <span class="text-sm font-semibold text-white">MCP 外部 Agent 插件</span>
+            <span class="text-sm font-semibold text-white">{{ t('mcp.title') }}</span>
             <span class="text-[10px] px-1.5 py-0.5 rounded font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
               stdio
             </span>
@@ -131,7 +129,7 @@ const copyText = async (text, key, toastMsg) => {
           <button
             @click="emit('close')"
             class="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-            title="关闭 (Esc)"
+            :title="t('mcp.closeTip')"
           >
             <X class="w-4 h-4" />
           </button>
@@ -144,14 +142,14 @@ const copyText = async (text, key, toastMsg) => {
             <div class="flex items-center justify-between">
               <span
                 class="text-[11px] font-medium text-gray-400"
-                title="将此配置填入 Claude Desktop / Cursor / Antigravity 的 mcpServers 配置文件"
+                :title="t('mcp.configTip')"
               >
-                接入配置 (mcpServers)
+                {{ t('mcp.configLabel') }}
               </span>
               <button
-                @click="copyText(configSnippet, 'config', '已复制 MCP 配置 JSON')"
+                @click="copyText(configSnippet, 'config', t('mcp.toastCopiedConfig'))"
                 class="w-7 h-7 rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
-                title="复制 MCP 配置 JSON"
+                :title="t('mcp.copyConfigTip')"
               >
                 <Check v-if="copiedKey === 'config'" class="w-3.5 h-3.5 text-emerald-400" />
                 <Copy v-else class="w-3.5 h-3.5" />
@@ -160,16 +158,16 @@ const copyText = async (text, key, toastMsg) => {
 
             <pre
               class="p-3.5 rounded-xl bg-black/50 border border-white/10 font-mono text-[11px] text-emerald-300 overflow-x-auto select-all leading-relaxed"
-            >{{ configSnippet || '加载中...' }}</pre>
+            >{{ configSnippet || t('common.loading') }}</pre>
           </div>
 
           <!-- 2. Ready-to-Use External Agent Prompts -->
           <div class="space-y-2">
             <span
               class="text-[11px] font-medium text-gray-400 block"
-              title="点击右侧复制图标，直接发送给外部 AI Agent 执行深度整理"
+              :title="t('mcp.playbooksTip')"
             >
-              常用深度整理指令
+              {{ t('mcp.playbooksLabel') }}
             </span>
 
             <div class="space-y-1.5">
@@ -184,9 +182,9 @@ const copyText = async (text, key, toastMsg) => {
                   <span class="text-xs text-gray-200 truncate">{{ item.label }}</span>
                 </div>
                 <button
-                  @click="copyText(item.prompt, item.id, '已复制外部 Agent 整理指令')"
+                  @click="copyText(item.prompt, item.id, t('mcp.toastCopiedPlaybook'))"
                   class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0"
-                  title="复制此整理指令"
+                  :title="t('mcp.copyPlaybookTip')"
                 >
                   <Check v-if="copiedKey === item.id" class="w-3.5 h-3.5 text-emerald-400" />
                   <Copy v-else class="w-3.5 h-3.5" />
@@ -200,21 +198,21 @@ const copyText = async (text, key, toastMsg) => {
             <div class="flex items-center justify-between">
               <span
                 class="text-[11px] font-medium text-gray-400"
-                title="鼠标悬浮工具名查看详细功能说明"
+                :title="t('mcp.toolsTip')"
               >
-                已暴露 MCP 工具
+                {{ t('mcp.toolsLabel') }}
               </span>
               <span class="text-[11px] font-mono text-gray-500">{{ mcpData.tools.length }}</span>
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
               <div
-                v-for="t in mcpData.tools"
-                :key="t.name"
-                :title="t.desc"
+                v-for="toolItem in mcpData.tools"
+                :key="toolItem.name"
+                :title="tData(toolItem.desc)"
                 class="px-2.5 py-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 font-mono text-[11px] text-purple-300 truncate cursor-default transition-colors"
               >
-                {{ t.name }}
+                {{ toolItem.name }}
               </div>
             </div>
           </div>

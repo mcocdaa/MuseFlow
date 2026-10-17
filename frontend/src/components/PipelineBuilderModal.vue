@@ -400,7 +400,7 @@ function addLevel() {
   pipelineLevels.value.splice(insertIdx, 0, {
     level_index: insertIdx,
     facet: defaultFacet,
-    fallback: '未分类'
+    fallback: t('pipeline.defaultFallback')
   })
   evaluationResult.value = null
 }
@@ -427,14 +427,14 @@ function previewSampleSegment(idx) {
     const code = lvl.facet.split('.')[1]
     const tc = tagClasses.value.find(c => c.code === code)
     const name = tFacet(code, tc?.display_name || code)
-    return locale.value === 'en' ? `Sample ${name}` : `示例${name}`
+    return `${t('pipeline.sampleFacetPrefix')}${name}`
   }
-  if (lvl.facet === 'collection.name') return locale.value === 'en' ? 'Collection Folder' : '原系列目录'
-  return locale.value === 'en' ? 'Category Folder' : '分类目录'
+  if (lvl.facet === 'collection.name') return t('pipeline.sampleCollectionFolder')
+  return t('pipeline.sampleCategoryFolder')
 }
 
 function previewSampleLeaf() {
-  const sampleWork = locale.value === 'en' ? 'Sample_Media_Unit' : '示例作品'
+  const sampleWork = t('pipeline.sampleWorkUnit')
   const last = pipelineLevels.value[pipelineLevels.value.length - 1]
   if (last?.naming) {
     return last.naming
@@ -459,9 +459,9 @@ function formatDisplayPath(fullPath) {
   let formatted = fullPath
   if (root && fullPath.startsWith(root)) {
     const rel = fullPath.slice(root.length).replace(/^\/+/, '')
-    formatted = `/媒体库/${rel}`
+    formatted = `/Library/${rel}`
   } else {
-    formatted = fullPath.replace(/^\/mnt\/media\/library\/?/, '/媒体库/')
+    formatted = fullPath.replace(/^\/mnt\/media\/library\/?/, '/Library/')
   }
   return tPath(formatted)
 }
@@ -478,7 +478,7 @@ async function runEvaluation() {
 
     const payload = {
       pipeline: {
-        name: '自定义整理流水线',
+        name: t('pipeline.customPipelineName'),
         target_root: targetRoot,
         levels: pipelineLevels.value
       },
@@ -490,7 +490,7 @@ async function runEvaluation() {
       dryRunSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
   } catch (err) {
-    alert(`体检预演失败: ${err?.response?.data?.detail || err.message}`)
+    alert(`${t('pipeline.evalFailedPrefix')} ${err?.response?.data?.detail || err.message}`)
   } finally {
     evaluating.value = false
   }
@@ -498,7 +498,7 @@ async function runEvaluation() {
 
 async function confirmExecution() {
   if (!evaluationResult.value || evaluationResult.value.total_actions === 0) return
-  if (!confirm(`确认要将这 ${evaluationResult.value.total_actions} 项资产按照当前流水线进行物理位移与数据库自愈吗？`)) {
+  if (!confirm(t('pipeline.confirmExec', { count: evaluationResult.value.total_actions }))) {
     return
   }
 
@@ -507,20 +507,20 @@ async function confirmExecution() {
     const triagePlan = {
       plan_id: `plan_${Date.now()}`,
       target_folder: evaluationResult.value.target_root,
-      summary: `管线整理：${evaluationResult.value.pipeline_name}`,
+      summary: `${t('pipeline.planSummaryPrefix')}${evaluationResult.value.pipeline_name}`,
       actions: evaluationResult.value.actions.map(act => ({
         action_type: 'move_file',
         src_path: act.src_path,
         dst_path: act.dst_path,
-        description: `流水线归档：${act.file_name}`
+        description: `${t('pipeline.actionDescPrefix')}${act.file_name}`
       }))
     }
     const res = await executeTriagePlan(triagePlan, false)
-    alert(`🎉 整理执行成功！已安全完成 ${res.executed_count} 项物理操作，数据库路径已自愈！`)
+    alert(t('pipeline.execSuccessAlert', { count: res.executed_count }))
     emit('executed')
     close()
   } catch (err) {
-    alert(`执行失败: ${err?.response?.data?.detail || err.message}`)
+    alert(`${t('pipeline.execFailedPrefix')} ${err?.response?.data?.detail || err.message}`)
   } finally {
     executing.value = false
   }

@@ -109,19 +109,19 @@ const handleKeyDown = (e) => {
     e.preventDefault()
     playerStore.toggleVideoMute()
     syncVideoVolume()
-    playerStore.showToast(playerStore.videoVolume === 0 ? '已静音' : `音量: ${Math.round(playerStore.videoVolume * 100)}%`)
+    playerStore.showToast(playerStore.videoVolume === 0 ? t('player.toastMuted') : t('player.toastVolume', { pct: Math.round(playerStore.videoVolume * 100) }))
   } else if (e.key === 'ArrowUp') {
     e.preventDefault()
     const newVol = Math.min(1, Math.round((playerStore.videoVolume + 0.05) * 100) / 100)
     playerStore.setVideoVolume(newVol)
     syncVideoVolume()
-    playerStore.showToast(`音量: ${Math.round(newVol * 100)}%`)
+    playerStore.showToast(t('player.toastVolume', { pct: Math.round(newVol * 100) }))
   } else if (e.key === 'ArrowDown') {
     e.preventDefault()
     const newVol = Math.max(0, Math.round((playerStore.videoVolume - 0.05) * 100) / 100)
     playerStore.setVideoVolume(newVol)
     syncVideoVolume()
-    playerStore.showToast(`音量: ${Math.round(newVol * 100)}%`)
+    playerStore.showToast(t('player.toastVolume', { pct: Math.round(newVol * 100) }))
   } else if (e.key === ']' || e.key === 'PageDown') {
     e.preventDefault()
     playerStore.nextVideo()
@@ -220,7 +220,7 @@ const onVideoEnded = () => {
 
 const onVideoError = (e) => {
   console.warn('Video playback error:', e)
-  playerStore.showToast('视频加载失败：存储路径不可达或读取超时')
+  playerStore.showToast(t('player.toastLoadError'))
 }
 
 watch([() => playerStore.videoModalOpen, currentUnit], ([isOpen, newVal], [, oldVal]) => {
@@ -255,7 +255,7 @@ const toggleFavorite = () => {
   if (currentUnit.value) {
     mediaStore.toggleFavorite(currentUnit.value.id)
     currentUnit.value.is_favorite = !currentUnit.value.is_favorite
-    playerStore.showToast(currentUnit.value.is_favorite ? '已加入喜爱收藏' : '已取消收藏')
+    playerStore.showToast(currentUnit.value.is_favorite ? t('player.toastFavAdded') : t('player.toastFavRemoved'))
   }
 }
 
@@ -277,14 +277,14 @@ const setRating = async (stars) => {
       currentUnit.value.rating = updated.rating
     }
     const finalRating = Number(currentUnit.value.rating || stars).toFixed(1)
-    playerStore.showToast(`✨ 追加 ${stars} 星好评 (当前有效评分: ${finalRating}★)`)
+    playerStore.showToast(t('player.toastRateSuccess', { stars, rating: finalRating }))
   }
 }
 
 const addToCooldown = async () => {
   if (currentUnit.value) {
-    await mediaStore.addToCooldown(currentUnit.value.id, 14, '看腻了')
-    playerStore.showToast('已加入冷却池 (未来 14 天不再推荐)')
+    await mediaStore.addToCooldown(currentUnit.value.id, 14, t('player.cooldownReason'))
+    playerStore.showToast(t('player.toastCooldownAdded'))
   }
 }
 </script>

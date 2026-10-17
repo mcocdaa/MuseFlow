@@ -18,6 +18,7 @@ import {
   FolderInput
 } from 'lucide-vue-next'
 import { planTriage, executeTriagePlan } from '../api'
+import { t } from '../i18n'
 
 const mediaStore = useMediaStore()
 const playerStore = usePlayerStore()
@@ -26,8 +27,8 @@ const folderPath = ref('')
 const selectedRule = ref('metadata_normalization_and_dates')
 const renameTemplate = ref('{title}')
 const updateMtime = ref(true)
-const untranslatedFolder = ref('待整理')
-const customMappingStr = ref('{\n  "视觉摄影": ["*.png", "*.jpg"],\n  "视频归档": ["*.mp4", "*.mkv"]\n}')
+const untranslatedFolder = ref(t('physOrg.defaultUntranslated'))
+const customMappingStr = ref('{\n  "Photography": ["*.png", "*.jpg"],\n  "Video Archive": ["*.mp4", "*.mkv"]\n}')
 
 const loadingPlan = ref(false)
 const executing = ref(false)
@@ -38,6 +39,7 @@ const errorMsg = ref('')
 watch(() => mediaStore.physicalOrganizerModalOpen, (isOpen) => {
   if (isOpen) {
     folderPath.value = mediaStore.physicalOrganizerTargetFolder || ''
+    untranslatedFolder.value = t('physOrg.defaultUntranslated')
     planResult.value = null
     executionResult.value = null
     errorMsg.value = ''
@@ -51,7 +53,7 @@ const closeModal = () => {
 
 const handleGeneratePlan = async () => {
   if (!folderPath.value.trim()) {
-    errorMsg.value = '请输入目标文件夹路径'
+    errorMsg.value = t('physOrg.errEmptyFolder')
     return
   }
 
@@ -65,12 +67,12 @@ const handleGeneratePlan = async () => {
     options.rename_template = renameTemplate.value.trim() || '{title}'
     options.update_mtime_to_release = updateMtime.value
   } else if (selectedRule.value === 'workflow_subfolder_isolation') {
-    options.untranslated_subfolder_name = untranslatedFolder.value.trim() || '待整理'
+    options.untranslated_subfolder_name = untranslatedFolder.value.trim() || t('physOrg.defaultUntranslated')
   } else if (selectedRule.value === 'custom_topology') {
     try {
       options.topology_mapping = JSON.parse(customMappingStr.value)
     } catch (e) {
-      errorMsg.value = '自定义拓扑 JSON 格式有误'
+      errorMsg.value = t('physOrg.errInvalidJson')
       loadingPlan.value = false
       return
     }
@@ -80,7 +82,7 @@ const handleGeneratePlan = async () => {
     const res = await planTriage(folderPath.value.trim(), selectedRule.value, options)
     planResult.value = res
   } catch (err) {
-    errorMsg.value = err.response?.data?.detail || err.message || '生成预演方案失败'
+    errorMsg.value = err.response?.data?.detail || err.message || t('physOrg.errPlanFailed')
   } finally {
     loadingPlan.value = false
   }
@@ -88,7 +90,7 @@ const handleGeneratePlan = async () => {
 
 const handleExecutePlan = async () => {
   if (!planResult.value) return
-  if (!confirm(`确定执行共 ${planResult.value.total_actions} 项物理整理操作吗？数据库索引与收藏评分将自动同步保留。`)) {
+  if (!confirm(t('physOrg.confirmExecute', { count: planResult.value.total_actions }))) {
     return
   }
 
@@ -98,7 +100,7 @@ const handleExecutePlan = async () => {
   try {
     const res = await executeTriagePlan(planResult.value, false)
     executionResult.value = res
-    playerStore.showToast(`已完成 ${res.executed_count} 项物理整理`)
+    playerStore.showToast(t('physOrg.toastExecuted', { count: res.executed_count }))
     await Promise.all([
       mediaStore.loadCollections(),
       mediaStore.loadFeed(),
@@ -106,7 +108,7 @@ const handleExecutePlan = async () => {
       mediaStore.checkMaintenance()
     ])
   } catch (err) {
-    errorMsg.value = err.response?.data?.detail || err.message || '执行物理整理失败'
+    errorMsg.value = err.response?.data?.detail || err.message || t('physOrg.errExecuteFailed')
   } finally {
     executing.value = false
   }
@@ -131,11 +133,11 @@ const getActionBadgeClass = (actionType) => {
 
 const getActionTypeName = (actionType) => {
   switch (actionType) {
-    case 'rename_dir': return '目录改名'
-    case 'move_dir': return '目录迁移'
-    case 'set_mtime': return '日期对齐'
-    case 'create_dir': return '新建目录'
-    case 'move_file': return '文件归档'
+    case 'rename_dir': return t('physOrg.actRenameDir')
+    case 'move_dir': return t('physOrg.actMoveDir')
+    case 'set_mtime': return t('physOrg.actSetMtime')
+    case 'create_dir': return t('physOrg.actCreateDir')
+    case 'move_file': return t('physOrg.actMoveFile')
     default: return actionType
   }
 }
@@ -163,17 +165,17 @@ const getActionTypeName = (actionType) => {
         <div class="px-5 py-3.5 border-b border-white/5 flex items-center justify-between">
           <div
             class="flex items-center gap-2.5"
-            title="受控目录物理整理，自动同步数据库索引、标签关联与评分记录"
+            :title="t('physOrg.headerTip')"
           >
             <div class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-300">
               <FolderCog class="w-4 h-4" />
             </div>
-            <h3 class="text-sm font-semibold text-white">物理目录整理</h3>
+            <h3 class="text-sm font-semibold text-white">{{ t('physOrg.title') }}</h3>
           </div>
           <button
             @click="closeModal"
             class="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-            title="关闭"
+            :title="t('common.close')"
           >
             <X class="w-4 h-4" />
           </button>
@@ -182,11 +184,11 @@ const getActionTypeName = (actionType) => {
         <!-- Modal Body -->
         <div class="p-5 space-y-4 overflow-y-auto flex-grow text-xs">
           <!-- Target Scope Input -->
-          <div class="relative" title="仅整理此路径下的文件与子目录，其他目录绝不触碰">
+          <div class="relative" :title="t('physOrg.scopeTip')">
             <input
               v-model="folderPath"
               type="text"
-              placeholder="目标文件夹路径 (例如: /mnt/media/Unsorted)"
+              :placeholder="t('physOrg.folderPlaceholder')"
               class="w-full bg-black/30 border border-white/10 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 font-mono"
             />
             <FolderInput class="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
@@ -196,7 +198,7 @@ const getActionTypeName = (actionType) => {
           <div class="grid grid-cols-3 gap-2">
             <button
               @click="selectedRule = 'metadata_normalization_and_dates'"
-              title="按命名模版规范作品目录名，并将文件夹修改时间对齐至发布日期"
+              :title="t('physOrg.ruleDatesTip')"
               class="px-3 py-2 rounded-xl border text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
               :class="[
                 selectedRule === 'metadata_normalization_and_dates'
@@ -205,12 +207,12 @@ const getActionTypeName = (actionType) => {
               ]"
             >
               <Calendar class="w-3.5 h-3.5 shrink-0" />
-              <span class="truncate">命名与日期对齐</span>
+              <span class="truncate">{{ t('physOrg.ruleDates') }}</span>
             </button>
 
             <button
               @click="selectedRule = 'workflow_subfolder_isolation'"
-              title="将尚未附加字幕或待处理的作品集中移入指定子目录"
+              :title="t('physOrg.ruleWorkflowTip')"
               class="px-3 py-2 rounded-xl border text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
               :class="[
                 selectedRule === 'workflow_subfolder_isolation'
@@ -219,12 +221,12 @@ const getActionTypeName = (actionType) => {
               ]"
             >
               <FolderOutput class="w-3.5 h-3.5 shrink-0" />
-              <span class="truncate">待处理子目录分流</span>
+              <span class="truncate">{{ t('physOrg.ruleWorkflow') }}</span>
             </button>
 
             <button
               @click="selectedRule = 'custom_topology'"
-              title="根据文件通配符规则将散落文件归档至对应子目录"
+              :title="t('physOrg.ruleWildcardTip')"
               class="px-3 py-2 rounded-xl border text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
               :class="[
                 selectedRule === 'custom_topology'
@@ -233,7 +235,7 @@ const getActionTypeName = (actionType) => {
               ]"
             >
               <Layers class="w-3.5 h-3.5 shrink-0" />
-              <span class="truncate">通配符规则归档</span>
+              <span class="truncate">{{ t('physOrg.ruleWildcard') }}</span>
             </button>
           </div>
 
@@ -243,16 +245,16 @@ const getActionTypeName = (actionType) => {
               <div class="flex items-center gap-2">
                 <span
                   class="text-[11px] text-gray-400 shrink-0"
-                  title="支持变量：{title} (作品标题)、{code} (作品编号)"
+                  :title="t('physOrg.templateVarsTip')"
                 >
-                  命名模版
+                  {{ t('physOrg.templateLabel') }}
                 </span>
                 <input
                   v-model="renameTemplate"
                   type="text"
-                  title="支持变量：{title}、{code}（如：{title} 或 [{code}] {title}）"
+                  :title="t('physOrg.templateInputTip')"
                   class="flex-1 bg-black/30 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-amber-500/50"
-                  placeholder="例如: {title} 或 [{code}] {title}"
+                  :placeholder="t('physOrg.templatePlaceholder')"
                 />
               </div>
               <label class="flex items-center gap-2 text-xs text-gray-300 select-none cursor-pointer">
@@ -261,23 +263,23 @@ const getActionTypeName = (actionType) => {
                   v-model="updateMtime"
                   class="rounded bg-black/40 border-white/20 text-amber-500 focus:ring-0"
                 />
-                <span>将文件夹物理修改时间对齐至作品发布日期</span>
+                <span>{{ t('physOrg.alignMtimeCheckbox') }}</span>
               </label>
             </div>
 
             <div v-else-if="selectedRule === 'workflow_subfolder_isolation'" class="flex items-center gap-2">
-              <span class="text-[11px] text-gray-400 shrink-0">目标子目录</span>
+              <span class="text-[11px] text-gray-400 shrink-0">{{ t('physOrg.targetSubdirLabel') }}</span>
               <input
                 v-model="untranslatedFolder"
                 type="text"
                 class="flex-1 bg-black/30 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-purple-500/50"
-                placeholder="待整理"
+                :placeholder="t('physOrg.defaultUntranslated')"
               />
             </div>
 
             <div v-else-if="selectedRule === 'custom_topology'" class="space-y-1.5">
-              <span class="text-[11px] text-gray-400 block" title="JSON 格式：目标子目录 ➔ 通配符数组">
-                归档映射 (JSON)
+              <span class="text-[11px] text-gray-400 block" :title="t('physOrg.mappingJsonTip')">
+                {{ t('physOrg.mappingJsonLabel') }}
               </span>
               <textarea
                 v-model="customMappingStr"
@@ -298,18 +300,18 @@ const getActionTypeName = (actionType) => {
             <div class="flex items-center justify-between" :title="planResult.summary">
               <div class="flex items-center gap-1.5">
                 <FileCheck class="w-3.5 h-3.5 text-emerald-400" />
-                <span class="font-semibold text-gray-200">预演清单 ({{ planResult.total_actions }})</span>
+                <span class="font-semibold text-gray-200">{{ t('physOrg.previewListTitle', { count: planResult.total_actions }) }}</span>
               </div>
-              <span class="text-[11px] text-gray-500">执行后自动更新数据库索引</span>
+              <span class="text-[11px] text-gray-500">{{ t('physOrg.autoSyncNote') }}</span>
             </div>
 
             <div class="border border-white/10 rounded-xl overflow-hidden max-h-52 overflow-y-auto">
               <table class="w-full text-left text-[11px]">
                 <thead class="bg-white/5 border-b border-white/10 text-gray-400 font-medium">
                   <tr>
-                    <th class="py-2 px-3">动作</th>
-                    <th class="py-2 px-3">原项</th>
-                    <th class="py-2 px-3">目标变更</th>
+                    <th class="py-2 px-3">{{ t('physOrg.colAction') }}</th>
+                    <th class="py-2 px-3">{{ t('physOrg.colSource') }}</th>
+                    <th class="py-2 px-3">{{ t('physOrg.colTarget') }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5 font-mono">
@@ -345,13 +347,13 @@ const getActionTypeName = (actionType) => {
           <div v-if="executionResult" class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-between">
             <div class="flex items-center gap-2">
               <CheckCircle2 class="w-4 h-4 text-emerald-400" />
-              <span>已完成 {{ executionResult.executed_count }} 项物理操作</span>
+              <span>{{ t('physOrg.executedSuccess', { count: executionResult.executed_count }) }}</span>
             </div>
             <button
               @click="closeModal"
               class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all cursor-pointer"
             >
-              完成
+              {{ t('common.done') }}
             </button>
           </div>
         </div>
@@ -362,11 +364,11 @@ const getActionTypeName = (actionType) => {
             @click="handleGeneratePlan"
             :disabled="loadingPlan || executing || !folderPath.trim()"
             class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-medium transition-all disabled:opacity-40 text-xs cursor-pointer"
-            title="预演计算物理整理变更，不修改磁盘文件"
+            :title="t('physOrg.dryRunBtnTip')"
           >
             <RefreshCw v-if="loadingPlan" class="w-3.5 h-3.5 animate-spin" />
             <FileCheck v-else class="w-3.5 h-3.5 text-amber-400" />
-            <span>预演</span>
+            <span>{{ t('physOrg.dryRunBtn') }}</span>
           </button>
 
           <button
@@ -377,7 +379,7 @@ const getActionTypeName = (actionType) => {
           >
             <RefreshCw v-if="executing" class="w-3.5 h-3.5 animate-spin" />
             <Check v-else class="w-3.5 h-3.5" />
-            <span>确认执行</span>
+            <span>{{ t('physOrg.executeBtn') }}</span>
           </button>
         </div>
       </div>

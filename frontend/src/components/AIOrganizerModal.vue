@@ -71,7 +71,7 @@ const handleApplyPlan = async () => {
   errorMsg.value = ''
   try {
     const res = await applyAITriagePlan(folderPath.value.trim(), plan.value)
-    successMsg.value = `应用成功！已更新 ${res.collections_created} 个系列，${res.units_created} 个原子消费单元。`
+    successMsg.value = t('aiOrg.applySuccessMsg', { collections: res.collections_created, units: res.units_created })
     await Promise.all([
       mediaStore.loadCollections(),
       mediaStore.loadFeed(),
@@ -132,30 +132,30 @@ const handleClose = () => {
         <div class="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
           <div>
             <label class="block text-xs font-semibold text-gray-300 mb-1.5 flex items-center justify-between">
-              <span>待深度分析的文件夹绝对路径：</span>
+              <span>{{ t('aiOrg.folderPathLabel') }}</span>
               <button
                 @click="folderPath = './backend/sample_media/Project_Complex_A'"
                 class="text-[11px] text-purple-400 hover:underline"
               >
-                载入测试用复杂嵌套文件夹 (A/B & 跨层级Vlog)
+                {{ t('aiOrg.loadSampleFolderBtn') }}
               </button>
             </label>
             <input
               v-model="folderPath"
               type="text"
-              placeholder="例如: /path/to/media/Project_Complex_A 或 ./backend/sample_media/Project_Complex_A"
+              :placeholder="t('aiOrg.folderPathPlaceholder')"
               class="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 font-mono"
             />
           </div>
 
           <div>
             <label class="block text-xs font-semibold text-gray-300 mb-1.5">
-              补充指令 (可选，例如：“把嵌套的子工程 B 单独提取为独立系列”):
+              {{ t('aiOrg.customInstLabel') }}
             </label>
             <input
               v-model="customInstruction"
               type="text"
-              placeholder="给大模型的个性化指导（可留空，AI 会自动按最佳模式拆解）"
+              :placeholder="t('aiOrg.customInstPlaceholder')"
               class="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
             />
           </div>
@@ -163,7 +163,7 @@ const handleClose = () => {
           <div class="flex items-center justify-between pt-1">
             <div class="text-[11px] text-gray-400 flex items-center gap-1.5">
               <Sparkles class="w-3.5 h-3.5 text-pink-400" />
-              <span>由 grok-4.7 深度推理目录拓扑与语义关系</span>
+              <span>{{ t('aiOrg.modelNote') }}</span>
             </div>
 
             <button
@@ -173,7 +173,7 @@ const handleClose = () => {
             >
               <RefreshCw v-if="analyzing" class="w-4 h-4 animate-spin" />
               <Bot v-else class="w-4 h-4" />
-              <span>{{ analyzing ? 'AI 正在深度思考目录树拓扑...' : '召唤 AI 分析拓扑' }}</span>
+              <span>{{ analyzing ? t('aiOrg.analyzingBtn') : t('aiOrg.analyzeBtn') }}</span>
             </button>
           </div>
         </div>
@@ -202,7 +202,7 @@ const handleClose = () => {
           <div class="bg-purple-950/30 border border-purple-500/40 rounded-2xl p-4 space-y-1.5">
             <div class="flex items-center gap-2 text-xs font-bold text-purple-300 uppercase tracking-wider">
               <Sparkles class="w-4 h-4 text-pink-400" />
-              <span>AI 拓扑分析洞察与重组理由</span>
+              <span>{{ t('aiOrg.summaryTitle') }}</span>
             </div>
             <p class="text-xs text-gray-200 leading-relaxed">
               {{ plan.summary }}
@@ -212,8 +212,8 @@ const handleClose = () => {
           <!-- Suggested Collections & Bundles -->
           <div class="space-y-3">
             <div class="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center justify-between">
-              <span>规划系列与复合消费包 (共 {{ plan.collections?.length || 0 }} 个系列)：</span>
-              <span class="text-[11px] text-gray-500 font-normal">物理文件位置保持原位</span>
+              <span>{{ t('aiOrg.plannedCollectionsTitle', { count: plan.collections?.length || 0 }) }}</span>
+              <span class="text-[11px] text-gray-500 font-normal">{{ t('aiOrg.physicalUntouchedNote') }}</span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -233,11 +233,11 @@ const handleClose = () => {
                       v-if="col.folder_rel_path !== '.'"
                       class="text-[10px] bg-pink-500/20 text-pink-300 border border-pink-500/30 px-2 py-0.5 rounded-full font-medium"
                     >
-                      独立剥离子系列
+                      {{ t('aiOrg.extractedSubseriesBadge') }}
                     </span>
                   </div>
                   <div class="text-[11px] text-gray-400 mb-2 font-mono truncate">
-                    路径：{{ col.folder_rel_path }}
+                    {{ t('aiOrg.pathPrefix') }}{{ col.folder_rel_path }}
                   </div>
                   <p v-if="col.description" class="text-xs text-gray-300 mb-3 bg-black/20 p-2 rounded-lg">
                     {{ col.description }}
@@ -270,7 +270,7 @@ const handleClose = () => {
 
                       <!-- Primary File -->
                       <div class="text-[11px] text-gray-400 font-mono truncate">
-                        主文件: {{ u.primary_file }}
+                        {{ t('aiOrg.primaryFilePrefix') }} {{ u.primary_file }}
                       </div>
 
                       <!-- Auxiliary files if bundle -->
@@ -302,7 +302,7 @@ const handleClose = () => {
           <div v-if="plan.recommended_supersets?.length > 0" class="bg-white/5 border border-white/5 rounded-2xl p-4">
             <div class="text-xs font-bold text-pink-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Sparkles class="w-3.5 h-3.5 text-pink-400" />
-              <span>推荐构建的虚拟超集 (Supersets)：</span>
+              <span>{{ t('aiOrg.recSupersetsTitle') }}</span>
             </div>
             <div class="flex flex-wrap gap-2">
               <div
@@ -321,7 +321,7 @@ const handleClose = () => {
       <!-- Modal Footer -->
       <div v-if="plan" class="px-6 py-4 border-t border-white/10 flex items-center justify-between bg-white/[0.02]">
         <div class="text-xs text-gray-400">
-          已规划 {{ plan.collections?.length || 0 }} 个系列，共归整 {{ plan.total_scanned_files }} 个物理文件
+          {{ t('aiOrg.footerSummary', { collections: plan.collections?.length || 0, files: plan.total_scanned_files }) }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -329,7 +329,7 @@ const handleClose = () => {
             @click="handleClose"
             class="px-4 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
           >
-            取消
+            {{ t('common.cancel') }}
           </button>
           <button
             @click="handleApplyPlan"
@@ -338,7 +338,7 @@ const handleClose = () => {
           >
             <CheckCircle2 v-if="!applying" class="w-4 h-4" />
             <RefreshCw v-else class="w-4 h-4 animate-spin" />
-            <span>{{ applying ? '正在写入数据库...' : '✨ 一键确认应用此方案' }}</span>
+            <span>{{ applying ? t('aiOrg.applyingBtn') : t('aiOrg.applyBtn') }}</span>
           </button>
         </div>
       </div>

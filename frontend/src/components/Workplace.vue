@@ -109,49 +109,49 @@ const isSyncing = ref(false)
 
 const handleSyncChanges = async () => {
   isSyncing.value = true
-  playerStore.showToast('正在检测并同步媒体库文件变更...')
+  playerStore.showToast(t('workplace.toastSyncing'))
   try {
     const res = await syncLibraryChanges()
     if (res.status === 'success') {
       const added = res.added_units || 0
       const pruned = res.pruned_units || 0
-      playerStore.showToast(`✨ 媒体库同步成功：+${added} 新作品，-${pruned} 已移除`)
+      playerStore.showToast(t('workplace.toastSyncSuccess', { added, pruned }))
       await Promise.all([
         mediaStore.loadWorkplaceItems(),
         mediaStore.loadCollections(),
         mediaStore.loadFeed()
       ])
     } else {
-      playerStore.showToast('❌ 同步失败：' + (res.message || '未知错误'))
+      playerStore.showToast(t('workplace.toastSyncFailed') + (res.message || t('workplace.unknownError')))
     }
   } catch (err) {
-    playerStore.showToast('❌ 同步请求异常：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastSyncError') + (err.response?.data?.detail || err.message))
   } finally {
     isSyncing.value = false
   }
 }
 
 const handleReindexAll = async () => {
-  if (!confirm('⚠️ 确认要清空数据库并重新全量扫描媒体库吗？\n所有磁盘物理文件保持完好，将重新建立全库索引与标签关系。')) {
+  if (!confirm(t('workplace.confirmReindex'))) {
     return
   }
   isSyncing.value = true
-  playerStore.showToast('正在重新全量扫描本地媒体库...')
+  playerStore.showToast(t('workplace.toastReindexing'))
   try {
     const res = await reindexLibrary()
     if (res.status === 'success') {
       const added = res.added_units || 0
-      playerStore.showToast(`🎉 全库重建完成：共采集入库 ${added} 项资产`)
+      playerStore.showToast(t('workplace.toastReindexSuccess', { added }))
       await Promise.all([
         mediaStore.loadWorkplaceItems(),
         mediaStore.loadCollections(),
         mediaStore.loadFeed()
       ])
     } else {
-      playerStore.showToast('❌ 重构失败：' + (res.message || '未知错误'))
+      playerStore.showToast(t('workplace.toastReindexFailed') + (res.message || t('workplace.unknownError')))
     }
   } catch (err) {
-    playerStore.showToast('❌ 重建请求异常：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastReindexError') + (err.response?.data?.detail || err.message))
   } finally {
     isSyncing.value = false
   }
@@ -230,7 +230,7 @@ const handleWorkplaceAppendRate = async (stars) => {
     }
   }
   await loadItemAlgorithmStats(selectedItem.value.id)
-  playerStore.showToast(`✨ 追加 ${stars} 星好评 (当前有效评分: ${Number(selectedItem.value.rating).toFixed(1)}★)`)
+  playerStore.showToast(t('workplace.toastRateSuccess', { stars, rating: Number(selectedItem.value.rating).toFixed(1) }))
 }
 
 watch(selectedItem, () => {
@@ -273,14 +273,15 @@ const handleQuickAssignSuggestion = async (suggested) => {
       is_primary_landing: isPrimary,
       confidence: suggested.confidence || 1.0,
     })
-    playerStore.showToast(`✨ 已一键打标: 「${suggested.tag_name || suggested.name}」${isPrimary ? ' (设为主落点)' : ''}`)
+    const tagName = tData(suggested.tag_name || suggested.name)
+    playerStore.showToast(`${t('workplace.toastQuickTagged', { name: tagName })}${isPrimary ? t('workplace.toastPrimaryLandingSuffix') : ''}`)
     await Promise.all([
       loadSelectedItemTags(),
       loadTagSuggestions(selectedItem.value.id),
       mediaStore.loadFacetSummary()
     ])
   } catch (err) {
-    playerStore.showToast('打标失败: ' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastTagFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
@@ -296,11 +297,11 @@ const handleNextUntaggedItem = () => {
     const hasTargetFacet = candidate.tags?.some(t => t.class_code === targetFacet)
     if (!hasTargetFacet) {
       selectedItem.value = candidate
-      playerStore.showToast(`➡️ 跳转至下一部待补「${targetFacet === 'creator' ? '创作者' : targetFacet}」作品`)
+      playerStore.showToast(t('workplace.toastNextUntagged', { facet: tFacet(targetFacet, targetFacet) }))
       return
     }
   }
-  playerStore.showToast('🎉 当前列表中所有作品均已补齐相关分类！')
+  playerStore.showToast(t('workplace.toastAllTagged'))
 }
 
 const handlePrevItem = () => {
@@ -351,7 +352,7 @@ const handleConfirmBatchTag = async () => {
       tag_id: batchSelectedTagId.value,
       is_primary_landing: batchIsPrimaryLanding.value,
     })
-    playerStore.showToast(`🎉 成功为 ${res.assigned_count} 部作品批量打标: 「${tag?.name || '标签'}」`)
+    playerStore.showToast(t('workplace.toastBatchTagSuccess', { count: res.assigned_count, name: tData(tag?.name || '') }))
     showBatchTagModal.value = false
     selectedIds.value = new Set()
     isBatchMode.value = false
@@ -360,7 +361,7 @@ const handleConfirmBatchTag = async () => {
       mediaStore.loadFacetSummary()
     ])
   } catch (err) {
-    playerStore.showToast('批量打标失败: ' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastBatchTagFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
@@ -394,9 +395,9 @@ const handleAssignTag = async (tag) => {
     tagSearchQuery.value = ''
     isAddingTag.value = false
     await loadSelectedItemTags()
-    playerStore.showToast(`已为作品关联标签: 「${tag.name}」`)
+    playerStore.showToast(t('workplace.toastTagLinked', { name: tData(tag.name) }))
   } catch (err) {
-    playerStore.showToast('关联标签失败: ' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastTagLinkFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
@@ -420,9 +421,9 @@ const handleCreateAndAssignTag = async () => {
     tagSearchQuery.value = ''
     isAddingTag.value = false
     await loadSelectedItemTags()
-    playerStore.showToast('打标成功！')
+    playerStore.showToast(t('workplace.toastTagCreatedSuccess'))
   } catch (err) {
-    playerStore.showToast('打标失败: ' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastTagFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
@@ -435,9 +436,9 @@ const handleTogglePrimaryLanding = async (tag) => {
       is_primary_landing: newStatus,
     })
     await loadSelectedItemTags()
-    playerStore.showToast(`已${newStatus ? '设为' : '取消'}物理落点锚点: 「${tag.name}」`)
+    playerStore.showToast(newStatus ? t('workplace.toastSetPrimaryLanding', { name: tData(tag.name) }) : t('workplace.toastUnsetPrimaryLanding', { name: tData(tag.name) }))
   } catch (err) {
-    playerStore.showToast('设置落点失败: ' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastSetLandingFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
@@ -446,9 +447,9 @@ const handleRemoveTag = async (tag) => {
   try {
     await removeTag(selectedItem.value.id, tag.tag_id)
     await loadSelectedItemTags()
-    playerStore.showToast(`已移除标签: 「${tag.name}」`)
+    playerStore.showToast(t('workplace.toastTagRemoved', { name: tData(tag.name) }))
   } catch (err) {
-    playerStore.showToast('移除标签失败: ' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastTagRemoveFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
@@ -470,7 +471,6 @@ const facetSummaryMap = computed(() => {
   return map
 })
 
-// 动态呈现待完善分面（仅筛选库内实际有打标数据且尚有部分缺失的活跃分面，优先呈现 is_required 必需分面）
 const vacuumFacets = computed(() => {
   if (!mediaStore.facetSummary) return []
   return [...mediaStore.facetSummary]
@@ -487,7 +487,6 @@ const totalUntaggedCount = computed(() => {
   return vacuumFacets.value[0]?.missing_units || 0
 })
 
-// 纯抽象数据驱动：动态呈现左侧虚拟透镜选项（支持全部 8 大正交分类维度）
 const projectableFacets = computed(() => {
   if (!mediaStore.facetSummary) return []
   const order = ['domain', 'character', 'interaction', 'spec', 'creator', 'va', 'workflow', 'media_kind']
@@ -502,10 +501,10 @@ const batchCategoryTabs = computed(() => {
   const dynamicTabs = projectableFacets.value
     .filter(f => f.code !== 'media_kind')
     .map(f => ({ code: f.code, label: tFacet(f.code, f.display_name) }))
-  return [...dynamicTabs, { code: '', label: locale.value === 'en' ? 'All Tags' : '全部标签' }]
+  return [...dynamicTabs, { code: '', label: t('workplace.allTagsTab') }]
 })
 
-const WORKPLACE_MEDIA_KIND_NAMES = new Set(['音频', '视频', '图片', '复合媒体'])
+const WORKPLACE_MEDIA_KIND_NAMES = new Set(['Audio', 'Video', 'Image', 'Bundle', '\u97f3\u9891', '\u89c6\u9891', '\u56fe\u7247', '\u590d\u5408\u5a92\u4f53'])
 
 const parentTagSetWorkplace = computed(() => {
   const s = new Set()
@@ -568,7 +567,7 @@ const currentLensContext = computed(() => {
     const f = mediaStore.facetSummary?.find(x => x.code === mediaStore.selectedMissingFacet)
     const facetName = tFacet(mediaStore.selectedMissingFacet, f ? f.display_name : mediaStore.selectedMissingFacet)
     return {
-      title: locale.value === 'en' ? `Missing "${facetName}"` : `未分类/缺失「${facetName}」`,
+      title: `${t('workplace.missingPrefix', { name: facetName })}`,
       is_unassigned: true,
       facet_code: mediaStore.selectedMissingFacet
     }
@@ -669,19 +668,20 @@ const handleEnqueueCollection = () => {
   const audioTracks = displayItems.value.filter(u => isAudioUnit(u))
   const toAdd = audioTracks.length > 0 ? audioTracks : displayItems.value
   playerStore.addMultipleToBgQueue(toAdd)
-  playerStore.showToast(`已将「${currentCollection.value?.name || '系列'}」共 ${toAdd.length} 首音轨加入背景队列`)
+  const colName = currentCollection.value?.name ? tData(currentCollection.value.name) : ''
+  playerStore.showToast(t('workplace.toastEnqueuedCollection', { name: colName, count: toAdd.length }))
 }
 
 const handleCreateSuperset = async () => {
   if (!newSupersetName.value.trim()) return
   try {
     const created = await createSuperset({ name: newSupersetName.value.trim() })
-    playerStore.showToast(`已成功创建虚拟超集「${created.name}」`)
+    playerStore.showToast(t('workplace.toastSupersetCreated', { name: tData(created.name) }))
     newSupersetName.value = ''
     showNewSupersetInput.value = false
     await mediaStore.loadSupersets()
   } catch (err) {
-    playerStore.showToast('创建超集失败：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastSupersetCreateFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
@@ -689,26 +689,26 @@ const handleAddToSuperset = async (supersetId) => {
   if (!selectedItem.value) return
   try {
     await addItemToSuperset(supersetId, selectedItem.value.id)
-    playerStore.showToast(`已成功将「${selectedItem.value.title}」加入超集！`)
+    playerStore.showToast(t('workplace.toastAddedToSuperset', { title: tData(selectedItem.value.title) }))
     await mediaStore.loadSupersets()
   } catch (err) {
-    playerStore.showToast('添加失败：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastAddSupersetFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
 const handleDeleteSuperset = async (sup, e) => {
   e?.stopPropagation()
-  if (!confirm(`确定删除虚拟超集「${sup.name}」吗？\n（物理文件不受任何影响）`)) return
+  if (!confirm(t('workplace.confirmDeleteSuperset', { name: tData(sup.name) }))) return
   try {
     await deleteSuperset(sup.id)
-    playerStore.showToast(`已删除虚拟超集「${sup.name}」`)
+    playerStore.showToast(t('workplace.toastSupersetDeleted', { name: tData(sup.name) }))
     if (mediaStore.selectedSupersetId === sup.id) {
       mediaStore.selectedSupersetId = null
       await mediaStore.loadWorkplaceItems()
     }
     await mediaStore.loadSupersets()
   } catch (err) {
-    playerStore.showToast('删除超集失败：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastSupersetDeleteFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
@@ -717,7 +717,7 @@ const handleRemoveFromCurrentSuperset = async (item, e) => {
   if (!mediaStore.selectedSupersetId) return
   try {
     await removeItemFromSuperset(mediaStore.selectedSupersetId, item.id)
-    playerStore.showToast(`已从当前超集移出「${item.title}」`)
+    playerStore.showToast(t('workplace.toastRemovedFromSuperset', { title: tData(item.title) }))
     await Promise.all([
       mediaStore.loadWorkplaceItems(),
       mediaStore.loadSupersets()
@@ -726,7 +726,7 @@ const handleRemoveFromCurrentSuperset = async (item, e) => {
       selectedItem.value = null
     }
   } catch (err) {
-    playerStore.showToast('移出失败：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastRemoveSupersetFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
@@ -792,13 +792,13 @@ const handleBatchAddToSuperset = async (superset) => {
   try {
     const ids = Array.from(selectedIds.value)
     await addItemsBatchToSuperset(superset.id, ids)
-    playerStore.showToast(`已将 ${ids.length} 项批量加入超集「${superset.name}」`)
+    playerStore.showToast(t('workplace.toastBatchAddedSuperset', { count: ids.length, name: tData(superset.name) }))
     await mediaStore.loadSupersets()
     showBatchSupersetModal.value = false
     selectedIds.value = new Set()
     isBatchMode.value = false
   } catch (err) {
-    playerStore.showToast('批量添加失败：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastBatchAddFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
@@ -808,14 +808,14 @@ const handleBatchCreateAndAddSuperset = async () => {
     const newSup = await createSuperset({ name: batchNewSupersetName.value.trim() })
     const ids = Array.from(selectedIds.value)
     await addItemsBatchToSuperset(newSup.id, ids)
-    playerStore.showToast(`已创建超集「${newSup.name}」并存入 ${ids.length} 项`)
+    playerStore.showToast(t('workplace.toastBatchCreatedSuperset', { name: tData(newSup.name), count: ids.length }))
     batchNewSupersetName.value = ''
     showBatchSupersetModal.value = false
     selectedIds.value = new Set()
     isBatchMode.value = false
     await mediaStore.loadSupersets()
   } catch (err) {
-    playerStore.showToast('创建超集失败：' + (err.response?.data?.detail || err.message))
+    playerStore.showToast(t('workplace.toastSupersetCreateFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
@@ -1199,7 +1199,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             <div class="flex items-center justify-between text-xs font-semibold text-gray-300 mb-2.5 px-1">
               <div class="flex items-center gap-2 min-w-0">
                 <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: mediaStore.lensTreeData?.color || '#a855f7' }" />
-                <span class="truncate font-semibold">{{ tFacet(mediaStore.activeLens, mediaStore.lensTreeData?.display_name || '透镜树') }}</span>
+                <span class="truncate font-semibold">{{ tFacet(mediaStore.activeLens, mediaStore.lensTreeData?.display_name || t('workplace.taxonomy')) }}</span>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
                 <span

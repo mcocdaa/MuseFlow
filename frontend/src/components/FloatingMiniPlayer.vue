@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { usePlayerStore } from '../stores/playerStore'
+import { t, tData } from '../i18n'
 import {
   Play,
   Pause,
@@ -176,7 +177,7 @@ const onEnded = () => {
 
 const onMediaError = (e) => {
   console.warn('Background media load error:', e)
-  playerStore.showToast('媒体存储读取超时或设备未就绪，已保留播放进度')
+  playerStore.showToast(t('mini.errMediaTimeout'))
 }
 
 const togglePlay = () => {
@@ -256,7 +257,7 @@ onUnmounted(() => {
       v-if="viewMode === 'disc'"
       @click="playerStore.setBgViewMode('mini')"
       class="fixed bottom-6 right-6 z-40 group cursor-pointer"
-      title="点击展开媒体悬浮小窗"
+      :title="t('mini.expandMiniTip')"
     >
       <!-- Pulsating Audio Glow Aura -->
       <div
@@ -329,8 +330,8 @@ onUnmounted(() => {
             class="w-2 h-2 rounded-full"
             :class="isPlaying ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'"
           />
-          <span class="text-[11px] font-medium text-white truncate" :title="currentUnit.title">
-            {{ currentUnit.title }}
+          <span class="text-[11px] font-medium text-white truncate" :title="tData(currentUnit.title)">
+            {{ tData(currentUnit.title) }}
           </span>
         </div>
 
@@ -341,7 +342,7 @@ onUnmounted(() => {
             @click.stop="showMiniQueue = !showMiniQueue"
             class="p-1 rounded transition-colors relative"
             :class="showMiniQueue ? 'text-purple-300 bg-purple-500/20' : 'text-gray-400 hover:text-white hover:bg-white/10'"
-            title="查看与编辑播放队列"
+            :title="t('mini.queueToggleTip')"
           >
             <ListMusic class="w-3.5 h-3.5" />
             <span
@@ -354,7 +355,7 @@ onUnmounted(() => {
           <button
             @click.stop="minimizeToDisc"
             class="p-1 text-gray-400 hover:text-white rounded hover:bg-white/10 transition-colors"
-            title="最小化为唱片挂件"
+            :title="t('mini.minToDiscTip')"
           >
             <Disc3 class="w-3.5 h-3.5 text-purple-400" />
           </button>
@@ -363,7 +364,7 @@ onUnmounted(() => {
           <button
             @click.stop="expandToFull"
             class="p-1 text-gray-400 hover:text-white rounded hover:bg-white/10 transition-colors"
-            title="最大化展开"
+            :title="t('mini.maxFullTip')"
           >
             <Maximize2 class="w-3.5 h-3.5" />
           </button>
@@ -372,7 +373,7 @@ onUnmounted(() => {
           <button
             @click.stop="playerStore.closeBgPlayer()"
             class="p-1 text-gray-400 hover:text-rose-400 rounded hover:bg-white/10 transition-colors"
-            title="关闭背景播放"
+            :title="t('mini.closeBgTip')"
           >
             <X class="w-3.5 h-3.5" />
           </button>
@@ -390,22 +391,22 @@ onUnmounted(() => {
           <div class="flex items-center justify-between pb-1.5 border-b border-white/10 text-[11px]">
             <div class="flex items-center gap-1.5">
               <ListMusic class="w-3 h-3 text-purple-400" />
-              <span class="font-medium text-white">队列 ({{ playerStore.bgQueue.length }})</span>
+              <span class="font-medium text-white">{{ t('mini.queueLabel', { count: playerStore.bgQueue.length }) }}</span>
             </div>
             <div class="flex items-center gap-1.5">
               <button
                 @click.stop="playerStore.openQueueDrawer()"
                 class="text-[10px] text-purple-300 hover:text-purple-200 px-1.5 py-0.5 rounded bg-purple-500/20 hover:bg-purple-500/30 transition-colors"
-                title="打开完整播放队列面板 (拖拽排序/另存超集)"
+                :title="t('mini.panelMgrTip')"
               >
-                面板管理
+                {{ t('mini.panelMgrBtn') }}
               </button>
               <button
                 @click.stop="playerStore.clearBgQueue()"
                 class="text-[10px] text-rose-400 hover:text-rose-300 px-1.5 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 transition-colors"
-                title="清空当前队列并退出播放"
+                :title="t('mini.clearQueueTip')"
               >
-                清空
+                {{ t('mini.clearBtn') }}
               </button>
               <button
                 @click.stop="showMiniQueue = false"
@@ -422,7 +423,7 @@ onUnmounted(() => {
               v-if="playerStore.bgQueue.length === 0"
               class="h-full flex items-center justify-center text-[11px] text-gray-500"
             >
-              队列为空
+              {{ t('mini.emptyQueue') }}
             </div>
             <div
               v-else
@@ -438,14 +439,14 @@ onUnmounted(() => {
             >
               <div class="flex items-center gap-1.5 truncate">
                 <span class="text-[10px] text-gray-500 font-mono w-3 shrink-0">{{ idx + 1 }}</span>
-                <span class="truncate text-[11px]" :title="unit.title">{{ unit.title }}</span>
+                <span class="truncate text-[11px]" :title="tData(unit.title)">{{ tData(unit.title) }}</span>
               </div>
               <div class="flex items-center gap-0.5 shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity">
                 <button
                   @click.stop="playerStore.moveBgQueueItem(idx, idx - 1)"
                   :disabled="idx === 0"
                   class="p-0.5 text-gray-400 hover:text-white rounded disabled:opacity-20"
-                  title="上移"
+                  :title="t('mini.moveUpTip')"
                 >
                   <ChevronUp class="w-3 h-3" />
                 </button>
@@ -453,14 +454,14 @@ onUnmounted(() => {
                   @click.stop="playerStore.moveBgQueueItem(idx, idx + 1)"
                   :disabled="idx === playerStore.bgQueue.length - 1"
                   class="p-0.5 text-gray-400 hover:text-white rounded disabled:opacity-20"
-                  title="下移"
+                  :title="t('mini.moveDownTip')"
                 >
                   <ChevronDown class="w-3 h-3" />
                 </button>
                 <button
                   @click.stop="playerStore.removeFromBgQueue(idx)"
                   class="p-0.5 text-gray-400 hover:text-rose-400 rounded"
-                  title="从队列中移除"
+                  :title="t('mini.removeFromQueueTip')"
                 >
                   <Trash2 class="w-3 h-3" />
                 </button>
@@ -517,7 +518,7 @@ onUnmounted(() => {
           <button
             @click.stop="playerStore.prevAudio()"
             class="p-2 text-gray-200 hover:text-white rounded-full bg-black/50 hover:bg-black/80 transition-transform active:scale-95"
-            title="上一首"
+            :title="t('mini.prevTip')"
           >
             <SkipBack class="w-4 h-4" />
           </button>
@@ -525,7 +526,7 @@ onUnmounted(() => {
             @click.stop="togglePlay"
             class="p-3 text-white rounded-full shadow-lg transition-transform active:scale-95"
             style="background-color: var(--accent-color);"
-            :title="isPlaying ? '暂停' : '播放'"
+            :title="isPlaying ? t('mini.pauseTip') : t('mini.playTip')"
           >
             <Pause v-if="isPlaying" class="w-4 h-4 fill-current" />
             <Play v-else class="w-4 h-4 ml-0.5 fill-current" />
@@ -533,7 +534,7 @@ onUnmounted(() => {
           <button
             @click.stop="playerStore.nextAudio()"
             class="p-2 text-gray-200 hover:text-white rounded-full bg-black/50 hover:bg-black/80 transition-transform active:scale-95"
-            title="下一首"
+            :title="t('mini.nextTip')"
           >
             <SkipForward class="w-4 h-4" />
           </button>
@@ -558,7 +559,7 @@ onUnmounted(() => {
           <button
             @click.stop="playerStore.toggleBgMute()"
             class="p-0.5 text-gray-400 hover:text-white transition-colors"
-            :title="playerStore.bgVolume === 0 ? '取消静音' : '静音'"
+            :title="playerStore.bgVolume === 0 ? t('mini.unmuteTip') : t('mini.muteTip')"
           >
             <VolumeX v-if="playerStore.bgVolume === 0" class="w-3 h-3 text-rose-400" />
             <Volume2 v-else class="w-3 h-3 text-gray-300" />
@@ -571,7 +572,7 @@ onUnmounted(() => {
             :value="playerStore.bgVolume"
             @input.stop="playerStore.setBgVolume($event.target.value)"
             class="w-12 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-purple-400"
-            title="音量调节"
+            :title="t('mini.volumeTip')"
           />
         </div>
       </div>
@@ -580,7 +581,7 @@ onUnmounted(() => {
       <div
         @mousedown.stop="startResize"
         class="absolute bottom-0 right-0 w-3.5 h-3.5 cursor-nwse-resize flex items-end justify-end p-0.5 z-20 group"
-        title="按住拖拽缩放小窗"
+        :title="t('mini.resizeTip')"
       >
         <div class="w-2 h-2 border-r-2 border-b-2 border-white/40 group-hover:border-white transition-colors" />
       </div>

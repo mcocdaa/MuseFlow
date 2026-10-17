@@ -43,16 +43,16 @@
               <button 
                 @click="openPresetsModal"
                 class="px-2 py-0.5 rounded-lg text-[10px] font-semibold text-purple-400 hover:text-white bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 transition-all flex items-center gap-0.5 cursor-pointer whitespace-nowrap"
-                title="加载领域预设体系 (HiFi音乐、播客、有声广播剧、摄影等)"
+                :title="t('tagMgr.presetsTip')"
               >
-                <span>⚡ 预设</span>
+                <span>{{ t('tagMgr.presets') }}</span>
               </button>
               <button 
                 @click="showCreateClassModal = true"
                 class="px-2 py-0.5 rounded-lg text-[10px] font-semibold text-blue-400 hover:text-white bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all flex items-center gap-0.5 cursor-pointer whitespace-nowrap"
-                title="创建全新的永久分类维度"
+                :title="t('tagMgr.newFacetTip')"
               >
-                <span>+ 新增</span>
+                <span>{{ t('tagMgr.newFacet') }}</span>
               </button>
             </div>
           </div>
@@ -69,8 +69,8 @@
             <div class="flex items-center gap-2 truncate">
               <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: tc.color || '#a855f7' }"></span>
               <span class="truncate">{{ tFacet(tc.code, tc.display_name) }}</span>
-              <span v-if="tc.code === 'media_kind'" class="text-[9px] text-blue-400 font-mono px-1 py-0.2 bg-blue-500/10 rounded" title="核心物理形态">物理</span>
-              <span v-else-if="tc.is_required" class="text-[9px] text-amber-400 font-bold" title="必要标签族">⭐</span>
+              <span v-if="tc.code === 'media_kind'" class="text-[9px] text-blue-400 font-mono px-1 py-0.2 bg-blue-500/10 rounded" :title="t('tagMgr.physicalTip')">{{ t('tagMgr.physicalBadge') }}</span>
+              <span v-else-if="tc.is_required" class="text-[9px] text-amber-400 font-bold" :title="t('tagMgr.requiredTip')">⭐</span>
             </div>
             <span class="text-[10px] font-mono opacity-60 bg-white/5 px-1.5 py-0.2 rounded-full">
               {{ getClassTagCount(tc.id) }}
@@ -85,10 +85,10 @@
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="flex flex-wrap items-center gap-2">
                 <span class="w-3 h-3 rounded-full shrink-0" :style="{ backgroundColor: currentClass?.color || '#a855f7' }"></span>
-                <span class="text-sm font-bold text-white">{{ currentClass?.display_name }}</span>
+                <span class="text-sm font-bold text-white">{{ currentClass ? tFacet(currentClass.code, currentClass.display_name) : '' }}</span>
                 <span class="text-xs font-mono text-gray-400">({{ currentClass?.code }})</span>
 
-                <!-- Toggle Required Facet (必需标签族) -->
+                <!-- Toggle Required Facet -->
                 <button
                   v-if="currentClass && currentClass.code !== 'media_kind'"
                   @click="handleToggleRequired(currentClass)"
@@ -96,12 +96,12 @@
                   :class="currentClass.is_required 
                     ? 'bg-amber-500/25 border-amber-500/50 text-amber-200' 
                     : 'bg-white/5 border-white/10 text-gray-400 hover:text-gray-200 hover:bg-white/10'"
-                  title="点击切换：是否为全库资产的必要标签族（缺少即触发待整理与补标提示）"
+                  :title="t('tagMgr.toggleRequiredTip')"
                 >
-                  <span>{{ currentClass.is_required ? '⭐ 必需标签族' : '☆ 可选分面' }}</span>
+                  <span>{{ currentClass.is_required ? t('tagMgr.requiredFacet') : t('tagMgr.optionalFacet') }}</span>
                 </button>
 
-                <!-- Toggle Projectable (物理投影) -->
+                <!-- Toggle Projectable -->
                 <button
                   v-if="currentClass"
                   @click="handleToggleProjectable(currentClass)"
@@ -109,9 +109,9 @@
                   :class="currentClass.is_projectable 
                     ? 'bg-blue-500/20 border-blue-500/40 text-blue-200' 
                     : 'bg-white/5 border-white/10 text-gray-500 hover:text-gray-300'"
-                  title="点击切换：是否可作为物理目录重组流水线的投影分层"
+                  :title="t('tagMgr.toggleProjectableTip')"
                 >
-                  <span>{{ currentClass.is_projectable ? '📁 支持投影' : '📄 仅虚拟' }}</span>
+                  <span>{{ currentClass.is_projectable ? t('tagMgr.projectable') : t('tagMgr.virtualOnly') }}</span>
                 </button>
               </div>
 
@@ -120,12 +120,12 @@
                 v-if="currentClass && currentClass.code !== 'media_kind' && currentClass.code !== 'workflow'"
                 @click="handleDeleteClass(currentClass)"
                 class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all border select-none cursor-pointer bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300"
-                title="删除此分类维度"
+                :title="t('tagMgr.deleteFacetTip')"
               >
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                <span>删除维度</span>
+                <span>{{ t('tagMgr.deleteFacet') }}</span>
               </button>
             </div>
 
@@ -134,7 +134,7 @@
               <input
                 v-model="newTagName"
                 type="text"
-                :placeholder="`在【${currentClass?.display_name || '维度'}】中新建标签...`"
+                :placeholder="t('tagMgr.newTagPlaceholder', { name: currentClass ? tFacet(currentClass.code, currentClass.display_name) : '' })"
                 class="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 flex-1 max-w-xs"
                 @keyup.enter="handleCreateTag"
               />
@@ -142,11 +142,11 @@
               <select
                 v-model="newTagParentId"
                 class="bg-white/5 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-gray-300 outline-none max-w-[150px]"
-                title="选择继承父标签 (可选)"
+                :title="t('tagMgr.selectParentTip')"
               >
-                <option :value="null">-- 作为顶级标签 (Root) --</option>
-                <option v-for="t in currentClassTags" :key="t.id" :value="t.id">
-                  继承: {{ t.name }}
+                <option :value="null">{{ t('tagMgr.asRootTag') }}</option>
+                <option v-for="tNode in currentClassTags" :key="tNode.id" :value="tNode.id">
+                  {{ t('tagMgr.inheritPrefix') }} {{ tData(tNode.name) }}
                 </option>
               </select>
 
@@ -155,7 +155,7 @@
                 :disabled="!newTagName.trim()"
                 class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white disabled:opacity-40 transition-colors cursor-pointer shrink-0"
               >
-                创建标签
+                {{ t('tagMgr.createTagBtn') }}
               </button>
             </div>
           </div>
@@ -163,11 +163,11 @@
           <!-- Tree View Area -->
           <div class="flex-1 rounded-xl border p-4 overflow-y-auto" style="background: var(--bg-surface); border-color: var(--border-color);">
             <div v-if="loading" class="text-center py-12 text-xs" style="color: var(--text-muted);">
-              加载标签拓扑中...
+              {{ t('tagMgr.loadingTree') }}
             </div>
 
             <div v-else-if="currentClassTree.length === 0" class="text-center py-12 text-xs" style="color: var(--text-muted);">
-              当前维度下暂无标签，请在上方输入框新建
+              {{ t('tagMgr.emptyTree') }}
             </div>
 
             <!-- Recursive Tree List -->
@@ -190,13 +190,13 @@
       <div class="px-6 py-3 border-t shrink-0 flex items-center justify-between text-xs" style="border-color: var(--border-color); color: var(--text-muted);">
         <div class="flex items-center gap-1.5">
           <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span>分类学提示：系统核心仅内置客观物理形态，所有业务分类均支持自由增删与预设载入。</span>
+          <span>{{ t('tagMgr.footerNote') }}</span>
         </div>
         <button
           @click="close"
           class="px-4 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white transition-colors cursor-pointer"
         >
-          完成并关闭
+          {{ t('tagMgr.doneAndClose') }}
         </button>
       </div>
 
@@ -211,7 +211,7 @@
         >
           <div class="flex items-center justify-between border-b pb-3" style="border-color: var(--border-color);">
             <div class="flex items-center gap-2">
-              <span class="text-base font-bold text-white">✨ 新建永久分类维度</span>
+              <span class="text-base font-bold text-white">{{ t('tagMgr.createFacetTitle') }}</span>
             </div>
             <button @click="showCreateClassModal = false" class="text-gray-400 hover:text-white">
               ✕
@@ -220,28 +220,28 @@
 
           <div class="space-y-3 text-xs">
             <div>
-              <label class="block font-medium text-gray-300 mb-1">显示名称 (Display Name) *</label>
+              <label class="block font-medium text-gray-300 mb-1">{{ t('tagMgr.displayNameLabel') }}</label>
               <input 
                 v-model="newClassForm.display_name" 
                 type="text" 
-                placeholder="例如：所属项目、摄影机型、特邀嘉宾、主讲人..."
+                :placeholder="t('tagMgr.displayNamePlaceholder')"
                 class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
               />
             </div>
 
             <div>
-              <label class="block font-medium text-gray-300 mb-1">英文标识 (Code) *</label>
+              <label class="block font-medium text-gray-300 mb-1">{{ t('tagMgr.codeLabel') }}</label>
               <input 
                 v-model="newClassForm.code" 
                 type="text" 
-                placeholder="例如：project, camera, guest, instructor..."
+                :placeholder="t('tagMgr.codePlaceholder')"
                 class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white font-mono placeholder-gray-500 focus:outline-none focus:border-purple-500"
               />
-              <span class="text-[10px] text-gray-500">用于 API、投影路径及内部唯一引用，仅限小写英文与下划线</span>
+              <span class="text-[10px] text-gray-500">{{ t('tagMgr.codeHint') }}</span>
             </div>
 
             <div>
-              <label class="block font-medium text-gray-300 mb-1">主题色彩 (Color)</label>
+              <label class="block font-medium text-gray-300 mb-1">{{ t('tagMgr.colorLabel') }}</label>
               <div class="flex items-center gap-2">
                 <button
                   v-for="c in presetColors"
@@ -257,21 +257,21 @@
             <div class="space-y-2 pt-2 border-t border-white/5">
               <label class="flex items-center gap-2 text-gray-300 cursor-pointer">
                 <input type="checkbox" v-model="newClassForm.is_projectable" class="rounded text-purple-600" />
-                <span>支持物理目录重组投影 (可在整理流水线中作为文件夹层级)</span>
+                <span>{{ t('tagMgr.projectableCheckbox') }}</span>
               </label>
 
               <label class="flex items-center gap-2 text-gray-300 cursor-pointer">
                 <input type="checkbox" v-model="newClassForm.is_required" class="rounded text-purple-600" />
-                <span>标记为全库必需标签族 (若资产缺少则给出补标预警)</span>
+                <span>{{ t('tagMgr.requiredCheckbox') }}</span>
               </label>
             </div>
 
             <div>
-              <label class="block font-medium text-gray-300 mb-1">语义说明 (可选)</label>
+              <label class="block font-medium text-gray-300 mb-1">{{ t('tagMgr.descLabel') }}</label>
               <input 
                 v-model="newClassForm.description" 
                 type="text" 
-                placeholder="例如：记录作品所属的商业客户或平面设计项目"
+                :placeholder="t('tagMgr.descPlaceholder')"
                 class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
               />
             </div>
@@ -282,14 +282,14 @@
               @click="showCreateClassModal = false"
               class="px-4 py-2 rounded-xl text-xs text-gray-400 hover:text-white bg-white/5 transition-colors cursor-pointer"
             >
-              取消
+              {{ t('common.cancel') }}
             </button>
             <button 
               @click="handleCreateClass"
               :disabled="!newClassForm.display_name.trim() || !newClassForm.code.trim()"
               class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 disabled:opacity-40 transition-colors cursor-pointer shadow-lg"
             >
-              创建并应用
+              {{ t('tagMgr.createAndApply') }}
             </button>
           </div>
         </div>
@@ -307,10 +307,10 @@
           <div class="flex items-center justify-between border-b pb-3 shrink-0" style="border-color: var(--border-color);">
             <div>
               <h4 class="text-base font-bold text-white flex items-center gap-2">
-                <span>⚡ 领域分类体系预设库</span>
+                <span>{{ t('tagMgr.presetsModalTitle') }}</span>
               </h4>
               <p class="text-xs text-gray-400">
-                针对不同媒体资产库类型，一键载入行业推荐分类元类族（幂等安全加载，绝不损坏现有数据）
+                {{ t('tagMgr.presetsModalDesc') }}
               </p>
             </div>
             <button @click="showPresetsModal = false" class="text-gray-400 hover:text-white">
@@ -327,10 +327,10 @@
             >
               <div class="space-y-1.5 flex-1">
                 <div class="flex items-center gap-2">
-                  <span class="font-bold text-sm text-white">{{ p.name }}</span>
+                  <span class="font-bold text-sm text-white">{{ tData(p.name) }}</span>
                   <span class="font-mono text-[10px] text-gray-500">({{ p.id }})</span>
                 </div>
-                <p class="text-xs text-gray-400">{{ p.description }}</p>
+                <p class="text-xs text-gray-400">{{ tData(p.description) }}</p>
 
                 <!-- TagClass chips inside preset -->
                 <div class="flex flex-wrap items-center gap-1.5 pt-1">
@@ -340,7 +340,7 @@
                     class="px-2 py-0.5 rounded-md text-[10px] font-medium border flex items-center gap-1"
                     :style="{ backgroundColor: `${c.color}15`, borderColor: `${c.color}40`, color: c.color }"
                   >
-                    <span>{{ c.display_name }}</span>
+                    <span>{{ tFacet(c.code, c.display_name) }}</span>
                     <span class="opacity-60 font-mono text-[9px]">({{ c.code }})</span>
                   </span>
                 </div>
@@ -351,7 +351,7 @@
                 :disabled="applyingPreset"
                 class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 disabled:opacity-50 transition-all shrink-0 cursor-pointer shadow-md"
               >
-                {{ isPresetFullyLoaded(p) ? '✓ 已包含' : '一键载入' }}
+                {{ isPresetFullyLoaded(p) ? t('tagMgr.presetLoaded') : t('tagMgr.presetLoadBtn') }}
               </button>
             </div>
           </div>
@@ -361,7 +361,7 @@
               @click="showPresetsModal = false"
               class="px-4 py-1.5 rounded-xl text-xs text-white bg-white/10 hover:bg-white/15 transition-colors cursor-pointer"
             >
-              关闭
+              {{ t('common.close') }}
             </button>
           </div>
         </div>
@@ -387,7 +387,7 @@ import {
   deleteTagApi
 } from '../api'
 import { useMediaStore } from '../stores/mediaStore'
-import { t, tFacet } from '../i18n'
+import { t, tData, tFacet } from '../i18n'
 
 const mediaStore = useMediaStore()
 
@@ -552,18 +552,19 @@ const handleCreateClass = async () => {
     await mediaStore.loadFacetSummary()
     emit('changed')
   } catch (err) {
-    alert('创建分类维度失败：' + (err.response?.data?.detail || err.message))
+    alert(t('tagMgr.createFacetFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
 const handleDeleteClass = async (tc) => {
   if (!tc) return
+  const name = tFacet(tc.code, tc.display_name)
   if (tc.code === 'media_kind' || tc.code === 'workflow') {
-    alert(`【${tc.display_name}】为系统底层核心不变量，禁止删除。`)
+    alert(`${name}: ${t('tagMgr.coreInvariantError')}`)
     return
   }
 
-  if (!confirm(`确定删除分类维度【${tc.display_name}】(${tc.code}) 吗？`)) return
+  if (!confirm(`${t('tagMgr.confirmDeleteFacet')} "${name}" (${tc.code})?`)) return
 
   try {
     await deleteTagClass(tc.id, false)
@@ -575,7 +576,7 @@ const handleDeleteClass = async (tc) => {
     emit('changed')
   } catch (err) {
     const detail = err.response?.data?.detail || err.message
-    if (confirm(`${detail}\n\n是否确认强制级联删除并解除所有资产关联？`)) {
+    if (confirm(`${detail}\n\n${t('tagMgr.confirmForceDeleteFacet')}`)) {
       try {
         await deleteTagClass(tc.id, true)
         await loadData()
@@ -585,7 +586,7 @@ const handleDeleteClass = async (tc) => {
         await mediaStore.loadFacetSummary()
         emit('changed')
       } catch (e2) {
-        alert('强制删除失败：' + (e2.response?.data?.detail || e2.message))
+        alert(t('tagMgr.forceDeleteFailed') + (e2.response?.data?.detail || e2.message))
       }
     }
   }
@@ -614,7 +615,7 @@ const handleApplyPreset = async (presetId) => {
     await mediaStore.loadFacetSummary()
     emit('changed')
   } catch (err) {
-    alert('载入预设失败：' + (err.response?.data?.detail || err.message))
+    alert(t('tagMgr.loadPresetFailed') + (err.response?.data?.detail || err.message))
   } finally {
     applyingPreset.value = false
   }
@@ -633,7 +634,7 @@ const handleCreateTag = async () => {
     await loadData()
     emit('changed')
   } catch (err) {
-    alert('创建标签失败：' + (err.response?.data?.detail || err.message))
+    alert(t('tagMgr.createTagFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
@@ -643,18 +644,18 @@ const handleReparent = async ({ tagId, newParentId }) => {
     await loadData()
     emit('changed')
   } catch (err) {
-    alert('调整继承关系失败：' + (err.response?.data?.detail || err.message))
+    alert(t('tagMgr.reparentFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
 const handleDelete = async (tagId) => {
-  if (!confirm('确定删除此标签吗？\n（已挂载该标签的资产会自动解绑，其子标签会自动挂载到上一级）')) return
+  if (!confirm(t('tagMgr.confirmDeleteTag'))) return
   try {
     await deleteTagApi(tagId)
     await loadData()
     emit('changed')
   } catch (err) {
-    alert('删除标签失败：' + (err.response?.data?.detail || err.message))
+    alert(t('tagMgr.deleteTagFailed') + (err.response?.data?.detail || err.message))
   }
 }
 
@@ -694,12 +695,12 @@ const TagTreeNode = defineComponent({
           // Left: Icon + Tree branches indicator + Unit count
           h('div', { class: 'flex items-center gap-2 truncate flex-grow mr-2' }, [
             lvl > 0 ? h('span', { class: 'text-gray-600 font-mono select-none' }, '└── ') : null,
-            h('span', { class: 'font-semibold text-white truncate' }, n.name),
+            h('span', { class: 'font-semibold text-white truncate' }, tData(n.name)),
             n.aliases && n.aliases.length > 0 ? h('span', {
               class: 'text-[10px] text-amber-300/80 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded font-mono truncate max-w-[160px]',
-              title: `同义词/别名: ${n.aliases.join(', ')}`
+              title: `${t('tagMgr.aliasTooltipPrefix')} ${n.aliases.join(', ')}`
             }, `≈ ${n.aliases.join(', ')}`) : null,
-            h('span', { class: 'text-[10px] font-mono text-gray-500 bg-white/5 px-1.5 py-0.2 rounded-full shrink-0' }, `${n.unit_count || 0} 部资产`)
+            h('span', { class: 'text-[10px] font-mono text-gray-500 bg-white/5 px-1.5 py-0.2 rounded-full shrink-0' }, `${n.unit_count || 0} ${t('tagMgr.assetsCountSuffix')}`)
           ]),
 
           // Right: Actions (Change Parent, Delete)
@@ -713,28 +714,28 @@ const TagTreeNode = defineComponent({
                     },
                     class: 'bg-transparent text-[11px] text-white outline-none max-w-[120px]'
                   }, [
-                    h('option', { value: '' }, '-- 设为根类 --'),
-                    candidateParents.value.map(p => h('option', { value: p.id }, p.name))
+                    h('option', { value: '' }, t('tagMgr.setRootOption')),
+                    candidateParents.value.map(p => h('option', { value: p.id }, tData(p.name)))
                   ]),
                   h('button', {
                     onClick: applyParentChange,
                     class: 'text-[10px] bg-purple-600 text-white px-1.5 py-0.5 rounded cursor-pointer'
-                  }, '确定'),
+                  }, t('common.confirm')),
                   h('button', {
                     onClick: () => { isEditingParent.value = false },
                     class: 'text-[10px] text-gray-400 hover:text-white px-1 cursor-pointer'
-                  }, '取消')
+                  }, t('common.cancel'))
                 ])
               : h('button', {
                   onClick: () => { isEditingParent.value = true; selectedParent.value = n.parent_id },
                   class: 'text-[11px] text-purple-300 hover:text-white px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 transition-colors cursor-pointer',
-                  title: '更改此标签的父级继承关系'
-                }, '调整父级'),
+                  title: t('tagMgr.changeParentTip')
+                }, t('tagMgr.changeParentBtn')),
 
             h('button', {
               onClick: () => emit('delete', n.id),
               class: 'text-gray-500 hover:text-red-400 p-1 rounded hover:bg-red-500/10 transition-colors cursor-pointer',
-              title: '删除此标签'
+              title: t('tagMgr.deleteTagTip')
             }, [
               h('svg', { class: 'w-3.5 h-3.5', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
                 h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16' })

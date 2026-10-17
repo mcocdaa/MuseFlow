@@ -2,6 +2,7 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { usePlayerStore } from '../stores/playerStore'
 import { useMediaStore } from '../stores/mediaStore'
+import { t, tData } from '../i18n'
 import {
   ListMusic,
   Play,
@@ -88,7 +89,7 @@ const playItem = (unit) => {
 
 const handleClearQueue = () => {
   if (queue.value.length === 0) return
-  if (confirm('确定清空当前背景播放队列吗？播放将随之停止。')) {
+  if (confirm(t('bgQueue.confirmClear'))) {
     playerStore.clearBgQueue()
   }
 }
@@ -150,10 +151,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                 <ListMusic class="w-4 h-4" />
               </div>
               <div>
-                <h3 class="text-sm font-semibold text-white tracking-wide">背景播放队列</h3>
+                <h3 class="text-sm font-semibold text-white tracking-wide">{{ t('bgQueue.title') }}</h3>
                 <p class="text-[11px] text-gray-400 font-mono">
-                  共 {{ queue.length }} 项
-                  <span v-if="currentUnit">· 正在播放第 {{ playerStore.bgQueueIndex + 1 }} 项</span>
+                  {{ t('bgQueue.totalItems', { count: queue.length }) }}
+                  <span v-if="currentUnit">{{ t('bgQueue.playingIdx', { current: playerStore.bgQueueIndex + 1 }) }}</span>
                 </p>
               </div>
             </div>
@@ -165,7 +166,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                 v-if="currentUnit || isPlaying"
                 @click="handleExitPlayback"
                 class="p-1.5 text-gray-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors"
-                title="停止并退出背景播放"
+                :title="t('bgQueue.stopExitTip')"
               >
                 <Power class="w-4 h-4" />
               </button>
@@ -174,7 +175,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
               <button
                 @click="close"
                 class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                title="关闭面板 (Esc)"
+                :title="t('bgQueue.closeTip')"
               >
                 <X class="w-4 h-4" />
               </button>
@@ -188,10 +189,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
               @click="showSaveSupersetInput = !showSaveSupersetInput"
               :disabled="queue.length === 0"
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium text-pink-200 bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/30 transition-all disabled:opacity-40 disabled:pointer-events-none active:scale-95"
-              title="将当前活跃队列另存为持久化虚拟超集"
+              :title="t('bgQueue.saveSupersetTip')"
             >
               <Sparkles class="w-3.5 h-3.5 text-pink-400" />
-              <span>另存为超集</span>
+              <span>{{ t('bgQueue.saveSupersetBtn') }}</span>
             </button>
 
             <!-- Clear Queue -->
@@ -199,10 +200,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
               @click="handleClearQueue"
               :disabled="queue.length === 0"
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-gray-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all disabled:opacity-40 disabled:pointer-events-none active:scale-95"
-              title="清空当前队列"
+              :title="t('bgQueue.clearQueueTip')"
             >
               <Trash2 class="w-3.5 h-3.5" />
-              <span>清空队列</span>
+              <span>{{ t('bgQueue.clearQueueBtn') }}</span>
             </button>
           </div>
 
@@ -212,14 +213,14 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
             class="m-4 p-3 rounded-2xl bg-pink-950/40 border border-pink-500/30 flex flex-col gap-2 transition-all"
           >
             <div class="text-[11px] font-medium text-pink-300 flex items-center justify-between">
-              <span>保存队列为虚拟超集</span>
-              <span class="text-gray-400 font-mono">{{ queue.length }}项</span>
+              <span>{{ t('bgQueue.saveDialogTitle') }}</span>
+              <span class="text-gray-400 font-mono">{{ t('bgQueue.itemsCount', { count: queue.length }) }}</span>
             </div>
             <div class="flex items-center gap-2">
               <input
                 v-model="supersetNameInput"
                 type="text"
-                placeholder="例如: 沉浸心流精选集..."
+                :placeholder="t('bgQueue.supersetPlaceholder')"
                 class="flex-grow bg-black/40 border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-pink-500"
                 @keyup.enter="handleSaveSuperset"
                 autofocus
@@ -228,13 +229,13 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                 @click="handleSaveSuperset"
                 class="px-3 py-1.5 bg-pink-600 hover:bg-pink-500 text-white rounded-xl text-xs font-medium transition-colors shrink-0"
               >
-                保存
+                {{ t('common.save') }}
               </button>
               <button
                 @click="showSaveSupersetInput = false"
                 class="px-2 py-1.5 text-gray-400 hover:text-white text-xs"
               >
-                取消
+                {{ t('common.cancel') }}
               </button>
             </div>
           </div>
@@ -247,9 +248,9 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
             <div class="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-3 text-purple-400">
               <ListMusic class="w-7 h-7" />
             </div>
-            <h4 class="text-sm font-medium text-gray-300 mb-1">播放队列为空</h4>
+            <h4 class="text-sm font-medium text-gray-300 mb-1">{{ t('bgQueue.emptyTitle') }}</h4>
             <p class="text-xs text-gray-500 max-w-xs leading-relaxed">
-              在沉浸流或工作台中，悬浮卡片点击「加入队列」或开启「批量模式」即可随时收录音乐与视频
+              {{ t('bgQueue.emptyDesc') }}
             </p>
           </div>
 
@@ -275,7 +276,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                 <!-- Drag Grip Icon -->
                 <GripVertical
                   class="w-3.5 h-3.5 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab shrink-0 -mr-1"
-                  title="按住拖拽调整顺序"
+                  :title="t('bgQueue.dragReorderTip')"
                 />
 
                 <!-- Index or Equalizer animation -->
@@ -309,11 +310,11 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
 
                 <!-- Title & Collection -->
                 <div class="truncate">
-                  <h4 class="text-xs font-medium truncate" :title="unit.title">
-                    {{ unit.title }}
+                  <h4 class="text-xs font-medium truncate" :title="tData(unit.title)">
+                    {{ tData(unit.title) }}
                   </h4>
                   <p class="text-[10px] text-gray-400 truncate mt-0.5">
-                    {{ unit.collection_name || '散落文件' }}
+                    {{ unit.collection_name ? tData(unit.collection_name) : t('bgQueue.looseFilesFallback') }}
                   </p>
                 </div>
               </div>
@@ -325,7 +326,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                   @click="moveUp($event, idx)"
                   :disabled="idx === 0"
                   class="p-1 text-gray-400 hover:text-white rounded hover:bg-white/10 transition-colors disabled:opacity-20"
-                  title="上移"
+                  :title="t('bgQueue.moveUpTip')"
                 >
                   <ChevronUp class="w-3.5 h-3.5" />
                 </button>
@@ -335,7 +336,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                   @click="moveDown($event, idx)"
                   :disabled="idx === queue.length - 1"
                   class="p-1 text-gray-400 hover:text-white rounded hover:bg-white/10 transition-colors disabled:opacity-20"
-                  title="下移"
+                  :title="t('bgQueue.moveDownTip')"
                 >
                   <ChevronDown class="w-3.5 h-3.5" />
                 </button>
@@ -344,7 +345,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                 <button
                   @click="removeItem($event, idx)"
                   class="p-1 text-gray-400 hover:text-rose-400 rounded hover:bg-rose-500/10 transition-colors ml-0.5"
-                  title="从队列中移除"
+                  :title="t('bgQueue.removeTip')"
                 >
                   <Trash2 class="w-3.5 h-3.5" />
                 </button>
@@ -360,8 +361,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
             <!-- Current Track Info Strip -->
             <div class="flex items-center justify-between text-xs">
               <div class="truncate pr-2">
-                <span class="text-gray-400 text-[11px]">正在播放: </span>
-                <span class="font-medium text-white">{{ currentUnit.title }}</span>
+                <span class="text-gray-400 text-[11px]">{{ t('bgQueue.nowPlayingPrefix') }} </span>
+                <span class="font-medium text-white">{{ tData(currentUnit.title) }}</span>
               </div>
               <span class="text-[10px] text-purple-300 font-mono shrink-0 uppercase px-1.5 py-0.5 rounded bg-purple-500/20">
                 {{ currentUnit.unit_type }}
@@ -374,7 +375,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
               <button
                 @click="playerStore.toggleAudioPlayMode()"
                 class="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-white/10 transition-colors"
-                :title="`播放模式: ${playerStore.bgPlayMode === 'repeat' ? '单曲循环' : playerStore.bgPlayMode === 'shuffle' ? '随机播放' : '列表顺序'}`"
+                :title="`${t('bgQueue.playModePrefix')} ${playerStore.bgPlayMode === 'repeat' ? t('bgQueue.modeRepeat') : playerStore.bgPlayMode === 'shuffle' ? t('bgQueue.modeShuffle') : t('bgQueue.modeOrder')}`"
               >
                 <Repeat1 v-if="playerStore.bgPlayMode === 'repeat'" class="w-4 h-4 text-purple-400" />
                 <Shuffle v-else-if="playerStore.bgPlayMode === 'shuffle'" class="w-4 h-4 text-purple-400" />
@@ -386,7 +387,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                 <button
                   @click="playerStore.prevAudio()"
                   class="p-2 text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-all active:scale-95"
-                  title="上一首"
+                  :title="t('bgQueue.prevTip')"
                 >
                   <SkipBack class="w-4 h-4 fill-current" />
                 </button>
@@ -395,7 +396,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                   @click="playerStore.togglePlayAudio()"
                   class="w-10 h-10 rounded-full text-white flex items-center justify-center shadow-lg transition-transform active:scale-95"
                   style="background-color: var(--accent-color);"
-                  :title="isPlaying ? '暂停' : '播放'"
+                  :title="isPlaying ? t('bgQueue.pauseTip') : t('bgQueue.playTip')"
                 >
                   <Pause v-if="isPlaying" class="w-4 h-4 fill-current" />
                   <Play v-else class="w-4 h-4 ml-0.5 fill-current" />
@@ -404,7 +405,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                 <button
                   @click="playerStore.nextAudio()"
                   class="p-2 text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-all active:scale-95"
-                  title="下一首"
+                  :title="t('bgQueue.nextTip')"
                 >
                   <SkipForward class="w-4 h-4 fill-current" />
                 </button>
@@ -415,7 +416,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                 <button
                   @click="playerStore.toggleBgMute()"
                   class="p-1.5 text-gray-400 hover:text-white rounded-lg transition-colors"
-                  :title="playerStore.bgVolume === 0 ? '取消静音' : '静音'"
+                  :title="playerStore.bgVolume === 0 ? t('bgQueue.unmuteTip') : t('bgQueue.muteTip')"
                 >
                   <VolumeX v-if="playerStore.bgVolume === 0" class="w-4 h-4 text-rose-400" />
                   <Volume2 v-else class="w-4 h-4 text-gray-300" />
@@ -428,7 +429,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown))
                   :value="playerStore.bgVolume"
                   @input="playerStore.setBgVolume($event.target.value)"
                   class="w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-purple-400"
-                  title="音量调节"
+                  :title="t('bgQueue.volumeTip')"
                 />
               </div>
             </div>

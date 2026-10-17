@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
+import { t } from '../i18n'
 
 export const THEMES = [
   {
     id: 'cyber-dark',
-    name: '幻紫流光',
+    get name() { return t('theme.item.cyber-dark.name') },
     subname: 'Cyber Dark',
-    desc: '经典暗黑基调搭配霓光紫与极光靛',
+    get desc() { return t('theme.item.cyber-dark.desc') },
     accentColor: '#a855f7',
     bgColor: '#0f1117',
     surfaceColor: '#171923',
@@ -14,9 +15,9 @@ export const THEMES = [
   },
   {
     id: 'oled-black',
-    name: '黑曜深空',
+    get name() { return t('theme.item.oled-black.name') },
     subname: 'OLED Pure Black',
-    desc: '纯黑极致省电，影院级高对比视效',
+    get desc() { return t('theme.item.oled-black.desc') },
     accentColor: '#8b5cf6',
     bgColor: '#000000',
     surfaceColor: '#0a0a0c',
@@ -25,9 +26,9 @@ export const THEMES = [
   },
   {
     id: 'sakura-pink',
-    name: '粉黛微光',
+    get name() { return t('theme.item.sakura-pink.name') },
     subname: 'Sakura & Bilibili',
-    desc: '元气桃粉与玫瑰金，浪漫次元感',
+    get desc() { return t('theme.item.sakura-pink.desc') },
     accentColor: '#f43f5e',
     bgColor: '#130d16',
     surfaceColor: '#1c1322',
@@ -36,9 +37,9 @@ export const THEMES = [
   },
   {
     id: 'cyberpunk-neon',
-    name: '赛博电青',
+    get name() { return t('theme.item.cyberpunk-neon.name') },
     subname: 'Cyberpunk Neon',
-    desc: '冷冽深海蓝与高饱和电光青',
+    get desc() { return t('theme.item.cyberpunk-neon.desc') },
     accentColor: '#06b6d4',
     bgColor: '#081119',
     surfaceColor: '#0e1c28',
@@ -47,9 +48,9 @@ export const THEMES = [
   },
   {
     id: 'forest-emerald',
-    name: '苍翠松隐',
+    get name() { return t('theme.item.forest-emerald.name') },
     subname: 'Forest Emerald',
-    desc: '北欧森林静谧墨绿与薄荷青翠',
+    get desc() { return t('theme.item.forest-emerald.desc') },
     accentColor: '#10b981',
     bgColor: '#081410',
     surfaceColor: '#10221c',
@@ -58,9 +59,9 @@ export const THEMES = [
   },
   {
     id: 'sunset-amber',
-    name: '落日熔金',
+    get name() { return t('theme.item.sunset-amber.name') },
     subname: 'Sunset Amber',
-    desc: '暖调落日熔金与暖暮晚霞',
+    get desc() { return t('theme.item.sunset-amber.desc') },
     accentColor: '#f59e0b',
     bgColor: '#17110c',
     surfaceColor: '#241a14',
@@ -69,9 +70,9 @@ export const THEMES = [
   },
   {
     id: 'clean-light',
-    name: '摄影工坊',
+    get name() { return t('theme.item.clean-light.name') },
     subname: 'Studio Light',
-    desc: '极简柔光素白，自然通透白天模式',
+    get desc() { return t('theme.item.clean-light.desc') },
     accentColor: '#7c3aed',
     bgColor: '#f8fafc',
     surfaceColor: '#ffffff',

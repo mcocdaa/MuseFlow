@@ -2,6 +2,7 @@
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { usePlayerStore } from '../stores/playerStore'
 import { useMediaStore } from '../stores/mediaStore'
+import { t, tData } from '../i18n'
 import {
   Play,
   Pause,
@@ -124,7 +125,7 @@ const onEnded = () => {
 
 const onAudioError = (e) => {
   console.warn('Foreground audio load error:', e)
-  playerStore.showToast('音频读取超时或存储设备离线，请检查文件存储连接')
+  playerStore.showToast(t('audio.errLoadTimeout'))
 }
 
 const seek = (e) => {
@@ -253,20 +254,20 @@ const rateCurrent = async (stars) => {
     currentUnit.value.rating = updated.rating
   }
   const finalRating = Number(currentUnit.value.rating || stars).toFixed(1)
-  playerStore.showToast(`✨ 追加 ${stars} 星好评 (当前有效评分: ${finalRating}★)`)
+  playerStore.showToast(t('audio.toastRateSuccess', { stars, rating: finalRating }))
 }
 
 const toggleFavCurrent = () => {
   if (!currentUnit.value) return
   mediaStore.toggleFavorite(currentUnit.value.id)
   currentUnit.value.is_favorite = !currentUnit.value.is_favorite
-  playerStore.showToast(currentUnit.value.is_favorite ? '已加入喜爱收藏' : '已取消收藏')
+  playerStore.showToast(currentUnit.value.is_favorite ? t('audio.toastFavAdded') : t('audio.toastFavRemoved'))
 }
 
 const cooldownCurrent = async () => {
   if (!currentUnit.value) return
-  await mediaStore.addToCooldown(currentUnit.value.id, 14, '听腻了')
-  playerStore.showToast('已加入冷却池 (未来 14 天不再推荐)')
+  await mediaStore.addToCooldown(currentUnit.value.id, 14, t('audio.cooldownReason'))
+  playerStore.showToast(t('audio.toastCooldownAdded'))
 }
 </script>
 
@@ -324,17 +325,17 @@ const cooldownCurrent = async () => {
           <div>
             <div class="flex items-center gap-2">
               <span class="text-[10px] uppercase font-semibold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">
-                {{ isFg ? '系列内播放' : '背景伴奏流' }}
+                {{ isFg ? t('audio.seriesPlayback') : t('audio.bgStream') }}
               </span>
               <span v-if="playlist.length > 1" class="text-xs text-gray-400 font-mono">
-                第 {{ playlistIndex + 1 }} / {{ playlist.length }} 轨
+                {{ t('audio.trackIndicator', { current: playlistIndex + 1, total: playlist.length }) }}
               </span>
             </div>
             <h2 class="text-base font-semibold text-white tracking-wide truncate max-w-sm sm:max-w-md mt-0.5">
-              {{ currentUnit.title }}
+              {{ tData(currentUnit.title) }}
             </h2>
             <p class="text-xs text-gray-400">
-              {{ currentUnit.collection_name || 'MuseFlow 音频沉浸' }}
+              {{ currentUnit.collection_name ? tData(currentUnit.collection_name) : t('audio.defaultCollection') }}
             </p>
           </div>
         </div>
@@ -346,17 +347,17 @@ const cooldownCurrent = async () => {
             v-if="isFg"
             @click="transferToBg"
             class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-purple-300 hover:text-white rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 transition-all"
-            title="移入后台继续播放，释放主屏"
+            :title="t('audio.moveToBgTip')"
           >
             <Minimize2 class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">移入背景播放</span>
+            <span class="hidden sm:inline">{{ t('audio.moveToBgBtn') }}</span>
           </button>
 
           <!-- Close -->
           <button
             @click="close"
             class="p-2 text-gray-400 hover:text-white rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
-            title="关闭 (Esc)"
+            :title="t('audio.closeTip')"
           >
             <X class="w-4 h-4" />
           </button>
@@ -390,7 +391,7 @@ const cooldownCurrent = async () => {
             <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-white/40 shadow-inner flex items-center justify-center bg-purple-950">
               <img
                 :src="`/api/stream/thumbnail/${currentUnit.id}`"
-                :alt="currentUnit.title"
+                :alt="tData(currentUnit.title)"
                 class="w-full h-full object-cover"
                 @error="(e) => e.target.style.display = 'none'"
               />
@@ -430,7 +431,7 @@ const cooldownCurrent = async () => {
               {{ activeCueText }}
             </div>
             <div v-else class="text-xs text-gray-500 font-mono">
-              {{ subtitleFile ? '已挂载字幕 · 等待歌词对齐' : (isPlaying ? '高保真音频心流沉浸中' : '默认暂停 · 点击下方播放按钮开始') }}
+              {{ subtitleFile ? t('audio.subtitleReady') : (isPlaying ? t('audio.hifiImmersion') : t('audio.pausedHint')) }}
             </div>
           </Transition>
         </div>
@@ -462,7 +463,7 @@ const cooldownCurrent = async () => {
               @click="toggleFavCurrent"
               class="p-2 rounded-xl border transition-all cursor-pointer"
               :class="currentUnit.is_favorite ? 'text-rose-500 border-rose-500/40 bg-rose-500/10' : 'text-gray-400 hover:text-rose-400 border-white/10 bg-white/5'"
-              :title="currentUnit.is_favorite ? '已收藏' : '标记喜欢'"
+              :title="currentUnit.is_favorite ? t('audio.favoritedTip') : t('audio.markFavTip')"
             >
               <Heart :class="['w-4 h-4', currentUnit.is_favorite ? 'fill-current' : '']" />
             </button>
@@ -471,13 +472,13 @@ const cooldownCurrent = async () => {
             <button
               @click="rateCurrent(currentUnit.rating >= 5 ? 1 : Math.floor(currentUnit.rating) + 1)"
               class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-amber-400 transition-all cursor-pointer text-xs"
-              :title="currentUnit.rating > 0 ? `当前评分: ${Number(currentUnit.rating).toFixed(1)} 星 (点击追加)` : '点击评分 (1-5星)'"
+              :title="currentUnit.rating > 0 ? t('audio.rateCurrentTip', { rating: Number(currentUnit.rating).toFixed(1) }) : t('audio.rateEmptyTip')"
             >
               <Star class="w-3.5 h-3.5" :class="currentUnit.rating > 0 ? 'text-amber-400 fill-amber-400' : 'text-gray-400'" />
               <span v-if="currentUnit.rating > 0" class="font-mono text-amber-400 font-bold text-[11px]">
                 {{ Number(currentUnit.rating).toFixed(1) }}
               </span>
-              <span v-else class="text-[11px] text-gray-400">评分</span>
+              <span v-else class="text-[11px] text-gray-400">{{ t('audio.rateBtn') }}</span>
             </button>
           </div>
 
@@ -487,7 +488,7 @@ const cooldownCurrent = async () => {
               @click="isFg ? playerStore.prevFgAudio() : playerStore.prevAudio()"
               :disabled="playlist.length <= 1"
               class="p-2.5 text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-transform active:scale-90 disabled:opacity-30"
-              title="上一轨"
+              :title="t('audio.prevTrackTip')"
             >
               <SkipBack class="w-5 h-5 fill-current" />
             </button>
@@ -496,7 +497,7 @@ const cooldownCurrent = async () => {
               @click="togglePlay"
               class="w-14 h-14 rounded-full text-white flex items-center justify-center shadow-xl transform hover:scale-105 active:scale-95 transition-all"
               style="background-color: var(--accent-color);"
-              :title="isPlaying ? '暂停 (空格)' : '播放 (空格)'"
+              :title="isPlaying ? t('audio.pauseSpaceTip') : t('audio.playSpaceTip')"
             >
               <Pause v-if="isPlaying" class="w-6 h-6 fill-current" />
               <Play v-else class="w-6 h-6 ml-1 fill-current" />
@@ -506,7 +507,7 @@ const cooldownCurrent = async () => {
               @click="isFg ? playerStore.nextFgAudio() : playerStore.nextAudio()"
               :disabled="playlist.length <= 1"
               class="p-2.5 text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition-transform active:scale-90 disabled:opacity-30"
-              title="下一轨"
+              :title="t('audio.nextTrackTip')"
             >
               <SkipForward class="w-5 h-5 fill-current" />
             </button>
@@ -519,7 +520,7 @@ const cooldownCurrent = async () => {
               <button
                 @click="playerStore.toggleFgAudioMute()"
                 class="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-white/10 transition-colors"
-                title="静音切换"
+                :title="t('audio.muteToggleTip')"
               >
                 <VolumeX v-if="playerStore.fgAudioVolume === 0" class="w-4 h-4 text-rose-400" />
                 <Volume2 v-else class="w-4 h-4 text-gray-300" />
@@ -532,7 +533,7 @@ const cooldownCurrent = async () => {
                 :value="playerStore.fgAudioVolume"
                 @input="playerStore.setFgAudioVolume($event.target.value)"
                 class="w-16 sm:w-20 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-purple-400"
-                title="音量"
+                :title="t('audio.volumeTip')"
               />
             </div>
 
@@ -541,10 +542,10 @@ const cooldownCurrent = async () => {
               @click="playerStore.toggleFgAudioDrawer(); if (playerStore.fgAudioDrawerOpen) playerStore.galleryDrawerOpen = false"
               class="flex items-center gap-1.5 px-3 py-2 text-xs rounded-xl transition-all"
               :class="playerStore.fgAudioDrawerOpen ? 'bg-purple-600 text-white' : 'bg-white/10 text-gray-300 hover:bg-white/15'"
-              title="查看系列选集播放列表"
+              :title="t('audio.playlistDrawerTip')"
             >
               <ListMusic class="w-4 h-4" />
-              <span>选集 ({{ playlist.length }})</span>
+              <span>{{ t('audio.playlistBtn', { count: playlist.length }) }}</span>
             </button>
 
             <!-- Companion Gallery Drawer Toggle -->
@@ -553,10 +554,10 @@ const cooldownCurrent = async () => {
               @click="playerStore.galleryDrawerOpen = !playerStore.galleryDrawerOpen; if (playerStore.galleryDrawerOpen) playerStore.fgAudioDrawerOpen = false"
               class="flex items-center gap-1.5 px-3 py-2 text-xs rounded-xl transition-all"
               :class="playerStore.galleryDrawerOpen ? 'bg-amber-600 text-white' : 'bg-white/10 text-amber-300 hover:bg-white/15'"
-              title="查看作品附赠插画与画册"
+              :title="t('audio.galleryDrawerTip')"
             >
               <ImageIcon class="w-4 h-4" />
-              <span>插画 ({{ playerStore.companionGallery.length }})</span>
+              <span>{{ t('audio.galleryBtn', { count: playerStore.companionGallery.length }) }}</span>
             </button>
           </div>
         </div>
@@ -581,13 +582,13 @@ const cooldownCurrent = async () => {
             <div>
               <div class="flex items-center gap-2">
                 <ListMusic class="w-4 h-4 text-purple-400" />
-                <span class="text-sm font-semibold text-white">系列选集列表</span>
+                <span class="text-sm font-semibold text-white">{{ t('audio.playlistDrawerTitle') }}</span>
                 <span class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-purple-300 font-mono">
                   {{ playlist.length }}
                 </span>
               </div>
               <p class="text-[11px] text-gray-400 mt-1 truncate max-w-[240px]">
-                {{ currentUnit.collection_name || '当前系列' }}
+                {{ currentUnit.collection_name ? tData(currentUnit.collection_name) : t('audio.currentSeriesFallback') }}
               </p>
             </div>
             <button
@@ -603,10 +604,10 @@ const cooldownCurrent = async () => {
             <button
               @click="playerStore.addMultipleToBgQueue(playlist)"
               class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-purple-200 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 transition-all"
-              title="将整个系列的音轨全部追加到背景队列"
+              :title="t('audio.addAllToBgTip')"
             >
               <Plus class="w-3.5 h-3.5 text-purple-400" />
-              <span>全系列加入背景</span>
+              <span>{{ t('audio.addAllToBgBtn') }}</span>
             </button>
           </div>
 
@@ -627,8 +628,8 @@ const cooldownCurrent = async () => {
                 <span class="text-[11px] font-mono text-gray-500 w-5 text-center shrink-0">
                   {{ (idx + 1).toString().padStart(2, '0') }}
                 </span>
-                <span class="text-xs font-medium truncate" :title="unit.title">
-                  {{ unit.title }}
+                <span class="text-xs font-medium truncate" :title="tData(unit.title)">
+                  {{ tData(unit.title) }}
                 </span>
               </div>
 
@@ -664,9 +665,9 @@ const cooldownCurrent = async () => {
           <div class="flex items-center justify-between pb-3 border-b border-white/10">
             <div class="flex items-center gap-2">
               <ImageIcon class="w-4 h-4 text-amber-400" />
-              <span class="text-sm font-semibold text-white">附赠插画与画册</span>
+              <span class="text-sm font-semibold text-white">{{ t('audio.galleryDrawerTitle') }}</span>
               <span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono">
-                {{ playerStore.companionGallery.length }} 张
+                {{ playerStore.companionGallery.length }} {{ t('audio.galleryCountSuffix') }}
               </span>
             </div>
             <button
@@ -684,17 +685,17 @@ const cooldownCurrent = async () => {
               :key="imgUnit.track_key || imgUnit.file_id || `${imgUnit.id}_${imgIdx}`"
               @click="playerStore.openImage(imgUnit, playerStore.companionGallery, false)"
               class="group relative aspect-square rounded-xl overflow-hidden bg-black/40 border border-white/10 hover:border-amber-400/50 cursor-pointer transition-all hover:scale-105 shadow"
-              :title="imgUnit.title"
+              :title="tData(imgUnit.title)"
             >
               <img
                 :src="imgUnit.file_id ? `/api/stream/file_thumbnail/${imgUnit.file_id}` : `/api/stream/thumbnail/${imgUnit.id}`"
-                :alt="imgUnit.title"
+                :alt="tData(imgUnit.title)"
                 loading="lazy"
                 class="w-full h-full object-cover"
                 @error="(e) => e.target.style.display = 'none'"
               />
               <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
-                <span class="text-[10px] text-white truncate font-medium">{{ imgUnit.title }}</span>
+                <span class="text-[10px] text-white truncate font-medium">{{ tData(imgUnit.title) }}</span>
               </div>
             </div>
           </div>

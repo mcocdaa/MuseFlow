@@ -18,6 +18,7 @@ import {
   Disc3
 } from 'lucide-vue-next'
 import { revealInExplorer } from '../api'
+import { t, tData } from '../i18n'
 
 const playerStore = usePlayerStore()
 const audioRef = ref(null)
@@ -150,9 +151,9 @@ const closePlayer = () => {
           <Music class="w-6 h-6 text-purple-400 absolute pointer-events-none -z-0" />
         </div>
         <div class="truncate">
-          <div class="text-sm font-semibold text-white truncate">{{ currentUnit.title }}</div>
+          <div class="text-sm font-semibold text-white truncate">{{ tData(currentUnit.title) }}</div>
           <div class="text-xs text-gray-400 truncate flex items-center gap-1.5">
-            <span>{{ currentUnit.collection_name || '单曲欣赏' }}</span>
+            <span>{{ currentUnit.collection_name ? tData(currentUnit.collection_name) : t('audioBar.singleTrack') }}</span>
             <span v-if="playerStore.audioQueue.length > 1" class="text-[10px] text-purple-400 font-mono">
               ({{ playerStore.audioQueueIndex + 1 }}/{{ playerStore.audioQueue.length }})
             </span>
@@ -171,7 +172,7 @@ const closePlayer = () => {
               'p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs',
               playerStore.audioPlayMode !== 'order' ? 'text-purple-400 bg-purple-500/10' : 'text-gray-400 hover:text-white'
             ]"
-            :title="playerStore.audioPlayMode === 'repeat' ? '单曲循环' : playerStore.audioPlayMode === 'shuffle' ? '随机播放' : '列表顺序循环'"
+            :title="playerStore.audioPlayMode === 'repeat' ? t('audioBar.modeRepeat') : playerStore.audioPlayMode === 'shuffle' ? t('audioBar.modeShuffle') : t('audioBar.modeOrder')"
           >
             <Repeat1 v-if="playerStore.audioPlayMode === 'repeat'" class="w-4 h-4" />
             <Shuffle v-else-if="playerStore.audioPlayMode === 'shuffle'" class="w-4 h-4" />
@@ -182,7 +183,7 @@ const closePlayer = () => {
           <button
             @click="playerStore.prevAudio()"
             class="p-2 text-gray-300 hover:text-white transition-transform active:scale-95"
-            title="上一首"
+            :title="t('audioBar.prevTip')"
           >
             <SkipBack class="w-4 h-4" />
           </button>
@@ -200,7 +201,7 @@ const closePlayer = () => {
           <button
             @click="playerStore.nextAudio()"
             class="p-2 text-gray-300 hover:text-white transition-transform active:scale-95"
-            title="下一首"
+            :title="t('audioBar.nextTip')"
           >
             <SkipForward class="w-4 h-4" />
           </button>
@@ -210,7 +211,7 @@ const closePlayer = () => {
             <button
               @click="showTimerMenu = !showTimerMenu"
               :class="['p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs', playerStore.audioSleepTimerMinutes > 0 ? 'text-pink-400 bg-pink-500/10' : 'text-gray-400 hover:text-white']"
-              title="睡眠定时器"
+              :title="t('audioBar.sleepTimerTip')"
             >
               <Timer class="w-4 h-4" />
               <span v-if="playerStore.audioSleepTimerMinutes > 0" class="text-[10px]">{{ playerStore.audioSleepTimerMinutes }}m</span>
@@ -220,11 +221,11 @@ const closePlayer = () => {
               v-if="showTimerMenu"
               class="absolute bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 border border-white/10 rounded-xl p-2 shadow-2xl flex flex-col gap-1 w-28 text-xs z-50"
             >
-              <div class="text-[10px] text-gray-400 px-2 py-1 font-semibold border-b border-white/5">定时关闭</div>
-              <button @click="setSleep(0)" class="text-left px-2 py-1 rounded hover:bg-white/10 text-gray-300">关闭定时</button>
-              <button @click="setSleep(15)" class="text-left px-2 py-1 rounded hover:bg-white/10 text-gray-300">15 分钟</button>
-              <button @click="setSleep(30)" class="text-left px-2 py-1 rounded hover:bg-white/10 text-gray-300">30 分钟</button>
-              <button @click="setSleep(60)" class="text-left px-2 py-1 rounded hover:bg-white/10 text-gray-300">60 分钟</button>
+              <div class="text-[10px] text-gray-400 px-2 py-1 font-semibold border-b border-white/5">{{ t('audioBar.sleepTimerTitle') }}</div>
+              <button @click="setSleep(0)" class="text-left px-2 py-1 rounded hover:bg-white/10 text-gray-300">{{ t('audioBar.sleepOff') }}</button>
+              <button @click="setSleep(15)" class="text-left px-2 py-1 rounded hover:bg-white/10 text-gray-300">{{ t('audioBar.sleepMinutes', { m: 15 }) }}</button>
+              <button @click="setSleep(30)" class="text-left px-2 py-1 rounded hover:bg-white/10 text-gray-300">{{ t('audioBar.sleepMinutes', { m: 30 }) }}</button>
+              <button @click="setSleep(60)" class="text-left px-2 py-1 rounded hover:bg-white/10 text-gray-300">{{ t('audioBar.sleepMinutes', { m: 60 }) }}</button>
             </div>
           </div>
         </div>
@@ -248,7 +249,7 @@ const closePlayer = () => {
       <div class="flex items-center gap-3 justify-end w-full md:w-1/4">
         <!-- Volume Control Slider -->
         <div class="hidden sm:flex items-center gap-1.5 group">
-          <button @click="toggleMute" class="text-gray-400 hover:text-white p-1" title="静音切换">
+          <button @click="toggleMute" class="text-gray-400 hover:text-white p-1" :title="t('audioBar.muteTip')">
             <VolumeX v-if="playerStore.audioVolume === 0" class="w-4 h-4 text-rose-400" />
             <Volume2 v-else class="w-4 h-4" />
           </button>
@@ -260,7 +261,7 @@ const closePlayer = () => {
             :value="playerStore.audioVolume"
             @input="onVolumeChange"
             class="w-16 h-1 bg-white/15 rounded-lg appearance-none cursor-pointer accent-purple-400 group-hover:w-20 transition-all"
-            title="音量调节"
+            :title="t('audioBar.volumeTip')"
           />
         </div>
 
@@ -268,7 +269,7 @@ const closePlayer = () => {
         <button
           @click="playerStore.setBgViewMode('full')"
           class="p-2 text-purple-400 hover:text-purple-300 rounded-lg hover:bg-white/10"
-          title="展开沉浸黑胶唱片模式"
+          :title="t('audioBar.vinylModeTip')"
         >
           <Disc3 class="w-4 h-4" />
         </button>
@@ -276,7 +277,7 @@ const closePlayer = () => {
         <button
           @click="revealInExplorer({ unit_id: currentUnit.id })"
           class="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10"
-          title="在资源管理器中定位"
+          :title="t('audioBar.revealTip')"
         >
           <FolderOpen class="w-4 h-4 text-blue-400" />
         </button>
@@ -284,7 +285,7 @@ const closePlayer = () => {
         <button
           @click="closePlayer"
           class="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10"
-          title="关闭播放器"
+          :title="t('audioBar.closeTip')"
         >
           <X class="w-4 h-4" />
         </button>
