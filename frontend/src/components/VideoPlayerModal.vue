@@ -144,20 +144,50 @@ watch(() => playerStore.videoVolume, (vol) => {
   }
 })
 
+const syncSubtitleCue = () => {
+  if (!videoRef.value) return
+  const tracks = videoRef.value.textTracks
+  if (!tracks || tracks.length === 0) return
+  const track = tracks[0]
+  if (track.mode !== 'hidden') {
+    track.mode = 'hidden'
+  }
+  const t = videoRef.value.currentTime
+  if (track.activeCues && track.activeCues.length > 0) {
+    activeCueText.value = track.activeCues[0].text
+  } else if (track.cues && track.cues.length > 0) {
+    let matched = ''
+    for (let i = 0; i < track.cues.length; i++) {
+      const c = track.cues[i]
+      if (t >= c.startTime && t <= c.endTime) {
+        matched = c.text
+        break
+      }
+    }
+    activeCueText.value = matched
+  } else {
+    activeCueText.value = ''
+  }
+}
+
 // Subtitle cue detection
 const setupSubtitleTracking = () => {
   if (!videoRef.value) return
+  const tracks = videoRef.value.textTracks
+  if (tracks && tracks.length > 0) {
+    tracks[0].mode = 'hidden'
+    tracks[0].oncuechange = () => syncSubtitleCue()
+  }
   const trackEl = videoRef.value.querySelector('track')
-  if (!trackEl) return
-
-  trackEl.addEventListener('cuechange', (e) => {
-    const track = e.target.track
-    if (track && track.activeCues && track.activeCues.length > 0) {
-      activeCueText.value = track.activeCues[0].text
-    } else {
-      activeCueText.value = ''
-    }
-  })
+  if (trackEl) {
+    trackEl.addEventListener('load', () => {
+      if (trackEl.track) {
+        trackEl.track.mode = 'hidden'
+      }
+      syncSubtitleCue()
+    })
+  }
+  syncSubtitleCue()
 }
 
 // Subtitle drag handling
@@ -192,22 +222,26 @@ const onVideoError = (e) => {
   playerStore.showToast('视频加载失败：存储路径不可达或读取超时')
 }
 
-watch(currentUnit, (newVal, oldVal) => {
+watch([() => playerStore.videoModalOpen, currentUnit], ([isOpen, newVal], [, oldVal]) => {
   activeCueText.value = ''
-  if (videoRef.value) {
-    videoRef.value.currentTime = 0
-    syncVideoVolume()
-    if (oldVal) {
-      videoRef.value.play().catch(() => {})
-    }
-    setTimeout(setupSubtitleTracking, 300)
+  if (isOpen) {
+    setTimeout(() => {
+      if (videoRef.value) {
+        videoRef.value.currentTime = 0
+        syncVideoVolume()
+        if (oldVal && newVal?.id !== oldVal?.id) {
+          videoRef.value.play().catch(() => {})
+        }
+        setupSubtitleTracking()
+      }
+    }, 150)
   }
 })
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
   syncVideoVolume()
-  setTimeout(setupSubtitleTracking, 500)
+  setTimeout(setupSubtitleTracking, 300)
 })
 
 onUnmounted(() => {
@@ -418,17 +452,19 @@ const addToCooldown = async () => {
 
 
     <!-- Main Container -->
-    <div ref="containerRef" class="relative w-full h-full max-w-5xl max-h-[90vh] flex flex-col items-center justify-center p-4">
-      <!-- Video Element -->
-      <div class="relative w-full h-full flex items-center justify-center overflow-hidden rounded-2xl bg-black shadow-2xl">
+    <div ref="containerRef" class="relative w-full h-full max-w-5xl max-h-[90vh] flex flex-col items-center justify-center px-4 pr-16 md:pr-20 py-4">
+      <!-- 16:9 Video Stage -->
+      <div class="relative w-full max-w-4xl aspect-video flex items-center justify-center overflow-hidden rounded-2xl bg-black shadow-2xl border border-white/10">
         <video
           ref="videoRef"
           :src="videoStreamUrl"
           controls
           playsinline
-          class="max-w-full max-h-full object-contain"
-          @loadedmetadata="syncVideoVolume"
+          class="w-full h-full object-contain"
+          @loadedmetadata="() => { syncVideoVolume(); setupSubtitleTracking(); }"
           @play="syncVideoVolume"
+          @timeupdate="syncSubtitleCue"
+          @seeked="syncSubtitleCue"
           @ended="onVideoEnded"
           @error="onVideoError"
         >
@@ -443,12 +479,12 @@ const addToCooldown = async () => {
           />
         </video>
 
-        <!-- Custom Interactive Draggable Subtitle Display -->
+        <!-- Custom Interactive Draggable Subtitle Display (Cleanly above bottom controls bar) -->
         <div
           v-if="subtitleFile && activeCueText"
           @mousedown.prevent="startSubtitleDrag"
-          class="absolute inset-x-0 flex justify-center z-30 select-none cursor-ns-resize group/sub"
-          :style="{ bottom: `${playerStore.subtitleConfig.verticalPercent}%` }"
+          class="absolute inset-x-0 flex justify-center z-30 select-none cursor-ns-resize group/sub pointer-events-auto"
+          :style="{ bottom: `${Math.max(15, playerStore.subtitleConfig.verticalPercent)}%` }"
           title="按住鼠标上下拖拽调整字幕位置"
         >
           <div
@@ -466,42 +502,44 @@ const addToCooldown = async () => {
             {{ activeCueText }}
           </div>
         </div>
+      </div>
 
-        <!-- Video Info Overlay (Bottom Left) -->
-        <div class="absolute bottom-6 left-6 max-w-lg pointer-events-none drop-shadow-md">
-          <div class="flex items-center gap-2 mb-1.5">
+      <!-- Dedicated Video Info Footer Below Video Stage (Zero overlap with video controls) -->
+      <div class="w-full max-w-4xl mt-3 px-1 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <h2 class="text-base font-bold text-white truncate">
+            {{ currentUnit.title }}
+          </h2>
+          <div class="flex items-center gap-1.5 shrink-0">
             <span
               v-if="currentUnit.unit_type === 'bundle'"
-              class="flex items-center gap-1 bg-purple-600/90 text-white text-[11px] font-semibold px-2 py-0.5 rounded-md"
+              class="flex items-center gap-1 bg-purple-600/90 text-white text-[11px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap"
             >
               <Layers class="w-3 h-3" />
               <span>复合包</span>
             </span>
             <span
               v-if="subtitleFile"
-              class="flex items-center gap-1 bg-emerald-600/90 text-white text-[11px] font-semibold px-2 py-0.5 rounded-md"
+              class="flex items-center gap-1 bg-emerald-600/90 text-white text-[11px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap"
             >
               <Subtitles class="w-3 h-3" />
               <span>智能挂载字幕</span>
             </span>
-            <span class="text-xs text-gray-300 font-medium">
+            <span class="text-xs text-gray-400 font-medium whitespace-nowrap">
               {{ currentUnit.collection_name || '未归类' }}
             </span>
           </div>
-          <h2 class="text-lg font-bold text-white leading-tight">
-            {{ currentUnit.title }}
-          </h2>
         </div>
       </div>
 
-      <!-- TikTok-style Vertical Side Actions (Right Side) -->
-      <div class="absolute right-4 md:right-8 bottom-20 flex flex-col items-center gap-5 z-20">
-        <!-- Next Video button -->
+      <!-- TikTok-style Vertical Side Actions (Right Side, Vertically Centered) -->
+      <div class="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3.5 z-20">
+        <!-- Prev Video button -->
         <button
           @click="playerStore.prevVideo()"
           :disabled="playerStore.videoQueueIndex <= 0"
           :class="[
-            'p-3 rounded-full bg-white/10 text-white backdrop-blur-md transition-all',
+            'p-2.5 rounded-full bg-white/10 text-white backdrop-blur-md transition-all',
             playerStore.videoQueueIndex <= 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/20 active:scale-95'
           ]"
           title="上一个 (↑)"
@@ -513,7 +551,7 @@ const addToCooldown = async () => {
           @click="playerStore.nextVideo()"
           :disabled="playerStore.videoQueueIndex >= playerStore.videoQueue.length - 1"
           :class="[
-            'p-3 rounded-full bg-white/10 text-white backdrop-blur-md transition-all',
+            'p-2.5 rounded-full bg-white/10 text-white backdrop-blur-md transition-all',
             playerStore.videoQueueIndex >= playerStore.videoQueue.length - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/20 active:scale-95'
           ]"
           title="下一个 (↓)"
@@ -526,10 +564,10 @@ const addToCooldown = async () => {
           @click="toggleFavorite"
           class="flex flex-col items-center gap-1 text-white"
         >
-          <div class="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all active:scale-125">
+          <div class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all active:scale-125">
             <Heart
               :class="[
-                'w-6 h-6',
+                'w-5 h-5',
                 currentUnit.is_favorite ? 'text-rose-500 fill-rose-500' : 'text-white'
               ]"
             />
@@ -543,10 +581,10 @@ const addToCooldown = async () => {
           class="flex flex-col items-center gap-1 text-white cursor-pointer"
           :title="currentUnit.rating > 0 ? `当前有效评分: ${Number(currentUnit.rating).toFixed(1)} 星 (点击追加)` : '点击评分 (1-5星)'"
         >
-          <div class="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all active:scale-125">
+          <div class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all active:scale-125">
             <Star
               :class="[
-                'w-6 h-6',
+                'w-5 h-5',
                 currentUnit.rating > 0 ? 'text-amber-400 fill-amber-400' : 'text-white'
               ]"
             />
@@ -559,19 +597,19 @@ const addToCooldown = async () => {
         <!-- Open in Explorer -->
         <button
           @click="revealInExplorer({ unit_id: currentUnit.id })"
-          class="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all"
+          class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all"
           title="在资源管理器中定位"
         >
-          <FolderOpen class="w-5 h-5 text-blue-400" />
+          <FolderOpen class="w-4 h-4 text-blue-400" />
         </button>
 
         <!-- Open in Default App -->
         <button
           @click="openWithDefaultApp({ unit_id: currentUnit.id })"
-          class="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all"
+          class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all"
           title="系统默认播放器打开"
         >
-          <ExternalLink class="w-5 h-5 text-purple-400" />
+          <ExternalLink class="w-4 h-4 text-purple-400" />
         </button>
       </div>
     </div>
@@ -663,9 +701,17 @@ const addToCooldown = async () => {
 </template>
 
 <style scoped>
-/* Hide native default browser cue text so our custom draggable subtitle takes over cleanly */
+/* Hide native default browser cue text and native loading spinner so custom overlay renders cleanly */
 video::cue {
   display: none !important;
+  opacity: 0 !important;
   color: transparent !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+video::-webkit-media-controls-loading-panel,
+video::-webkit-media-controls-overlay-play-button {
+  display: none !important;
+  opacity: 0 !important;
 }
 </style>

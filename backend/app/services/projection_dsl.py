@@ -84,7 +84,7 @@ def extract_unit_context(session: Session, unit: AssetUnit) -> Dict[str, Any]:
             "rating": unit.rating,
         },
         "meta": dyn_attrs,
-        "tag": primary_landing_by_class or tag_by_class, # 优先使用落点锚点标签
+        "tag": {**tag_by_class, **primary_landing_by_class}, # 优先使用落点锚点标签
         "all_tags": all_tags,
         "collection": {
             "name": unit.collection.name if unit.collection else "未分系列"

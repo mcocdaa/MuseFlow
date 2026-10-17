@@ -48,24 +48,24 @@ def create_sample_image(
     font_badge = get_font(20)
 
     # Outer subtle frosted card outline
-    draw.rounded_rectangle([36, 36, 1244, 764], radius=24, outline=(255, 255, 255, 45), width=2)
+    draw.rounded_rectangle([48, 44, 1232, 756], radius=24, outline=(255, 255, 255, 45), width=2)
     
     # Elegant subtle decorative geometry in background (modern abstract circles)
     draw.ellipse([850, -50, 1350, 450], outline=(255, 255, 255, 30), width=2)
     draw.ellipse([920, 20, 1280, 380], outline=(255, 255, 255, 20), width=1)
 
-    # Technical badge (top right, subtle translucent dark glass)
-    draw.rounded_rectangle([1040, 60, 1210, 105], radius=12, fill=(0, 0, 0, 90), outline=(255, 255, 255, 45))
-    draw.text((1065, 72), "4K · HDR", fill=(240, 240, 255, 220), font=font_badge)
+    # Technical badge (top right inside safe zone)
+    draw.rounded_rectangle([960, 72, 1130, 116], radius=12, fill=(0, 0, 0, 90), outline=(255, 255, 255, 45))
+    draw.text((985, 83), "4K · HDR", fill=(240, 240, 255, 220), font=font_badge)
 
-    # Category chip (bottom left above title)
+    # Category chip & Title & Metadata in upper-middle safe zone (leaving bottom 45% clear for subtitles & player bar)
     chip_w = max(110, len(category) * 26 + 32)
-    draw.rounded_rectangle([64, 530, 64 + chip_w, 572], radius=10, fill=(255, 255, 255, 35), outline=(255, 255, 255, 55))
-    draw.text((80, 540), category, fill=(255, 255, 255, 240), font=font_badge)
+    draw.rounded_rectangle([140, 210, 140 + chip_w, 252], radius=10, fill=(255, 255, 255, 35), outline=(255, 255, 255, 55))
+    draw.text((156, 220), category, fill=(255, 255, 255, 240), font=font_badge)
 
     # Title & Metadata
-    draw.text((64, 600), title, fill=(255, 255, 255, 255), font=font_title)
-    draw.text((64, 675), meta_text, fill=(220, 225, 240, 210), font=font_sub)
+    draw.text((140, 276), title, fill=(255, 255, 255, 255), font=font_title)
+    draw.text((140, 348), meta_text, fill=(220, 225, 240, 210), font=font_sub)
 
     final_img = Image.alpha_composite(base, overlay).convert("RGB")
     final_img.save(path, quality=94)
@@ -90,7 +90,7 @@ def create_sample_video(
         "-i", str(temp_cover),
         "-f", "lavfi",
         "-i", f"sine=frequency=440:duration={duration}",
-        "-vf", "scale=1280:720,zoompan=z='min(zoom+0.0006,1.05)':d=125:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1280x720",
+        "-vf", "scale=1280:720,zoompan=z='min(zoom+0.0004,1.03)':d=125:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1280x720",
         "-c:v", "libx264", "-pix_fmt", "yuv420p",
         "-c:a", "aac",
         "-t", str(duration),
@@ -180,6 +180,14 @@ def generate_all():
     )
     create_sample_subtitles(vlog_dir / "tokyo_vlog.srt")
     create_sample_audio_with_cover(vlog_dir / "tokyo_vlog_bgm.wav", "秋叶原午夜漫游 BGM", "MuseFlow Beat", duration=6, freq=520)
+    create_sample_image(
+        vlog_dir / "cover.png",
+        "Tokyo Vlog Ep.01 · 漫步秋叶原",
+        "城市记录",
+        start_color=(30, 20, 80),
+        end_color=(150, 40, 160),
+        meta_text="Panasonic S5M2X · 4K 60P ProRes · V-Log"
+    )
 
     # 3. Standalone video (Shorts)
     create_sample_video(
@@ -242,7 +250,7 @@ def generate_all():
     create_sample_image(
         sub_b / "b2.png",
         "B子项目 · 空间材质贴图 02",
-        "材质工程",
+        "3D渲染",
         (25, 75, 80),
         (45, 165, 145),
         "Substance 3D · 8K PBR Textures · Octane Render"
@@ -261,6 +269,14 @@ def generate_all():
     )
     create_sample_subtitles(cross_dir / "render_vlog.srt")
     create_sample_audio_with_cover(cross_dir / "render_vlog_bgm.wav", "项目汇报终版 背景配乐", "Studio Master", duration=5, freq=440)
+    create_sample_image(
+        cross_dir / "cover.png",
+        "渲染成果展示 · 项目汇报终版",
+        "汇报宣讲",
+        start_color=(15, 30, 80),
+        end_color=(45, 110, 180),
+        meta_text="DaVinci Resolve Studio · Rec.709 · Master 4K"
+    )
 
     print(f"Sample media successfully generated at {SAMPLE_DIR}!")
 

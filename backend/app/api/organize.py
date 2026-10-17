@@ -109,7 +109,7 @@ def get_pipeline_presets():
             "levels": [
                 {"level_index": 0, "facet": "tag.creator", "fallback": "其他创作者"},
                 {"level_index": 1, "facet": "tag.domain", "fallback": "综合作品"},
-                {"level_index": 2, "naming": "{unit.title}%unique{meta.code, unit.id}"}
+                {"level_index": 2, "naming": "{unit.title}%unique{code}"}
             ]
         },
         {

@@ -135,9 +135,9 @@ export const usePlayerStore = defineStore('player', {
     // 4. Subtitle Interactive Configuration (Draggable + Styling)
     // -------------------------------------------------------------
     subtitleConfig: {
-      verticalPercent: 12, // 12% from bottom, draggable between 5% and 80%
+      verticalPercent: 18, // 18% from bottom, draggable between 5% and 80%
       fontSize: 'md', // 'sm' (14px), 'md' (18px), 'lg' (24px), 'xl' (32px)
-      style: 'shadow', // 'shadow' | 'glass'
+      style: 'glass', // 'shadow' | 'glass'
     },
 
     // -------------------------------------------------------------

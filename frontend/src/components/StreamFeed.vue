@@ -1475,7 +1475,7 @@ const handleToggleFavorite = (e, card) => {
         </div>
 
         <!-- Media Thumbnail Container -->
-        <div class="relative w-full aspect-[4/3] bg-black/40 overflow-hidden flex items-center justify-center">
+        <div class="relative w-full aspect-[16/10] bg-black/40 overflow-hidden flex items-center justify-center">
           <!-- Fallback icon / artwork strictly behind the image (z-0), visible only if image fails or is missing -->
           <div
             class="absolute inset-0 flex items-center justify-center pointer-events-none z-0"

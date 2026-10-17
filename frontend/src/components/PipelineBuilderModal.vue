@@ -13,7 +13,7 @@
             </svg>
           </div>
           <div>
-            <h3 class="text-lg font-bold" style="color: var(--text-main);">智能文件夹整理规则 (Folder Pipeline)</h3>
+            <h3 class="text-lg font-bold" style="color: var(--text-main);">智能文件夹整理规则</h3>
             <p class="text-xs" style="color: var(--text-muted);">
               自定义多层文件夹收纳结构与文件命名模版 · 规范本地媒体目录
             </p>
@@ -32,11 +32,11 @@
       </div>
 
       <!-- Main Body -->
-      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+      <div class="flex-1 overflow-y-auto p-6 space-y-5">
         <!-- 1. 预设选择器与目标根目录 -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="p-4 rounded-xl border space-y-2 md:col-span-2" style="background: var(--bg-surface); border-color: var(--border-color);">
-            <label class="text-xs font-semibold uppercase tracking-wider block" style="color: var(--text-muted);">
+            <label class="text-xs font-semibold tracking-wider block" style="color: var(--text-muted);">
               ⭐ 快速套用收纳预设模板
             </label>
             <div class="flex flex-wrap gap-2">
@@ -56,8 +56,8 @@
           </div>
 
           <div class="p-4 rounded-xl border space-y-2" style="background: var(--bg-surface); border-color: var(--border-color);">
-            <label class="text-xs font-semibold uppercase tracking-wider block" style="color: var(--text-muted);">
-              🎯 整理目标作用域 (Collection)
+            <label class="text-xs font-semibold tracking-wider block" style="color: var(--text-muted);">
+              🎯 整理目标作用域
             </label>
             <select 
               v-model="selectedCollectionId" 
@@ -75,8 +75,8 @@
         <!-- 2. 卡槽式流水线积木 (Level Slots) -->
         <div class="p-4 rounded-xl border space-y-3" style="background: var(--bg-surface); border-color: var(--border-color);">
           <div class="flex items-center justify-between">
-            <label class="text-xs font-semibold uppercase tracking-wider flex items-center gap-2" style="color: var(--text-muted);">
-              <span>🔨 文件夹层级卡槽链 (从左至右代表从外向内的子目录)</span>
+            <label class="text-xs font-semibold tracking-wider flex items-center gap-2" style="color: var(--text-muted);">
+              <span>🔨 文件夹层级卡槽链（从左至右代表从外向内的子目录）</span>
             </label>
             <button 
               @click="addLevel"
@@ -96,7 +96,7 @@
               >
                 <div class="flex items-center justify-between mb-2">
                   <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-color);">
-                    {{ idx === pipelineLevels.length - 1 && lvl.naming ? 'Leaf (最终命名)' : `Level ${idx} 目录` }}
+                    {{ idx === pipelineLevels.length - 1 && lvl.naming ? '最终文件名规则' : `第 ${idx + 1} 层目录` }}
                   </span>
                   <div class="flex items-center gap-1">
                     <button 
@@ -160,7 +160,7 @@
                     style="background: var(--bg-surface); border-color: var(--border-color); color: var(--text-main);"
                   >
                     <option v-for="tc in projectableTagClasses" :key="tc.code" :value="`tag.${tc.code}`">
-                      {{ tc.display_name }} ({{ tc.code }})
+                      {{ tc.display_name }}
                     </option>
                     <option value="collection.name">📁 原系列合集名</option>
                   </select>
@@ -183,8 +183,8 @@
         <!-- 3. 动态目录树效果图例 -->
         <div class="p-4 rounded-xl border space-y-2" style="background: var(--bg-surface); border-color: var(--border-color);">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-muted);">
-              🌲 实时收纳蓝图图例 (Live Blueprint Tree)
+            <span class="text-xs font-semibold tracking-wider" style="color: var(--text-muted);">
+              🌲 实时收纳目录结构图例
             </span>
             <button 
               @click="runEvaluation" 
@@ -196,24 +196,24 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span>{{ evaluating ? '体检演算中...' : '🔍 执行整理体检预演 (Evaluate)' }}</span>
+              <span>{{ evaluating ? '体检演算中...' : '🔍 执行整理体检预演' }}</span>
             </button>
           </div>
           <div class="font-mono text-xs p-3 rounded-lg border overflow-x-auto space-y-1" style="background: rgba(0, 0, 0, 0.3); border-color: var(--border-color); color: var(--text-main);">
-            <div>📁 目标根目录/</div>
+            <div>📁 媒体库根目录/</div>
             <div class="pl-4">├── 📁 {{ previewSampleSegment(0) }}/</div>
             <div class="pl-8">└── 📁 {{ previewSampleSegment(1) }}/</div>
-            <div class="pl-12">└── 📁 {{ previewSampleSegment(2) }} ({{ previewSampleLeaf() }})</div>
+            <div class="pl-12">└── 🎬 {{ previewSampleLeaf() }}</div>
           </div>
         </div>
 
         <!-- 4. 三色风险体检看板 (Dry-run Inspector) -->
-        <div v-if="evaluationResult" class="space-y-4 animate-fade-in">
+        <div v-if="evaluationResult" ref="dryRunSectionRef" class="space-y-3 animate-fade-in">
           <!-- 统计指标卡 -->
           <div class="grid grid-cols-3 gap-3">
             <div class="p-3 rounded-xl border flex items-center justify-between" style="background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.3);">
               <div>
-                <span class="text-xs text-green-400 font-bold block">🟢 完全安全 (Safe)</span>
+                <span class="text-xs text-green-400 font-bold block">🟢 完全安全</span>
                 <span class="text-lg font-extrabold text-green-300">{{ evaluationResult.stats?.safe_count || 0 }} 项</span>
               </div>
               <span class="text-xs text-green-500 font-mono">毫秒级原子迁移</span>
@@ -221,15 +221,15 @@
 
             <div class="p-3 rounded-xl border flex items-center justify-between" style="background: rgba(234, 179, 8, 0.08); border-color: rgba(234, 179, 8, 0.3);">
               <div>
-                <span class="text-xs text-yellow-400 font-bold block">🟡 风险提示 (Warning)</span>
+                <span class="text-xs text-yellow-400 font-bold block">🟡 备选归档提示</span>
                 <span class="text-lg font-extrabold text-yellow-300">{{ evaluationResult.stats?.warning_count || 0 }} 项</span>
               </div>
-              <span class="text-xs text-yellow-500 font-mono">长路径/跨盘预警</span>
+              <span class="text-xs text-yellow-500 font-mono">自动归入备选目录</span>
             </div>
 
             <div class="p-3 rounded-xl border flex items-center justify-between" style="background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3);">
               <div>
-                <span class="text-xs text-red-400 font-bold block">🔴 冲突阻断 (Conflict)</span>
+                <span class="text-xs text-red-400 font-bold block">🔴 冲突阻断</span>
                 <span class="text-lg font-extrabold text-red-300">{{ evaluationResult.stats?.conflict_count || 0 }} 项</span>
               </div>
               <span class="text-xs text-red-500 font-mono">禁止覆盖</span>
@@ -237,24 +237,24 @@
           </div>
 
           <!-- 缺失分面降级提示条 (未分类资产降级提醒) -->
-          <div v-if="evaluationResult.stats?.degraded_count > 0" class="p-3 rounded-xl border flex items-center justify-between text-xs bg-amber-500/10 border-amber-500/30 text-amber-200">
+          <div v-if="evaluationResult.stats?.degraded_count > 0" class="p-2.5 rounded-xl border flex items-center justify-between text-xs bg-amber-500/10 border-amber-500/30 text-amber-200">
             <div class="flex items-center gap-2">
               <span class="text-amber-400 font-bold text-sm">⚠️</span>
-              <span>有 <strong>{{ evaluationResult.stats.degraded_count }}</strong> 部作品缺少当前流水线所需的分类标签，已安全降级至备选目录。</span>
+              <span>有 <strong>{{ evaluationResult.stats.degraded_count }}</strong> 部作品缺少当前流水线所需的分类标签，已安全归入备选目录。</span>
             </div>
-            <span class="text-[11px] text-amber-300/80">可随时在工作台通过「待整理」分类快速补齐标签</span>
+            <span class="text-[11px] text-amber-300/80">可在工作台通过「待整理」视图快速补齐标签</span>
           </div>
 
           <!-- 详细对比表格 -->
           <div class="rounded-xl border overflow-hidden" style="border-color: var(--border-color);">
-            <div class="max-h-60 overflow-y-auto">
+            <div class="max-h-56 overflow-y-auto">
               <table class="w-full text-left text-xs">
                 <thead class="sticky top-0 border-b font-semibold" style="background: var(--bg-surface); border-color: var(--border-color); color: var(--text-muted);">
                   <tr>
                     <th class="p-2.5 w-12 text-center">状态</th>
-                    <th class="p-2.5">文件</th>
-                    <th class="p-2.5">整理前物理位置 (Before)</th>
-                    <th class="p-2.5">➔ 整理后目标位置 (After)</th>
+                    <th class="p-2.5">文件名称</th>
+                    <th class="p-2.5">整理前目录位置</th>
+                    <th class="p-2.5">➔ 整理后目标位置</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y" style="divide-color: var(--border-color);">
@@ -268,19 +268,19 @@
                       <span v-else-if="act.risk_level === 'warning'" class="text-yellow-400 font-bold cursor-help" :title="act.risk_messages?.join(';\n')">🟡</span>
                       <span v-else class="text-red-400 font-bold cursor-help" :title="act.risk_messages?.join(';\n')">🔴</span>
                     </td>
-                    <td class="p-2 font-medium max-w-[140px] truncate" style="color: var(--text-main);" :title="act.file_name">
+                    <td class="p-2 font-medium max-w-[160px]" style="color: var(--text-main);" :title="act.file_name">
                       <div class="truncate">{{ act.file_name }}</div>
                       <div v-if="act.missing_facets?.length > 0" class="flex flex-wrap gap-1 mt-0.5">
-                        <span v-for="mf in act.missing_facets" :key="mf" class="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono">
-                          缺{{ mf }}
+                        <span v-for="mf in act.missing_facets" :key="mf" class="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 whitespace-nowrap">
+                          待补{{ formatFacetName(mf) }}
                         </span>
                       </div>
                     </td>
-                    <td class="p-2 font-mono text-[11px] max-w-[200px] truncate" style="color: var(--text-muted);" :title="act.src_path">
-                      {{ act.src_path }}
+                    <td class="p-2 font-mono text-[11px] max-w-[220px] truncate" style="color: var(--text-muted);" :title="act.src_path">
+                      {{ formatDisplayPath(act.src_path) }}
                     </td>
-                    <td class="p-2 font-mono text-[11px] max-w-[260px] truncate font-semibold" style="color: var(--accent-color);" :title="act.dst_path">
-                      {{ act.dst_path }}
+                    <td class="p-2 font-mono text-[11px] max-w-[280px] truncate font-semibold" style="color: var(--accent-color);" :title="act.dst_path">
+                      {{ formatDisplayPath(act.dst_path) }}
                     </td>
                   </tr>
                 </tbody>
@@ -326,11 +326,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted, computed } from 'vue'
 import { fetchPipelinePresets, evaluatePipeline, executeTriagePlan, fetchCollections, fetchTagClasses } from '../api'
 import { useMediaStore } from '../stores/mediaStore'
 
 const mediaStore = useMediaStore()
+const dryRunSectionRef = ref(null)
 
 const props = defineProps({
   isOpen: { type: Boolean, default: false }
@@ -448,12 +449,29 @@ function previewSampleLeaf() {
   return '示例作品'
 }
 
+function formatFacetName(code) {
+  const tc = tagClasses.value.find(c => c.code === code)
+  return tc?.display_name || code
+}
+
+function formatDisplayPath(fullPath) {
+  if (!fullPath) return ''
+  const root = evaluationResult.value?.target_root
+  if (root && fullPath.startsWith(root)) {
+    const rel = fullPath.slice(root.length).replace(/^\/+/, '')
+    return `/媒体库/${rel}`
+  }
+  return fullPath.replace(/^\/mnt\/media\/library\/?/, '/媒体库/')
+}
+
 async function runEvaluation() {
   evaluating.value = true
   try {
     const targetCol = collections.value.find(c => c.id === selectedCollectionId.value)
-    const targetRoot = targetCol?.folder_path
-      ? targetCol.folder_path.split('/').slice(0, -1).join('/')
+    const fallbackCol = collections.value.find(c => c.folder_path)
+    const baseFolder = targetCol?.folder_path || fallbackCol?.folder_path
+    const targetRoot = baseFolder
+      ? baseFolder.split('/').slice(0, -1).join('/')
       : '/mnt/media/library'
 
     const payload = {
@@ -466,6 +484,9 @@ async function runEvaluation() {
     }
     const res = await evaluatePipeline(payload)
     evaluationResult.value = res
+    nextTick(() => {
+      dryRunSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   } catch (err) {
     alert(`体检预演失败: ${err?.response?.data?.detail || err.message}`)
   } finally {

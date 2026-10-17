@@ -1082,13 +1082,13 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               >
                 <button
                   @click="handleSelectCollection(col.id)"
-                  class="flex-grow flex items-center justify-between px-2.5 py-1.5 text-xs truncate"
+                  class="flex-grow min-w-0 flex items-center justify-between px-2.5 py-1.5 text-xs"
                 >
-                  <span class="truncate flex items-center gap-2">
+                  <span class="truncate flex items-center gap-2 min-w-0">
                     <FolderOpen class="w-3.5 h-3.5 text-blue-400 shrink-0" />
                     <span class="truncate">{{ col.name }}</span>
                   </span>
-                  <span class="text-[10px] text-gray-500 shrink-0 bg-white/5 px-1.5 py-0.5 rounded-full mr-1">
+                  <span class="text-[10px] text-gray-500 shrink-0 bg-white/5 px-1.5 py-0.5 rounded-full ml-1.5">
                     {{ col.unit_count }}
                   </span>
                 </button>
@@ -1096,7 +1096,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 <button
                   v-if="col.folder_path"
                   @click.stop="mediaStore.openPhysicalOrganizer(col.folder_path)"
-                  class="p-1.5 text-amber-400 opacity-0 group-hover/col:opacity-100 hover:text-amber-200 transition-opacity"
+                  class="p-1.5 text-amber-400 hidden group-hover/col:inline-flex hover:text-amber-200 transition-opacity shrink-0"
                   title="物理整理与发售时间对齐"
                 >
                   <FolderCog class="w-3.5 h-3.5" />
@@ -1151,19 +1151,20 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               >
                 <button
                   @click="handleSelectSuperset(sup.id)"
-                  class="flex-grow flex items-center justify-between px-2.5 py-1.5 text-xs truncate"
+                  class="flex-grow min-w-0 flex items-center justify-between px-2.5 py-1.5 text-xs"
+                  :title="sup.name"
                 >
-                  <span class="truncate flex items-center gap-2">
+                  <span class="truncate flex items-center gap-2 min-w-0">
                     <Tag class="w-3.5 h-3.5 text-pink-400 shrink-0" />
                     <span class="truncate">{{ sup.name }}</span>
                   </span>
-                  <span class="text-[10px] text-gray-500 shrink-0 bg-white/5 px-1.5 py-0.5 rounded-full mr-1">
+                  <span class="text-[10px] text-gray-500 shrink-0 bg-white/5 px-1.5 py-0.5 rounded-full ml-1.5">
                     {{ sup.unit_count }}
                   </span>
                 </button>
 
                 <!-- Quick Play / Slideshow actions on hover -->
-                <div class="flex items-center gap-0.5 pr-1 opacity-0 group-hover/sup:opacity-100 transition-opacity">
+                <div class="hidden group-hover/sup:flex items-center gap-0.5 pr-1 shrink-0">
                   <button
                     @click.stop="playerStore.loadSuperset(sup.id, 'bg', true)"
                     class="p-1 text-purple-300 hover:text-white hover:bg-white/10 rounded transition-colors"
@@ -1638,7 +1639,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             ]"
           >
             <!-- Left Info -->
-            <div class="flex items-center gap-3 truncate">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
               <!-- Batch Selection Checkbox -->
               <div
                 v-if="isBatchMode"
@@ -1667,31 +1668,31 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 />
               </div>
 
-              <div class="truncate">
-                <div class="text-xs font-medium truncate flex items-center gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium flex items-center gap-2 min-w-0">
                   <span class="truncate">{{ item.title }}</span>
                   <span
                     v-if="item.dynamic_attributes?.track_count > 1"
-                    class="bg-purple-500/20 text-purple-300 text-[10px] px-1.5 py-0.2 rounded border border-purple-500/30 shrink-0 font-mono"
+                    class="bg-purple-500/20 text-purple-300 text-[10px] px-1.5 py-0.2 rounded border border-purple-500/30 shrink-0 whitespace-nowrap font-mono"
                   >
                     {{ item.dynamic_attributes.track_count }} 轨<template v-if="item.dynamic_attributes?.image_count > 0"> · {{ item.dynamic_attributes.image_count }} 插画</template>
                   </span>
                   <span
                     v-else-if="item.unit_type === 'bundle'"
-                    class="bg-purple-500/20 text-purple-300 text-[10px] px-1.5 py-0.2 rounded border border-purple-500/30 shrink-0"
+                    class="bg-purple-500/20 text-purple-300 text-[10px] px-1.5 py-0.2 rounded border border-purple-500/30 shrink-0 whitespace-nowrap"
                   >
                     复合包 ({{ item.files?.length || 1 }}文件)
                   </span>
                 </div>
-                <div class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-3">
-                  <span>{{ item.collection_name || '散落文件' }}</span>
-                  <span v-if="item.width && item.height">{{ item.width }}x{{ item.height }}</span>
-                  <span v-if="item.files?.length > 0">{{ formatBytes(item.files[0]?.file_size) }}</span>
+                <div class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-2 overflow-hidden">
+                  <span class="truncate max-w-[130px]">{{ item.collection_name || '散落文件' }}</span>
+                  <span v-if="item.width && item.height && !selectedItem" class="whitespace-nowrap shrink-0">{{ item.width }}x{{ item.height }}</span>
+                  <span v-if="item.files?.length > 0" class="whitespace-nowrap shrink-0">{{ formatBytes(item.files[0]?.file_size) }}</span>
 
                   <!-- Star Rating with Decimal -->
                   <span
                     v-if="item.rating > 0"
-                    class="flex items-center gap-0.5 text-amber-400 font-mono text-[10px] font-semibold bg-amber-400/10 px-1.5 py-0.2 rounded border border-amber-400/20 shrink-0"
+                    class="flex items-center gap-0.5 text-amber-400 font-mono text-[10px] font-semibold bg-amber-400/10 px-1.5 py-0.2 rounded border border-amber-400/20 shrink-0 whitespace-nowrap"
                     :title="`有效评分星级: ${Number(item.rating).toFixed(1)} 星`"
                   >
                     ★ {{ Number(item.rating).toFixed(1) }}
@@ -1699,8 +1700,8 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
 
                   <!-- Recommendation Composite Algorithm Score -->
                   <span
-                    v-if="item.composite_score > 0"
-                    class="flex items-center gap-1 text-purple-300 font-mono text-[10px] font-semibold bg-purple-500/15 px-1.5 py-0.2 rounded border border-purple-500/25 shrink-0"
+                    v-if="item.composite_score > 0 && !selectedItem"
+                    class="flex items-center gap-1 text-purple-300 font-mono text-[10px] font-semibold bg-purple-500/15 px-1.5 py-0.2 rounded border border-purple-500/25 shrink-0 whitespace-nowrap"
                     :title="`推荐算法综合偏好得分: ${Number(item.composite_score).toFixed(1)} 分`"
                   >
                     <Sparkles class="w-2.5 h-2.5" />
@@ -1715,20 +1716,20 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               <!-- Compact Tag Badges on Row (Hidden on extra-narrow viewports) -->
               <div v-if="getRowCleanTags(item).length > 0" class="hidden sm:flex items-center gap-1">
                 <span
-                  v-for="t in getRowCleanTags(item).slice(0, 3)"
+                  v-for="t in getRowCleanTags(item).slice(0, selectedItem ? 2 : 3)"
                   :key="t.id || t.name"
-                  class="text-[10px] px-1.5 py-0.5 rounded-md font-medium border truncate max-w-[88px]"
+                  class="text-[10px] px-1.5 py-0.5 rounded-md font-medium border truncate max-w-[120px] whitespace-nowrap shrink-0"
                   :class="getTagBadgeStyle(t.class_code)"
                   :title="t.display_path || t.name"
                 >
                   {{ t.name }}
                 </span>
                 <span
-                  v-if="getRowCleanTags(item).length > 3"
-                  class="text-[9px] text-gray-500 font-mono"
-                  :title="getRowCleanTags(item).slice(3).map(t => t.name).join(' · ')"
+                  v-if="getRowCleanTags(item).length > (selectedItem ? 2 : 3)"
+                  class="text-[9px] text-gray-500 font-mono whitespace-nowrap shrink-0"
+                  :title="getRowCleanTags(item).slice(selectedItem ? 2 : 3).map(t => t.name).join(' · ')"
                 >
-                  +{{ getRowCleanTags(item).length - 3 }}
+                  +{{ getRowCleanTags(item).length - (selectedItem ? 2 : 3) }}
                 </span>
               </div>
 
@@ -2023,7 +2024,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               :key="f.id"
               class="flex items-center justify-between px-2 py-1 rounded-lg bg-white/5 text-[11px] text-gray-300"
             >
-              <span class="truncate font-mono text-[10px] max-w-[150px]" :title="f.file_name">{{ f.file_name }}</span>
+              <span class="truncate font-mono text-[10px] min-w-0 flex-1 mr-2" :title="f.file_name">{{ f.file_name }}</span>
               <div class="flex items-center gap-1.5 shrink-0">
                 <span class="text-[9px] text-gray-500 font-mono">{{ formatBytes(f.file_size) }}</span>
                 <button
@@ -2059,7 +2060,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             @click="showAlgoDetails = !showAlgoDetails"
             class="w-full flex items-center justify-between text-[10px] text-gray-500 hover:text-gray-300 transition-colors py-1 cursor-pointer"
           >
-            <span>算法分析指标 (综合得 {{ Number(selectedItem.composite_score || itemAlgorithmStats.composite_score || 0).toFixed(1) }} 分)</span>
+            <span>算法分析指标 (综合得分 {{ Number(selectedItem.composite_score || itemAlgorithmStats.composite_score || 0).toFixed(1) }})</span>
             <ChevronDown :class="['w-3 h-3 transition-transform', showAlgoDetails ? 'rotate-180' : '']" />
           </button>
           
@@ -2331,7 +2332,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               class="rounded bg-white/10 border-white/20 text-purple-600 focus:ring-purple-500"
             />
             <label for="batchPrimaryLanding" class="text-xs text-gray-300 cursor-pointer select-none">
-              同时设为该类别的物理落点锚点 (Primary Landing)
+              同时设为该类别的主归档标签
             </label>
           </div>
 

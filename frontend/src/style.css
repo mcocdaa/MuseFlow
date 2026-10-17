@@ -170,3 +170,8 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+button {
+  white-space: nowrap;
+}
+

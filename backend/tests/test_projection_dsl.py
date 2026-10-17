@@ -175,3 +175,37 @@ def test_generate_projection_plan_with_risk_diagnostics(tmp_path):
         action = plan["actions"][0]
         assert action["risk_level"] == "safe"
         assert "organized/播客/安眠之夜/track.wav" in action["dst_path"].replace("\\", "/")
+
+
+def test_pipeline_dsl_non_primary_tag_fallback_per_class():
+    with Session(engine) as session:
+        domain_cls = session.exec(select(TagClass).where(TagClass.code == "domain")).first()
+        creator_cls = session.exec(select(TagClass).where(TagClass.code == "creator")).first()
+
+        tag_domain = create_tag(session, "城市旅拍", domain_cls.id)
+        tag_creator = create_tag(session, "光影影像组", creator_cls.id)
+
+        unit = AssetUnit(title="旅拍测试", unit_type="video")
+        session.add(unit)
+        session.commit()
+        session.refresh(unit)
+
+        # domain has primary_landing=True, creator has primary_landing=False
+        assign_tag_to_unit(session, unit.id, tag_domain.id, is_primary_landing=True)
+        assign_tag_to_unit(session, unit.id, tag_creator.id, is_primary_landing=False)
+
+        pipeline = PipelineConfig(
+            name="双层分类管线",
+            target_root="/media/test_root",
+            levels=[
+                LevelOperator(level_index=0, facet="tag.domain", fallback="通用分类"),
+                LevelOperator(level_index=1, facet="tag.creator", fallback="独立创作者"),
+                LevelOperator(level_index=2, naming="{unit.title}"),
+            ],
+        )
+
+        segments, leaf, missing_facets = calculate_unit_landing_path(session, unit, pipeline, "")
+        assert segments == ["城市旅拍", "光影影像组"]
+        assert leaf == "旅拍测试"
+        assert missing_facets == []
+
