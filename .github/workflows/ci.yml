@@ -81,7 +81,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend
-        run: pnpm install --frozen-lockfile || pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build frontend distribution
         working-directory: frontend
@@ -90,3 +90,6 @@ jobs:
       - name: Verify build artifact integrity
         run: |
           test -f frontend/dist/index.html || exit 1
+
+      - name: Validate compose.yaml
+        run: docker compose config -q

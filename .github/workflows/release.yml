@@ -6,6 +6,10 @@ on:
       - 'v*'
   workflow_dispatch:
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -17,6 +21,45 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Verify version parity and release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          backend_version="$(python3 -c "import pathlib, tomllib; print(tomllib.loads(pathlib.Path('backend/pyproject.toml').read_text(encoding='utf-8'))['project']['version'])")"
+          frontend_version="$(python3 -c "import json, pathlib; print(json.loads(pathlib.Path('frontend/package.json').read_text(encoding='utf-8'))['version'])")"
+          if [[ "$backend_version" != "$frontend_version" ]]; then
+            echo "Version mismatch: backend=$backend_version frontend=$frontend_version" >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            tag_version="${GITHUB_REF_NAME#v}"
+            if [[ "$tag_version" != "$backend_version" && "${tag_version%%-*}" != "$backend_version" ]]; then
+              echo "Tag ${GITHUB_REF_NAME} does not match package version v${backend_version}" >&2
+              exit 1
+            fi
+          fi
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Set up Python 3.13
+        run: uv python install 3.13
+
+      - name: Install system media libraries (FFmpeg)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: uv sync --dev
+
+      - name: Run backend unit tests
+        working-directory: backend
+        run: uv run pytest tests/ -v
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -31,16 +74,19 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         run: |
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm build
 
-      - name: Create Release Tarball
+      - name: Package Release Assets
         run: |
           tar --exclude='.git' \
               --exclude='.venv' \
+              --exclude='backend/.venv' \
               --exclude='node_modules' \
               --exclude='frontend/node_modules' \
+              --exclude='data' \
               --exclude='backend/data' \
+              --exclude='sample_media' \
               --exclude='backend/sample_media' \
               -czf /tmp/museflow-${{ github.ref_name }}.tar.gz .
           mv /tmp/museflow-${{ github.ref_name }}.tar.gz ./museflow-${{ github.ref_name }}.tar.gz

@@ -9,8 +9,8 @@ WORKDIR /build/frontend
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Cache dependencies
-COPY frontend/package.json ./
-RUN pnpm install --frozen-lockfile || pnpm install
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # Copy source and build
 COPY frontend/ ./
