@@ -7,7 +7,7 @@ Local-first, non-destructive media hub with composite bundle detection, LLM topo
 [![Family: *Flow](https://img.shields.io/badge/Family-*Flow-8A2BE2.svg)](https://github.com/mcocdaa)
 [![CI Status](https://github.com/mcocdaa/MuseFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/mcocdaa/MuseFlow/actions)
 [![Release](https://img.shields.io/github/v/release/mcocdaa/MuseFlow?include_prereleases&color=blue)](https://github.com/mcocdaa/MuseFlow/releases)
-[![Python 3.13+](https://img.shields.io/badge/Python-3.13%2B-3776AB.svg?logo=python&logoColor=white)](pyproject.toml)
+[![Python 3.13+](https://img.shields.io/badge/Python-3.13%2B-3776AB.svg?logo=python&logoColor=white)](backend/pyproject.toml)
 [![Vue 3.5+](https://img.shields.io/badge/Vue-3.5%2B-4FC08D.svg?logo=vuedotjs&logoColor=white)](frontend/package.json)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)](docker-compose.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -52,7 +52,7 @@ Local-first, non-destructive media hub with composite bundle detection, LLM topo
 cp .env.example .env && docker compose up -d --build
 ```
 
-Open **`http://localhost:8799`** (or your configured `MUSEFLOW_PORT` in `.env`).
+Open **`http://localhost:8765`** (or your configured `MUSEFLOW_PORT` in `.env`).
 
 ### Option 2: Local Dev (`uv` + `npm`)
 
@@ -60,7 +60,7 @@ Open **`http://localhost:8799`** (or your configured `MUSEFLOW_PORT` in `.env`).
 cp .env.example .env
 cd backend && uv sync && uv run python generate_samples.py
 cd ../frontend && npm install && npm run dev &
-cd ../backend && uv run uvicorn app.main:app --reload --port 8799
+cd ../backend && uv run uvicorn app.main:app --reload --port 8765
 ```
 
 <details>
@@ -69,7 +69,7 @@ cd ../backend && uv run uvicorn app.main:app --reload --port 8799
 | Variable | Default | Description |
 | :--- | :--- | :--- |
 | `MUSEFLOW_HOST` | `127.0.0.1` | Server bind address (`0.0.0.0` in Docker for LAN access) |
-| `MUSEFLOW_PORT` | `8765` | Backend & web UI port (e.g., `8799` or `8765`) |
+| `MUSEFLOW_PORT` | `8765` | Backend & web UI port (default `8765`) |
 | `MUSEFLOW_DATA_DIR` | `backend/data` | SQLite database and generated thumbnail cache directory |
 | `MAX_DWELL_SECONDS` | `180.0` | Anti-hang telemetry dwell time cap per playback session |
 | `LLM_BASE_URL` | `https://api.openai.com/v1` | OpenAI-compatible API endpoint |
@@ -86,13 +86,13 @@ MuseFlow exposes a full REST API (interactive OpenAPI docs at `/docs`) and MCP s
 
 ```bash
 # 1. List indexed atomic media assets (/api/assets)
-curl -s "http://localhost:8799/api/assets?unit_type=video&limit=10" | jq .
+curl -s "http://localhost:8765/api/assets?unit_type=video&limit=10" | jq .
 
 # 2. Fetch personalized stream recommendations (/api/recommend)
-curl -s "http://localhost:8799/api/recommend/feed?mode=unit&algorithm=affinity&limit=5" | jq .
+curl -s "http://localhost:8765/api/recommend/feed?mode=unit&algorithm=affinity&limit=5" | jq .
 
-# 3. Non-destructive dry-run topology triage evaluation (/api/organize/evaluate)
-curl -s -X POST "http://localhost:8799/api/organize/evaluate" \
+# 3. Non-destructive dry-run topology triage evaluation (/api/organize/pipeline/evaluate)
+curl -s -X POST "http://localhost:8765/api/organize/pipeline/evaluate" \
   -H "Content-Type: application/json" \
   -d '{
     "collection_id": 1,

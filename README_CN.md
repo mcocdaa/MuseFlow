@@ -7,7 +7,7 @@
 [![Family: *Flow](https://img.shields.io/badge/Family-*Flow-8A2BE2.svg)](https://github.com/mcocdaa)
 [![CI Status](https://github.com/mcocdaa/MuseFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/mcocdaa/MuseFlow/actions)
 [![Release](https://img.shields.io/github/v/release/mcocdaa/MuseFlow?include_prereleases&color=blue)](https://github.com/mcocdaa/MuseFlow/releases)
-[![Python 3.13+](https://img.shields.io/badge/Python-3.13%2B-3776AB.svg?logo=python&logoColor=white)](pyproject.toml)
+[![Python 3.13+](https://img.shields.io/badge/Python-3.13%2B-3776AB.svg?logo=python&logoColor=white)](backend/pyproject.toml)
 [![Vue 3.5+](https://img.shields.io/badge/Vue-3.5%2B-4FC08D.svg?logo=vuedotjs&logoColor=white)](frontend/package.json)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)](docker-compose.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -52,7 +52,7 @@
 cp .env.example .env && docker compose up -d --build
 ```
 
-启动后浏览器访问 **`http://localhost:8799`**（或 `.env` 中配置的 `MUSEFLOW_PORT`）。
+启动后浏览器访问 **`http://localhost:8765`**（或 `.env` 中配置的 `MUSEFLOW_PORT`）。
 
 ### 方式二：本地开发运行（`uv` + `npm`）
 
@@ -60,7 +60,7 @@ cp .env.example .env && docker compose up -d --build
 cp .env.example .env
 cd backend && uv sync && uv run python generate_samples.py
 cd ../frontend && npm install && npm run dev &
-cd ../backend && uv run uvicorn app.main:app --reload --port 8799
+cd ../backend && uv run uvicorn app.main:app --reload --port 8765
 ```
 
 <details>
@@ -69,7 +69,7 @@ cd ../backend && uv run uvicorn app.main:app --reload --port 8799
 | 变量名 | 默认值 | 说明 |
 | :--- | :--- | :--- |
 | `MUSEFLOW_HOST` | `127.0.0.1` | 服务监听地址（Docker 环境默认 `0.0.0.0` 支持局域网访问） |
-| `MUSEFLOW_PORT` | `8765` | 后端与 Web 服务端口（可配置为 `8799` 或 `8765`） |
+| `MUSEFLOW_PORT` | `8765` | 后端与 Web 服务端口（默认 `8765`） |
 | `MUSEFLOW_DATA_DIR` | `backend/data` | SQLite 数据库与缩略图缓存存储路径 |
 | `MAX_DWELL_SECONDS` | `180.0` | 推荐系统单次有效停留防挂机截断上限（秒） |
 | `LLM_BASE_URL` | `https://api.openai.com/v1` | OpenAI 兼容的大模型 API 基础地址 |
@@ -86,13 +86,13 @@ MuseFlow 提供完整的 RESTful API（交互式文档位于 `/docs`）以及面
 
 ```bash
 # 1. 查询已索引的原子媒体资产 (/api/assets)
-curl -s "http://localhost:8799/api/assets?unit_type=video&limit=10" | jq .
+curl -s "http://localhost:8765/api/assets?unit_type=video&limit=10" | jq .
 
 # 2. 获取个性化推荐流 (/api/recommend)
-curl -s "http://localhost:8799/api/recommend/feed?mode=unit&algorithm=affinity&limit=5" | jq .
+curl -s "http://localhost:8765/api/recommend/feed?mode=unit&algorithm=affinity&limit=5" | jq .
 
-# 3. 执行非破坏性目录拓扑重组干跑评估 (/api/organize/evaluate)
-curl -s -X POST "http://localhost:8799/api/organize/evaluate" \
+# 3. 执行非破坏性目录拓扑重组干跑评估 (/api/organize/pipeline/evaluate)
+curl -s -X POST "http://localhost:8765/api/organize/pipeline/evaluate" \
   -H "Content-Type: application/json" \
   -d '{
     "collection_id": 1,

@@ -314,6 +314,7 @@ const handleRefresh = () => {
         <!-- Compact Bilingual Toggle Button -->
         <button
           data-testid="lang-toggle-btn"
+          data-action="toggle-locale"
           @click="toggleLocale()"
           :title="t('nav.langTooltip')"
           class="px-2.5 py-1.5 text-xs font-semibold text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 hover:border-purple-400/40 cursor-pointer select-none"
