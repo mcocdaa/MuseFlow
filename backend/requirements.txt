@@ -18,7 +18,7 @@ attrs==26.1.0
     # via
     #   jsonschema
     #   referencing
-certifi==2026.7.22
+certifi==2026.10.23
     # via
     #   httpcore
     #   httpx
@@ -31,7 +31,7 @@ cryptography==50.0.2
     #   pyjwt
     #   pyspnego
     #   smbprotocol
-fastapi==0.142.1
+fastapi==0.162.0
     # via backend
 greenlet==3.5.6 ; platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64'
     # via sqlalchemy
@@ -42,13 +42,13 @@ h11==0.16.0
     #   uvicorn
 httpcore==1.0.9
     # via httpx
-httpcore2==2.13.1 ; sys_platform != 'emscripten'
+httpcore2==2.16.0 ; sys_platform != 'emscripten'
     # via httpx2
-httptools==0.8.0
+httptools==0.9.0
     # via uvicorn
 httpx==0.28.1
     # via backend
-httpx2==2.13.1
+httpx2==2.16.0
     # via mcp
 httpx2-jsfetch==1.0 ; sys_platform == 'emscripten'
     # via httpx2
@@ -67,27 +67,27 @@ mcp-types==2.3.0
     # via mcp
 mutagen==1.48.1
     # via backend
-opentelemetry-api==1.45.0
+opentelemetry-api==1.45.2
     # via
     #   fastapi
     #   mcp
 pillow==12.3.0
     # via backend
-pycparser==3.1 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
+pycparser==3.12 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
     # via cffi
-pydantic==2.13.5
+pydantic==2.14.1
     # via
     #   fastapi
     #   mcp
     #   mcp-types
     #   sqlmodel
-pydantic-core==2.46.5
+pydantic-core==2.50.1
     # via pydantic
 pyjwt==2.15.1
     # via mcp
 pyspnego==0.12.4
     # via smbprotocol
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via uvicorn
 python-multipart==0.0.32
     # via
@@ -107,20 +107,20 @@ rpds-py==2026.9.1
     #   referencing
 smbprotocol==1.17.0
     # via backend
-sqlalchemy==2.0.54
+sqlalchemy==2.1.6
     # via sqlmodel
-sqlmodel==0.0.47
+sqlmodel==0.0.48
     # via backend
-sse-starlette==3.5.0
+sse-starlette==3.6.0
     # via mcp
 sspilib==0.6.0 ; sys_platform == 'win32'
     # via pyspnego
-starlette==1.7.0
+starlette==1.10.0
     # via
     #   fastapi
     #   mcp
     #   sse-starlette
-truststore==0.10.4 ; sys_platform != 'emscripten'
+truststore==0.10.5 ; sys_platform != 'emscripten'
     # via
     #   httpcore2
     #   httpx2
@@ -145,11 +145,11 @@ uvicorn==0.54.0
     # via
     #   backend
     #   mcp
-uvloop==0.22.1 ; platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'
+uvloop==0.23.0 ; platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'
     # via uvicorn
 watchfiles==1.3.0
     # via
     #   backend
     #   uvicorn
-websockets==17.1
+websockets==17.3
     # via uvicorn
