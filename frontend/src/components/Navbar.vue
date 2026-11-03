@@ -3,7 +3,7 @@ import { ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { useMediaStore } from '../stores/mediaStore'
 import { useThemeStore } from '../stores/themeStore'
 import { usePlayerStore } from '../stores/playerStore'
-import { toggleLocale, t, tData } from '../i18n'
+import { locale, toggleLocale, t, tData } from '../i18n'
 import {
   Compass,
   FolderOpen,
@@ -317,10 +317,24 @@ const handleRefresh = () => {
           data-action="toggle-locale"
           @click="toggleLocale()"
           :title="t('nav.langTooltip')"
-          class="px-2.5 py-1.5 text-xs font-semibold text-gray-200 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 hover:border-purple-400/40 cursor-pointer select-none"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 hover:border-white/20 cursor-pointer select-none"
           style="white-space: nowrap; flex-shrink: 0;"
         >
-          {{ t('nav.langToggle') }}
+          <svg
+            class="w-3.5 h-3.5 text-gray-400 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+            <path d="M2 12h20" />
+          </svg>
+          <span>{{ locale === 'zh' ? 'EN' : '中文' }}</span>
         </button>
       </div>
     </div>

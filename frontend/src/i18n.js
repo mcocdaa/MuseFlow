@@ -58,7 +58,7 @@ const MESSAGES = {
     'nav.themeTooltip': '主题色彩 (当前: {name})',
     'nav.scanTooltip': '添加本地媒体文件夹',
     'nav.refreshTooltip': '刷新视图',
-    'nav.langToggle': '🌐 EN',
+    'nav.langToggle': 'EN',
     'nav.langTooltip': 'Switch to English (切换为英文)',
 
     // StreamFeed
@@ -374,27 +374,27 @@ const MESSAGES = {
     // PipelineBuilderModal
     'pipeline.title': '智能目录编排管线',
     'pipeline.subtitle': '自定义多层文件夹收纳结构与文件命名模版 · 规范本地媒体目录',
-    'pipeline.presetsLabel': '⭐ 预设方案',
-    'pipeline.scopeLabel': '🎯 整理目标作用域',
+    'pipeline.presetsLabel': '预设方案',
+    'pipeline.scopeLabel': '整理目标作用域',
     'pipeline.allIndexedOption': '全部已纳管资产 (前 300 部)',
-    'pipeline.blueprintLabel': '🔨 目录层级蓝图（从左至右代表从外向内的子目录）',
+    'pipeline.blueprintLabel': '目录层级蓝图（从左至右代表从外向内的子目录）',
     'pipeline.addLevelBtn': '+ 添加中间层级',
     'pipeline.leafRuleBadge': '最终文件名规则',
     'pipeline.levelBadge': '第 {level} 层目录',
     'pipeline.namingTemplateLabel': '实体命名模版',
     'pipeline.conditionalBranchLabel': '条件分支分流',
     'pipeline.facetMappingLabel': '标签族属性映射',
-    'pipeline.collectionNameOption': '📁 原系列合集名',
+    'pipeline.collectionNameOption': '原系列合集名',
     'pipeline.fallbackPlaceholder': '缺失备选 (如: 未分类)',
-    'pipeline.livePreviewLabel': '🌲 实时收纳目录结构图例',
+    'pipeline.livePreviewLabel': '实时收纳目录结构图例',
     'pipeline.runningDryRun': '预演评估中...',
-    'pipeline.runDryRunBtn': '🔍 执行预演评估',
-    'pipeline.libraryRoot': '📁 媒体库根目录/',
-    'pipeline.safeLabel': '🟢 完全安全',
+    'pipeline.runDryRunBtn': '执行预演评估',
+    'pipeline.libraryRoot': '媒体库根目录/',
+    'pipeline.safeLabel': '完全安全',
     'pipeline.safeSub': '毫秒级原子迁移',
-    'pipeline.fallbackLabel': '🟡 备选归档提示',
+    'pipeline.fallbackLabel': '备选归档提示',
     'pipeline.fallbackSub': '自动归入备选目录',
-    'pipeline.conflictsLabel': '🔴 冲突阻断',
+    'pipeline.conflictsLabel': '冲突阻断',
     'pipeline.conflictsSub': '禁止覆盖',
     'pipeline.itemsUnit': '{count} 项',
     'pipeline.degradedNotice': '有 {count} 部作品缺少当前流水线所需的分类标签，已安全归入备选目录。',
@@ -404,10 +404,10 @@ const MESSAGES = {
     'pipeline.colSourcePath': '变更前路径',
     'pipeline.colTargetPath': '➔ 目标投影路径',
     'pipeline.missingFacetPrefix': '待补',
-    'pipeline.footerSafeHint': '🛡️ 整理过程安全可逆，采用非破坏性事务保护，绝不损坏原始文件。',
+    'pipeline.footerSafeHint': '整理过程安全可逆，采用非破坏性事务保护，绝不损坏原始文件。',
     'pipeline.cancelBtn': '取消',
     'pipeline.executingBtn': '物理迁移与自愈中...',
-    'pipeline.applyOrganizeBtn': '🚀 应用目录重组 ({count})',
+    'pipeline.applyOrganizeBtn': '应用目录重组 ({count})',
 
     // ThemePickerModal
     'theme.title': '个性化主题配色',
@@ -427,7 +427,7 @@ const MESSAGES = {
     'scan.scanningBtn': '扫描中...',
     'scan.startBtn': '开始纳管',
     'scan.quickSampleTitle': '快速纳管测试库',
-    'scan.sampleBtn': '📁 MuseFlow 内置测试样本集',
+    'scan.sampleBtn': 'MuseFlow 内置测试样本集',
     'scan.successTitle': '纳管成功！',
     'scan.successDesc': '已扫描物理文件 {files} 个，智能构建原子消费单元 {units} 个。',
 
@@ -1087,7 +1087,7 @@ const MESSAGES = {
     'nav.themeTooltip': 'Theme ({name})',
     'nav.scanTooltip': 'Scan Local Folder',
     'nav.refreshTooltip': 'Refresh View',
-    'nav.langToggle': '🌐 中文',
+    'nav.langToggle': '中文',
     'nav.langTooltip': '切换为中文 (Switch to Chinese)',
 
     // StreamFeed
@@ -1401,27 +1401,27 @@ const MESSAGES = {
     // PipelineBuilderModal
     'pipeline.title': 'Smart Folder Pipeline',
     'pipeline.subtitle': 'Custom multi-level folder hierarchy & naming templates · Non-destructive media organization',
-    'pipeline.presetsLabel': '⭐ Presets',
-    'pipeline.scopeLabel': '🎯 Target Scope',
+    'pipeline.presetsLabel': 'Presets',
+    'pipeline.scopeLabel': 'Target Scope',
     'pipeline.allIndexedOption': 'All Indexed Media (Top 300)',
-    'pipeline.blueprintLabel': '🔨 Hierarchy Blueprint (Left to Right = Outer to Inner Folders)',
+    'pipeline.blueprintLabel': 'Hierarchy Blueprint (Left to Right = Outer to Inner Folders)',
     'pipeline.addLevelBtn': '+ Add Folder Level',
     'pipeline.leafRuleBadge': 'Leaf Naming Rule',
     'pipeline.levelBadge': 'Level {level} Folder',
     'pipeline.namingTemplateLabel': 'Naming Template',
     'pipeline.conditionalBranchLabel': 'Conditional Branch',
     'pipeline.facetMappingLabel': 'Facet Tag Mapping',
-    'pipeline.collectionNameOption': '📁 Collection Name',
+    'pipeline.collectionNameOption': 'Collection Name',
     'pipeline.fallbackPlaceholder': 'Fallback (e.g. Unsorted)',
-    'pipeline.livePreviewLabel': '🌲 Live Folder Structure Preview',
+    'pipeline.livePreviewLabel': 'Live Folder Structure Preview',
     'pipeline.runningDryRun': 'Running Dry-Run...',
-    'pipeline.runDryRunBtn': '🔍 Run Dry-Run',
-    'pipeline.libraryRoot': '📁 Library Root/',
-    'pipeline.safeLabel': '🟢 Safe',
+    'pipeline.runDryRunBtn': 'Run Dry-Run',
+    'pipeline.libraryRoot': 'Library Root/',
+    'pipeline.safeLabel': 'Safe',
     'pipeline.safeSub': 'Atomic Move',
-    'pipeline.fallbackLabel': '🟡 Fallback Notice',
+    'pipeline.fallbackLabel': 'Fallback Notice',
     'pipeline.fallbackSub': 'Fallback Folder',
-    'pipeline.conflictsLabel': '🔴 Conflicts',
+    'pipeline.conflictsLabel': 'Conflicts',
     'pipeline.conflictsSub': 'No Overwrite',
     'pipeline.itemsUnit': '{count} items',
     'pipeline.degradedNotice': '{count} unit(s) missing required facet tags will be safely routed to the fallback folder.',
@@ -1431,10 +1431,10 @@ const MESSAGES = {
     'pipeline.colSourcePath': 'Source Path',
     'pipeline.colTargetPath': '➔ Target Path',
     'pipeline.missingFacetPrefix': 'Missing: ',
-    'pipeline.footerSafeHint': '🛡️ Non-destructive transactional reorganization. Original files are never corrupted.',
+    'pipeline.footerSafeHint': 'Non-destructive transactional reorganization. Original files are never corrupted.',
     'pipeline.cancelBtn': 'Cancel',
     'pipeline.executingBtn': 'Applying Organization...',
-    'pipeline.applyOrganizeBtn': '🚀 Apply Organize ({count})',
+    'pipeline.applyOrganizeBtn': 'Apply Organize ({count})',
 
     // ThemePickerModal
     'theme.title': 'Theme Palette',
@@ -1454,7 +1454,7 @@ const MESSAGES = {
     'scan.scanningBtn': 'Scanning...',
     'scan.startBtn': 'Scan Now',
     'scan.quickSampleTitle': 'Quick Sample Library',
-    'scan.sampleBtn': '📁 MuseFlow Built-in Sample Set (sample_media)',
+    'scan.sampleBtn': 'MuseFlow Built-in Sample Set (sample_media)',
     'scan.successTitle': 'Scan Complete!',
     'scan.successDesc': 'Scanned {files} physical files and assembled {units} atomic media units.',
 
@@ -2527,6 +2527,10 @@ export const EN_DATA_MAP = {
   '【男性向中文音声】被女友催眠到圣教（真人版）：入教洗礼': '[Male CN Audio] Hypnotized by Girlfriend: Initiation Rite',
   '【男性向中文音声】被女友催眠到圣教6（真人版）：魔女的催眠响指': '[Male CN Audio] Hypnotized by Girlfriend Ep.6: Witch\'s Snap',
   '自定义智能拓扑结构归类': 'Custom intelligent topology classification',
+  '动画': 'Animation',
+  '少女映画': 'Shoujo Eiga',
+  '2 【少女映画】 D.VA': '2 [Shoujo Eiga] D.VA',
+  '唐翩翩': 'Tang Pianpian',
 
   // Collections & Supersets
   '本地创意媒体库': 'Creative Media Library',
@@ -2538,15 +2542,15 @@ export const EN_DATA_MAP = {
   '视觉概念主工程': 'Visual Concept Project',
   '3D 空间渲染子项': '3D Spatial Render Sub',
   '项目汇报复合工程': 'Keynote Showcase Bundle',
-  '🎬 4K 复合工程集': '🎬 4K Composite Bundles',
+  '🎬 4K 复合工程集': '4K Composite Bundles',
   '4K 复合工程集': '4K Composite Bundles',
   '包含完整音视频与双语字幕轨的复合工程包': 'Composite bundles containing full video, audio, and bilingual subtitle tracks',
-  '⛩️ 日本旅拍精选': '⛩️ Japan Travel Picks',
+  '⛩️ 日本旅拍精选': 'Japan Travel Picks',
   '日本旅拍精选': 'Japan Travel Picks',
   '东京与京都 4K 旅拍 VLOG 精选集': 'Curated 4K travel VLOG collection from Tokyo and Kyoto',
-  '🎬 音声伴生视频/短片': '🎬 Companion Videos & Shorts',
+  '🎬 音声伴生视频/短片': 'Companion Videos & Shorts',
   '音声伴生视频/短片': 'Companion Videos & Shorts',
-  '🎧 全量同人音声 (ASMR Hub)': '🎧 ASMR Audio Hub',
+  '🎧 全量同人音声 (ASMR Hub)': 'ASMR Audio Hub',
   '全量同人音声 (ASMR Hub)': 'ASMR Audio Hub',
 
   // Sample Asset Titles
@@ -2577,11 +2581,11 @@ export const EN_DATA_MAP = {
   '这是自动挂载的同名 SRT 字幕，已通过 WebVTT 实时渲染。': 'Auto-mounted companion SRT subtitle rendered live via WebVTT.',
 
   // Pipeline Presets & Fallbacks
-  '⭐ 题材分类与创作者分流流水线': '⭐ Genre ➔ Creator Pipeline',
+  '⭐ 题材分类与创作者分流流水线': 'Genre ➔ Creator Pipeline',
   '按「题材/分类」➔「创作者/社团」分层归类，作品名规范统一': 'Organize by [Genre / Domain] ➔ [Creator / Studio] with unified leaf naming',
-  '👤 创作者/社团优先流水线': '👤 Creator ➔ Genre Pipeline',
+  '👤 创作者/社团优先流水线': 'Creator ➔ Genre Pipeline',
   '按「创作者/社团」➔「题材」分层，作品名保持纯净，同名时自动消歧': 'Organize by [Creator / Studio] ➔ [Genre] with automatic disambiguation',
-  '📁 媒体形态扁平整理流水线': '📁 Media Type ➔ Genre Pipeline',
+  '📁 媒体形态扁平整理流水线': 'Media Type ➔ Genre Pipeline',
   '按「媒体形态」➔「分类」快速两级归类，极度清爽': 'Two-level organization by [Media Type] ➔ [Genre]',
   '通用分类': 'General',
   '独立创作者': 'Indie Creator',
@@ -2673,14 +2677,19 @@ export function t(key, params = {}) {
 export function tData(str) {
   if (!str) return str
   if (locale.value === 'zh') {
-    return ZH_DATA_MAP[str] || str
+    if (ZH_DATA_MAP[str]) return ZH_DATA_MAP[str]
+    if (typeof str === 'string') {
+      return str.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F]+\s+/u, '')
+    }
+    return str
   }
   if (EN_DATA_MAP[str]) return EN_DATA_MAP[str]
   if (typeof str === 'string') {
     const emojiMatch = str.match(/^([\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F]+\s+)(.+)$/u)
     if (emojiMatch) {
-      const [, prefix, rest] = emojiMatch
-      if (EN_DATA_MAP[rest]) return `${prefix}${EN_DATA_MAP[rest]}`
+      const [, , rest] = emojiMatch
+      if (EN_DATA_MAP[rest]) return EN_DATA_MAP[rest]
+      return rest
     }
     if (/^修改文件夹时间为官方发布日期[：:]\s*/.test(str)) {
       return str.replace(/^修改文件夹时间为官方发布日期[：:]\s*/, 'Sync folder timestamp to release date: ')
@@ -2731,6 +2740,9 @@ export function tData(str) {
     }
     if (str.includes('文本命中「')) {
       return str.replace(/文本命中「([^」]+)」/g, (_, kw) => `Matched text "${EN_DATA_MAP[kw] || kw}"`)
+    }
+    if (str.includes('【少女映画】')) {
+      return str.replace('【少女映画】', '[Shoujo Eiga]')
     }
     if (str.includes(' / ')) {
       return str

@@ -195,11 +195,26 @@
               <span>{{ evaluating ? t('pipeline.runningDryRun') : t('pipeline.runDryRunBtn') }}</span>
             </button>
           </div>
-          <div class="font-mono text-xs p-3 rounded-lg border overflow-x-auto space-y-1" style="background: rgba(0, 0, 0, 0.3); border-color: var(--border-color); color: var(--text-main);">
-            <div>{{ t('pipeline.libraryRoot') }}</div>
-            <div class="pl-4">├── 📁 {{ previewSampleSegment(0) }}/</div>
-            <div class="pl-8">└── 📁 {{ previewSampleSegment(1) }}/</div>
-            <div class="pl-12">└── 🎬 {{ previewSampleLeaf() }}</div>
+          <div class="font-mono text-xs p-3 rounded-lg border overflow-x-auto space-y-1.5" style="background: rgba(0, 0, 0, 0.3); border-color: var(--border-color); color: var(--text-main);">
+            <div class="flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <span>{{ t('pipeline.libraryRoot') }}</span>
+            </div>
+            <div class="pl-4 flex items-center gap-1.5">
+              <span class="text-gray-500">├──</span>
+              <svg class="w-3.5 h-3.5 text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <span>{{ previewSampleSegment(0) }}/</span>
+            </div>
+            <div class="pl-8 flex items-center gap-1.5">
+              <span class="text-gray-500">└──</span>
+              <svg class="w-3.5 h-3.5 text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <span>{{ previewSampleSegment(1) }}/</span>
+            </div>
+            <div class="pl-12 flex items-center gap-1.5">
+              <span class="text-gray-500">└──</span>
+              <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+              <span>{{ previewSampleLeaf() }}</span>
+            </div>
           </div>
         </div>
 
@@ -235,7 +250,7 @@
           <!-- 缺失分面降级提示条 (未分类资产降级提醒) -->
           <div v-if="evaluationResult.stats?.degraded_count > 0" class="p-2.5 rounded-xl border flex items-center justify-between text-xs bg-amber-500/10 border-amber-500/30 text-amber-200 gap-2">
             <div class="flex items-center gap-2 min-w-0">
-              <span class="text-amber-400 font-bold text-sm shrink-0">⚠️</span>
+              <svg class="w-4 h-4 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               <span class="truncate">{{ t('pipeline.degradedNotice', { count: evaluationResult.stats.degraded_count }) }}</span>
             </div>
             <span class="text-[11px] text-amber-300/80 shrink-0 whitespace-nowrap">{{ t('pipeline.degradedHint') }}</span>
@@ -260,9 +275,9 @@
                     class="hover:bg-white/5 transition-colors"
                   >
                     <td class="p-2 text-center">
-                      <span v-if="act.risk_level === 'safe'" class="text-green-400 font-bold">🟢</span>
-                      <span v-else-if="act.risk_level === 'warning'" class="text-yellow-400 font-bold cursor-help" :title="act.risk_messages?.join(';\n')">🟡</span>
-                      <span v-else class="text-red-400 font-bold cursor-help" :title="act.risk_messages?.join(';\n')">🔴</span>
+                      <span v-if="act.risk_level === 'safe'" class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-xs"></span>
+                      <span v-else-if="act.risk_level === 'warning'" class="inline-block w-2.5 h-2.5 rounded-full bg-amber-400 cursor-help shadow-xs" :title="act.risk_messages?.join(';\n')"></span>
+                      <span v-else class="inline-block w-2.5 h-2.5 rounded-full bg-rose-400 cursor-help shadow-xs" :title="act.risk_messages?.join(';\n')"></span>
                     </td>
                     <td class="p-2 font-medium max-w-[160px]" style="color: var(--text-main);" :title="act.file_name">
                       <div class="truncate">{{ act.file_name }}</div>

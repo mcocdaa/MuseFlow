@@ -1498,14 +1498,17 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 <span class="text-[10px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded font-mono">{{ displayItems.length }}</span>
               </div>
               <div class="flex items-center gap-2 mt-0.5">
-                <span v-if="currentCollection.audio_count > 0" class="text-[10px] text-emerald-400 font-mono">
-                  🎧 {{ t('stream.badgeAudioCount', { count: currentCollection.audio_count }) }}
+                <span v-if="currentCollection.audio_count > 0" class="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-mono">
+                  <Music class="w-3 h-3 shrink-0" />
+                  <span>{{ t('stream.badgeAudioCount', { count: currentCollection.audio_count }) }}</span>
                 </span>
-                <span v-if="currentCollection.image_count > 0" class="text-[10px] text-amber-400 font-mono">
-                  🖼️ {{ t('stream.badgeImageCount', { count: currentCollection.image_count }) }}
+                <span v-if="currentCollection.image_count > 0" class="inline-flex items-center gap-1 text-[10px] text-amber-400 font-mono">
+                  <ImageIcon class="w-3 h-3 shrink-0" />
+                  <span>{{ t('stream.badgeImageCount', { count: currentCollection.image_count }) }}</span>
                 </span>
-                <span v-if="currentCollection.video_count > 0" class="text-[10px] text-blue-400 font-mono">
-                  🎬 {{ t('stream.badgeVideoCount', { count: currentCollection.video_count }) }}
+                <span v-if="currentCollection.video_count > 0" class="inline-flex items-center gap-1 text-[10px] text-blue-400 font-mono">
+                  <Video class="w-3 h-3 shrink-0" />
+                  <span>{{ t('stream.badgeVideoCount', { count: currentCollection.video_count }) }}</span>
                 </span>
               </div>
               <p class="text-[11px] text-gray-400 truncate mt-0.5" v-if="currentCollection.description">
