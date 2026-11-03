@@ -41,7 +41,7 @@ def test_recommenders_series_execution():
     for algo_id in ["discover", "resonance", "flashback", "affinity"]:
         rec = get_recommender(algo_id)
         assert rec is not None
-        series = rec.recommend_series(session, {"category": "all"}, limit=10)
+        series = rec.recommend_series(session, {"category": "all"}, limit=100)
         assert isinstance(series, list)
         if series:
             card = series[0]
@@ -56,7 +56,7 @@ def test_feed_modes():
     client = TestClient(app)
 
     # Test series mode
-    res_series = client.get("/api/recommend/feed?mode=series&limit=10")
+    res_series = client.get("/api/recommend/feed?mode=series&limit=100")
     assert res_series.status_code == 200
     series_data = res_series.json()
     assert isinstance(series_data, list)
