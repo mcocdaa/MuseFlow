@@ -63,10 +63,10 @@
     </div>
 
     <!-- Main 3-Column Linear-Grade Minimalist Workspace -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[720px]">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 min-h-[720px]">
       <!-- Column 1 (3 cols): Orthogonal Dimensions -->
       <aside
-        class="lg:col-span-3 border rounded-2xl p-3.5 flex flex-col gap-2.5"
+        class="md:col-span-3 border rounded-2xl p-3.5 flex flex-col gap-2.5"
         style="background-color: var(--bg-surface); border-color: var(--border-color);"
       >
         <!-- Minimal Sidebar Header -->
@@ -217,7 +217,7 @@
 
       <!-- Column 2 (5 cols): Active Dimension Tag Tree -->
       <section
-        class="lg:col-span-5 border rounded-2xl p-3.5 flex flex-col gap-3"
+        class="md:col-span-5 border rounded-2xl p-3.5 flex flex-col gap-3"
         style="background-color: var(--bg-surface); border-color: var(--border-color);"
       >
         <!-- Single-Line Dimension Header & Icon Controls -->
@@ -414,7 +414,7 @@
 
       <!-- Column 3 (4 cols): Minimalist Tag Inspector -->
       <aside
-        class="lg:col-span-4 border rounded-2xl p-3.5 flex flex-col gap-3.5"
+        class="md:col-span-4 border rounded-2xl p-3.5 flex flex-col gap-3.5"
         style="background-color: var(--bg-surface); border-color: var(--border-color);"
       >
         <template v-if="selectedTag">

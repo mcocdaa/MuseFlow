@@ -416,7 +416,7 @@ onMounted(async () => {
   <div class="max-w-[1600px] mx-auto px-2 py-2 flex flex-col gap-5">
     <!-- Top Header & Task Switcher -->
     <div
-      class="rounded-xl p-5 border flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+      class="rounded-xl p-5 border flex flex-col md:flex-row md:items-center justify-between gap-4"
       style="background-color: var(--bg-surface); border-color: var(--border-color);"
     >
       <div>
@@ -431,7 +431,7 @@ onMounted(async () => {
 
       <!-- 3 Clear Task Tabs -->
       <div
-        class="inline-flex items-center p-1 rounded-lg border gap-1 self-start lg:self-auto"
+        class="inline-flex items-center p-1 rounded-lg border gap-1 self-start md:self-auto"
         style="background-color: var(--bg-app); border-color: var(--border-color);"
       >
         <button
@@ -479,8 +479,8 @@ onMounted(async () => {
         style="background-color: var(--bg-surface); border-color: var(--border-color);"
       >
         <!-- Presets & Scope Row -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-          <div class="lg:col-span-8 flex flex-col gap-1.5">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+          <div class="md:col-span-8 flex flex-col gap-1.5">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="text-xs font-medium mr-1" style="color: var(--text-muted);">{{ t('pipeline.presetsLabel') }}</span>
               <button
@@ -500,7 +500,7 @@ onMounted(async () => {
             </p>
           </div>
 
-          <div class="lg:col-span-4 flex items-center gap-2">
+          <div class="md:col-span-4 flex items-center gap-2">
             <span class="text-xs font-medium shrink-0" style="color: var(--text-muted);">{{ t('pipeline.scopeLabel') }}</span>
             <select
               v-model="selectedCollectionId"
@@ -517,7 +517,7 @@ onMounted(async () => {
         </div>
 
         <!-- Layer Chain Editor -->
-        <div class="flex items-center gap-3 overflow-x-auto pb-1">
+        <div class="flex items-center gap-2.5 overflow-x-auto pb-1">
           <div
             class="px-3 py-2.5 rounded-lg border text-xs font-mono shrink-0 flex items-center gap-1.5"
             style="background-color: var(--bg-app); border-color: var(--border-color); color: var(--text-secondary);"
@@ -530,7 +530,7 @@ onMounted(async () => {
             <ArrowRight class="w-4 h-4 shrink-0" style="color: var(--accent-text); opacity: 0.7;" />
 
             <div
-              class="p-3 rounded-lg border min-w-[220px] shrink-0 flex flex-col gap-2"
+              class="p-3 rounded-lg border min-w-[180px] shrink-0 flex flex-col gap-2"
               style="background-color: var(--bg-app); border-color: var(--border-color);"
             >
               <div class="flex items-center justify-between">

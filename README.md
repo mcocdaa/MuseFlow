@@ -20,14 +20,17 @@ Local-first, non-destructive media hub with composite bundle detection, LLM topo
 
 ---
 
-## ✨ Highlights
+## Highlights
 
 - **Zero-Destruction In-Place Indexing**: Indexes local directories, collections, and cross-collection virtual supersets directly on disk without renaming, moving, or locking your original media files.
 - **Automatic Composite Bundle Binding**: Groups companion multitrack assets (`mp4 + srt + wav`, `mp3 + lrc`) into a single `AssetUnit [bundle]` with on-the-fly `.srt`/`.ass` to WebVTT subtitle transcoding and encoding auto-detection (`UTF-8`, `GBK`, `GB18030`).
-- **LLM Directory Topology Triage**: Uses OpenAI-compatible reasoning models (`Grok-4.7`, `Claude 3.5`, `GPT-4o`) and an AST projection DSL to isolate nested sub-series, pair cross-folder companions, and preview changes via non-destructive dry-run evaluation.
-- **Dual-Mode UI — Explorer Workplace & TikTok-Style Vertical Stream Feed**: Seamlessly toggle between a Xiaohongshu-style waterfall + TikTok-style vertical swipe reel + vinyl audio bar and a professional file topology workplace with native OS reveal (`explorer.exe /select`, `open -R`, `xdg-open`).
-- **Pluggable Recommender Algorithms with 180s Anti-Hang Dwell Cap**: Built-in **Discover**, **Flashback**, and **Affinity** algorithms powered by rating, favorite, and playback telemetry strictly capped at `min(dwell, 180s)` to prevent idle tabs from skewing weights.
-- **7 Curated Themes**: Instant, persistent `localStorage` switching across Cyber Dark, OLED Pure Black, Sakura Pink, Cyberpunk Neon, Forest Emerald, Sunset Amber, and Studio Light palettes.
+- **4-Page Task-Oriented Workspace**:
+  - **Discover (`漫游推荐`)**: Multi-facet tag filtering, series/flat display toggle, and pluggable recommender algorithms (**Discover**, **Resonance**, **Affinity**, **Flashback**).
+  - **Library (`媒体资产`)**: Physical directory tree, dynamic taxonomy lens tree, batch operations, and full metadata inspector.
+  - **Taxonomy (`标签体系`)**: Orthogonal classification dimensions, hierarchical tag trees, synonym aliases, and domain presets.
+  - **Organize (`整理中心`)**: Dedicated workspace integrating **Projection Pipeline** (visual formula + non-destructive Dry-Run preview), **Folder Triage** (filename normalization & untranslated isolation), and **Scan & Index Sync**.
+- **Clean Studio Dark & Studio Light Themes**: Minimalist architectural surfaces with themed monochrome SVG line iconography (`lucide-vue-next`), `1px` hairline borders, and instant bilingual (`zh-CN` / `en-US`) live switching.
+- **Anti-Hang Telemetry Dwell Cap**: Playback dwell telemetry is strictly capped at `min(dwell, 180s)` to prevent idle browser tabs from skewing recommendation weights.
 
 <details>
 <summary><b>📊 Why MuseFlow vs. Traditional Media Tools (Click to expand)</b></summary>

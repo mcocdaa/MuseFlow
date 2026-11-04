@@ -925,10 +925,10 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
     />
 
     <!-- Standard 3-Column Asset Browser Workspace -->
-    <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[700px]">
+    <div v-else class="grid grid-cols-1 md:grid-cols-12 gap-5 min-h-[700px]">
       <!-- Left Sidebar: Collections, Supersets & Virtual Lens -->
       <aside
-        class="lg:col-span-3 border rounded-2xl p-4 flex flex-col gap-4 transition-colors"
+        class="md:col-span-3 border rounded-2xl p-4 flex flex-col gap-4 transition-colors"
         style="background-color: var(--bg-surface); border-color: var(--border-color);"
       >
         <!-- Mode Switch: 物理目录 vs 分类透镜 -->
@@ -1239,7 +1239,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
 
       <!-- Main Explorer Area -->
       <main
-        :class="selectedItem ? 'lg:col-span-6' : 'lg:col-span-9'"
+        :class="selectedItem ? 'md:col-span-6' : 'md:col-span-9'"
         class="border rounded-2xl p-4 flex flex-col transition-all duration-200"
         style="background-color: var(--bg-surface); border-color: var(--border-color);"
       >
@@ -1718,7 +1718,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
       <!-- Right Inspector Details Drawer (极简无噪点，现代设计系统) -->
       <aside
         v-if="selectedItem"
-        class="lg:col-span-3 border rounded-2xl p-4 flex flex-col gap-4 transition-all duration-200 overflow-y-auto max-h-[calc(100vh-100px)]"
+        class="md:col-span-3 border rounded-2xl p-4 flex flex-col gap-4 transition-all duration-200 overflow-y-auto max-h-[calc(100vh-100px)]"
         style="background-color: var(--bg-surface); border-color: var(--border-color);"
       >
         <!-- 1. Header (导航与关闭) -->
