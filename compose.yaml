@@ -3,8 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      network: host
+      args:
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple}
     image: museflow:latest
     container_name: museflow
+    user: "${UID:-1000}:${GID:-1000}"
     restart: unless-stopped
     ports:
       - "${MUSEFLOW_PORT:-8765}:8765"
@@ -13,22 +17,23 @@ services:
       - MUSEFLOW_PORT=8765
       - MUSEFLOW_DATA_DIR=/data
       - MUSEFLOW_FRONTEND_DIST=/app/frontend/dist
+      - MUSEFLOW_NAS_MOUNT=${MUSEFLOW_NAS_MOUNT:-/media}
+      - MUSEFLOW_MEDIA_ROOTS=${MUSEFLOW_MEDIA_ROOTS:-/media}
       - LLM_BASE_URL=${LLM_BASE_URL:-https://api.openai.com/v1}
       - LLM_API_KEY=${LLM_API_KEY:-}
       - LLM_MODEL=${LLM_MODEL:-gpt-4o}
-      - MAX_DWELL_SECONDS=180.0
+      - MAX_DWELL_SECONDS=${MAX_DWELL_SECONDS:-180.0}
     volumes:
-      # Persistent SQLite DB and generated thumbnails
-      - museflow_data:/data
-      # Mount your local media libraries (read-only for security)
-      - ${MEDIA_PATH:-./media}:/media:ro
+      # Persistent SQLite DB, user rules, and generated thumbnails
+      - ${MUSEFLOW_DATA_HOST_DIR:-./backend/data}:/data
+      # Mount local or NAS media library root
+      - ${MUSEFLOW_NAS_MOUNT:-./sample_media}:${MUSEFLOW_NAS_MOUNT:-/media}
+      # Serve latest compiled frontend assets directly
+      - ./frontend/dist:/app/frontend/dist:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8765/api/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/api/health')"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
 
-volumes:
-  museflow_data:
-    driver: local

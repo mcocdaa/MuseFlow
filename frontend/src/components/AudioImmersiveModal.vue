@@ -2,6 +2,7 @@
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { usePlayerStore } from '../stores/playerStore'
 import { useMediaStore } from '../stores/mediaStore'
+import { apiUrl } from '../api'
 import { t, tData } from '../i18n'
 import {
   Play,
@@ -74,12 +75,12 @@ const subtitleFile = computed(() => {
 
 const audioStreamUrl = computed(() => {
   if (!primaryFile.value) return ''
-  return `/api/stream/file/${primaryFile.value.id}`
+  return apiUrl(`/stream/file/${primaryFile.value.id}`)
 })
 
 const subtitleStreamUrl = computed(() => {
   if (!subtitleFile.value) return ''
-  return `/api/stream/subtitle/${subtitleFile.value.id}`
+  return apiUrl(`/stream/subtitle/${subtitleFile.value.id}`)
 })
 
 const setupSubtitleTracking = () => {
@@ -390,7 +391,7 @@ const cooldownCurrent = async () => {
             <!-- Center Artwork Label -->
             <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-white/40 shadow-inner flex items-center justify-center bg-purple-950">
               <img
-                :src="`/api/stream/thumbnail/${currentUnit.id}`"
+                :src="apiUrl(`/stream/thumbnail/${currentUnit.id}`)"
                 :alt="tData(currentUnit.title)"
                 class="w-full h-full object-cover"
                 @error="(e) => e.target.style.display = 'none'"
@@ -688,7 +689,7 @@ const cooldownCurrent = async () => {
               :title="tData(imgUnit.title)"
             >
               <img
-                :src="imgUnit.file_id ? `/api/stream/file_thumbnail/${imgUnit.file_id}` : `/api/stream/thumbnail/${imgUnit.id}`"
+                :src="imgUnit.file_id ? apiUrl(`/stream/file_thumbnail/${imgUnit.file_id}`) : apiUrl(`/stream/thumbnail/${imgUnit.id}`)"
                 :alt="tData(imgUnit.title)"
                 loading="lazy"
                 class="w-full h-full object-cover"

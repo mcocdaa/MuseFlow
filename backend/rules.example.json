@@ -44,6 +44,19 @@
     "临时目录",
     "网络暂存"
   ],
+  "domain_roots_by_type": {
+    "audio": "音频总览",
+    "video": "视频总览",
+    "image": "图集总览"
+  },
+  "ignored_dir_names": [
+    "Cache",
+    "Thumbnails"
+  ],
+  "atomic_album_containers": [
+    "摄影画册",
+    "漫画连载"
+  ],
   "container_bucket_dirs": [
     "待分类",
     "00_散装",

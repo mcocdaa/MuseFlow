@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { usePlayerStore } from '../stores/playerStore'
+import { apiUrl } from '../api'
 import { t, tData } from '../i18n'
 import {
   Play,
@@ -61,12 +62,12 @@ const subtitleFile = computed(() => {
 
 const mediaUrl = computed(() => {
   if (!primaryFile.value) return ''
-  return `/api/stream/file/${primaryFile.value.id}`
+  return apiUrl(`/stream/file/${primaryFile.value.id}`)
 })
 
 const subtitleUrl = computed(() => {
   if (!subtitleFile.value) return ''
-  return `/api/stream/subtitle/${subtitleFile.value.id}`
+  return apiUrl(`/stream/subtitle/${subtitleFile.value.id}`)
 })
 
 const isVideo = computed(() => {
@@ -280,7 +281,7 @@ onUnmounted(() => {
           style="animation-duration: 4s;"
         >
           <img
-            :src="`/api/stream/thumbnail/${currentUnit.id}`"
+            :src="apiUrl(`/stream/thumbnail/${currentUnit.id}`)"
             class="w-full h-full object-cover"
             @error="(e) => e.target.style.display = 'none'"
           />
@@ -492,7 +493,7 @@ onUnmounted(() => {
           >
             <!-- Vinyl label artwork -->
             <img
-              :src="`/api/stream/thumbnail/${currentUnit.id}`"
+              :src="apiUrl(`/stream/thumbnail/${currentUnit.id}`)"
               class="w-14 h-14 rounded-full object-cover border border-white/20"
               @error="(e) => e.target.style.display = 'none'"
             />

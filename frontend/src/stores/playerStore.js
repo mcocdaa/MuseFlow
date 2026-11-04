@@ -1,5 +1,10 @@
+import { watch } from 'vue'
 import { defineStore } from 'pinia'
 import { logTelemetry, createSupersetFromQueue, fetchAssets } from '../api'
+import { useI18nStore } from './i18nStore'
+
+const t = (key, params) => useI18nStore().t(key, params)
+const tData = (str) => useI18nStore().tData(str)
 
 function expandCompositeUnit(unit) {
   if (!unit) return { tracks: [], gallery: [] }
@@ -14,15 +19,23 @@ function expandCompositeUnit(unit) {
   }
 
   let tracks = []
-  if (rawTracks.length > 0 && fileMap.size > 0) {
+  if (rawTracks.length > 0) {
     rawTracks.forEach((t, idx) => {
-      const audioFile = fileMap.get(t.audio_file_id)
-      if (!audioFile) return
-      const subFile = t.subtitle_file_id
-        ? fileMap.get(t.subtitle_file_id)
-        : t.lyrics_file_id
-          ? fileMap.get(t.lyrics_file_id)
-          : null
+      if (!t.audio_file_id) return
+      const audioFile = fileMap.get(t.audio_file_id) || {
+        id: t.audio_file_id,
+        file_name: t.title || unit.title,
+        role: 'primary',
+      }
+      const subId = t.subtitle_file_id || t.lyrics_file_id
+      const isLyrics = Boolean(!t.subtitle_file_id && t.lyrics_file_id)
+      const subFile = subId
+        ? fileMap.get(subId) || {
+            id: subId,
+            file_name: t.title || unit.title,
+            role: isLyrics ? 'lyrics' : 'subtitle',
+          }
+        : null
       const trackFiles = [{ ...audioFile, role: 'primary' }]
       if (subFile) {
         trackFiles.push({ ...subFile, role: subFile.role === 'lyrics' ? 'lyrics' : 'subtitle' })
@@ -43,10 +56,14 @@ function expandCompositeUnit(unit) {
   }
 
   const gallery = []
-  if (rawGallery.length > 0 && fileMap.size > 0) {
+  if (rawGallery.length > 0) {
     rawGallery.forEach((g, idx) => {
-      const imgFile = fileMap.get(g.file_id)
-      if (!imgFile) return
+      if (!g.file_id) return
+      const imgFile = fileMap.get(g.file_id) || {
+        id: g.file_id,
+        file_name: g.file_name || g.title || unit.title,
+        role: 'primary',
+      }
       gallery.push({
         id: unit.id,
         file_id: g.file_id,
@@ -83,6 +100,8 @@ export const usePlayerStore = defineStore('player', {
     // -------------------------------------------------------------
     toast: {
       message: '',
+      key: '',
+      params: null,
       visible: false,
       timerId: null,
     },
@@ -322,18 +341,58 @@ export const usePlayerStore = defineStore('player', {
     // Foreground Continuous Viewer / Slideshow (Images & Videos)
     // -------------------------------------------------------------
     openImage(unit, queue = [], autoPlay = false) {
+      if (!unit) return
       this.startDwell(unit.id)
-      this.activeFgUnit = unit
-      this.fgQueue = queue.length > 0 ? queue : [unit]
-      const idx = this.fgQueue.findIndex((u) =>
-        unit.file_id && u.file_id ? u.file_id === unit.file_id : u.id === unit.id
-      )
-      this.fgQueueIndex = idx !== -1 ? idx : 0
+
+      // 1. If unit is already an expanded single gallery page (has file_id), use the provided queue directly
+      if (unit.file_id) {
+        this.fgQueue = queue.length > 0 ? queue : [unit]
+        const idx = this.fgQueue.findIndex((u) => u.file_id === unit.file_id)
+        this.fgQueueIndex = idx !== -1 ? idx : 0
+        this.activeFgUnit = this.fgQueue[this.fgQueueIndex] || unit
+      } else if (unit.dynamic_attributes?.gallery?.length > 1 && queue.length <= 1) {
+        // 2. Opening a single multi-page comic / photo album card: expand its pages + any companion video clips
+        const { tracks, gallery } = expandCompositeUnit(unit)
+        const bonusVideos = Array.isArray(unit.dynamic_attributes?.tracks) && unit.dynamic_attributes.tracks.length > 0
+          ? tracks.filter((t) => t.unit_type === 'video' || t.unit_type === 'bundle')
+          : []
+        const combined = [...gallery, ...bonusVideos]
+        this.fgQueue = combined.length > 0 ? combined : [unit]
+        this.fgQueueIndex = 0
+        this.activeFgUnit = this.fgQueue[0]
+      } else {
+        // 3. Opening a standalone loose image or a multi-unit series queue
+        const sourceList = queue.length > 0 ? queue : [unit]
+        const expanded = []
+        let targetIdx = 0
+        for (const item of sourceList) {
+          if (item.id === unit.id && expanded.length > 0 && targetIdx === 0) {
+            targetIdx = expanded.length
+          }
+          if (item.dynamic_attributes?.gallery?.length > 1) {
+            const { tracks, gallery } = expandCompositeUnit(item)
+            const bonusVideos = Array.isArray(item.dynamic_attributes?.tracks) && item.dynamic_attributes.tracks.length > 0
+              ? tracks.filter((t) => t.unit_type === 'video' || t.unit_type === 'bundle')
+              : []
+            expanded.push(...gallery, ...bonusVideos)
+          } else {
+            expanded.push(item)
+          }
+        }
+        this.fgQueue = expanded.length > 0 ? expanded : [unit]
+        if (targetIdx === 0 && unit.id) {
+          const foundIdx = this.fgQueue.findIndex((u) => u.id === unit.id)
+          if (foundIdx !== -1) targetIdx = foundIdx
+        }
+        this.fgQueueIndex = targetIdx
+        this.activeFgUnit = this.fgQueue[this.fgQueueIndex] || unit
+      }
+
       this.fgViewerOpen = true
       this.fgAutoPlay = autoPlay
 
       // Legacy image lightbox fields sync
-      this.activeImageUnit = unit
+      this.activeImageUnit = this.activeFgUnit
       this.imageQueue = this.fgQueue
       this.imageQueueIndex = this.fgQueueIndex
 
@@ -523,7 +582,7 @@ export const usePlayerStore = defineStore('player', {
       this.isBgPlaying = this.isFgAudioPlaying
       this.bgViewMode = 'disc'
       this.closeAudioModal()
-      this.showToast(`已将「${this.activeBgUnit.title}」移入背景播放`)
+      this.showI18nToast('playerStore.toastMovedToBg', { title: tData(this.activeBgUnit.title) })
     },
 
     toggleFgAudioDrawer() {
@@ -629,16 +688,41 @@ export const usePlayerStore = defineStore('player', {
     // -------------------------------------------------------------
     // Toast Notification Feedback
     // -------------------------------------------------------------
-    showToast(message, durationMs = 2500) {
+    showToast(message, durationMs = 2500, i18nKey = '', i18nParams = null) {
       if (this.toast.timerId) {
         clearTimeout(this.toast.timerId)
       }
+      this.toast.key = i18nKey
+      this.toast.params = i18nParams
       this.toast.message = message
       this.toast.visible = true
+      if (!this._toastLocaleWatcherBound) {
+        this._toastLocaleWatcherBound = true
+        const i18nStore = useI18nStore()
+        watch(i18nStore.locale, () => {
+          if (this.toast.visible && this.toast.key) {
+            const resolvedParams = {}
+            if (this.toast.params) {
+              for (const [k, v] of Object.entries(this.toast.params)) {
+                resolvedParams[k] = k === 'title' ? tData(v) : v
+              }
+            }
+            this.toast.message = t(this.toast.key, resolvedParams)
+          }
+        })
+      }
       this.toast.timerId = setTimeout(() => {
         this.toast.visible = false
         this.toast.timerId = null
       }, durationMs)
+    },
+
+    showI18nToast(key, params = {}, durationMs = 2500) {
+      const resolvedParams = {}
+      for (const [k, v] of Object.entries(params)) {
+        resolvedParams[k] = k === 'title' ? tData(v) : v
+      }
+      this.showToast(t(key, resolvedParams), durationMs, key, params)
     },
 
     // -------------------------------------------------------------
@@ -648,22 +732,22 @@ export const usePlayerStore = defineStore('player', {
       if (!unit) return
       const { tracks } = expandCompositeUnit(unit)
       let addedCount = 0
-      for (const t of tracks) {
-        const key = t.track_key || t.id
+      for (const tItem of tracks) {
+        const key = tItem.track_key || tItem.id
         const exists = this.bgQueue.some((u) => (u.track_key || u.id) === key)
         if (!exists) {
-          this.bgQueue.push(t)
+          this.bgQueue.push(tItem)
           addedCount++
         }
       }
       if (addedCount > 0) {
-        this.showToast(
-          tracks.length > 1
-            ? `已将「${unit.title}」(${addedCount} 轨) 加入播放队列`
-            : `已加入播放队列: 「${unit.title}」`
-        )
+        if (tracks.length > 1) {
+          this.showI18nToast('playerStore.toastAddedTracksToQueue', { title: unit.title, count: addedCount })
+        } else {
+          this.showI18nToast('playerStore.toastAddedUnitToQueue', { title: unit.title })
+        }
       } else {
-        this.showToast(`「${unit.title}」已在播放队列中`)
+        this.showI18nToast('playerStore.toastAlreadyInQueue', { title: unit.title })
       }
       // If nothing was in background, set activeBgUnit peacefully paused
       if (!this.activeBgUnit && this.bgQueue.length > 0) {
@@ -679,10 +763,10 @@ export const usePlayerStore = defineStore('player', {
       let addedCount = 0
       units.forEach((u) => {
         const { tracks } = expandCompositeUnit(u)
-        tracks.forEach((t) => {
-          const key = t.track_key || t.id
+        tracks.forEach((tItem) => {
+          const key = tItem.track_key || tItem.id
           if (!this.bgQueue.some((item) => (item.track_key || item.id) === key)) {
-            this.bgQueue.push(t)
+            this.bgQueue.push(tItem)
             addedCount++
           }
         })
@@ -690,31 +774,31 @@ export const usePlayerStore = defineStore('player', {
       if (!this.activeBgUnit && this.bgQueue.length > 0) {
         this.playAudio(this.bgQueue[0], this.bgQueue, 'disc')
       }
-      this.showToast(`已批量添加 ${addedCount} 项至背景播放队列`)
+      this.showI18nToast('playerStore.toastBatchAddedToQueue', { count: addedCount })
     },
 
     removeFromBgQueue(index) {
       if (index < 0 || index >= this.bgQueue.length) return
       const isCurrent = index === this.bgQueueIndex
-      const removedTitle = this.bgQueue[index]?.title || '项目'
+      const removedTitle = this.bgQueue[index]?.title || t('playerStore.defaultItemTitle')
       this.bgQueue.splice(index, 1)
 
       if (this.bgQueue.length === 0) {
         this.activeBgUnit = null
         this.isBgPlaying = false
         this.bgQueueIndex = 0
-        this.showToast(`已从队列移除「${removedTitle}」，队列已清空`)
+        this.showI18nToast('playerStore.toastRemovedAndCleared', { title: removedTitle })
       } else if (isCurrent) {
         const nextIdx = Math.min(index, this.bgQueue.length - 1)
         this.bgQueueIndex = nextIdx
         this.activeBgUnit = this.bgQueue[nextIdx]
         this.startDwell(this.activeBgUnit.id)
-        this.showToast(`已切换至下一首: 「${this.activeBgUnit.title}」`)
+        this.showI18nToast('playerStore.toastSwitchedNext', { title: this.activeBgUnit.title })
       } else if (index < this.bgQueueIndex) {
         this.bgQueueIndex--
-        this.showToast(`已从队列移除「${removedTitle}」`)
+        this.showI18nToast('playerStore.toastRemovedFromQueue', { title: removedTitle })
       } else {
-        this.showToast(`已从队列移除「${removedTitle}」`)
+        this.showI18nToast('playerStore.toastRemovedFromQueue', { title: removedTitle })
       }
     },
 
@@ -747,7 +831,7 @@ export const usePlayerStore = defineStore('player', {
       this.activeBgUnit = null
       this.isBgPlaying = false
       this.bgViewMode = 'hidden'
-      this.showToast('背景播放队列已清空，退出播放')
+      this.showI18nToast('playerStore.toastQueueClearedExit')
     },
 
     stopAndExitBgPlayback() {
@@ -755,7 +839,7 @@ export const usePlayerStore = defineStore('player', {
       this.isBgPlaying = false
       this.activeBgUnit = null
       this.bgViewMode = 'hidden'
-      this.showToast('已停止并退出背景播放')
+      this.showI18nToast('playerStore.toastStoppedBg')
     },
 
     toggleQueueDrawer() {
@@ -772,21 +856,21 @@ export const usePlayerStore = defineStore('player', {
 
     async saveBgQueueAsSuperset(name) {
       if (!name || !name.trim()) {
-        this.showToast('超集名称不能为空')
-        throw new Error('超集名称不能为空')
+        this.showI18nToast('playerStore.errEmptySupersetName')
+        throw new Error(t('playerStore.errEmptySupersetName'))
       }
       if (!this.bgQueue.length) {
-        this.showToast('播放队列为空，无法另存为超集')
-        throw new Error('播放队列为空')
+        this.showI18nToast('playerStore.errEmptyQueueSave')
+        throw new Error(t('playerStore.errQueueEmpty'))
       }
 
       const res = await createSupersetFromQueue({
         name: name.trim(),
-        description: '由播放队列一键另存生成',
+        description: t('playerStore.bgQueueSupersetDesc'),
         icon: 'list-music',
         unit_ids: this.bgQueue.map((u) => u.id)
       })
-      this.showToast(`已将当前队列另存为超集「${name.trim()}」(${res.unit_count}项)`)
+      this.showI18nToast('playerStore.toastSavedBgSuperset', { name: name.trim(), count: res.unit_count })
       return res
     },
 
@@ -794,7 +878,7 @@ export const usePlayerStore = defineStore('player', {
       try {
         const units = await fetchAssets({ superset_id: supersetId, limit: 200 })
         if (!units || units.length === 0) {
-          this.showToast('该超集暂无可播放的资产')
+          this.showI18nToast('playerStore.toastSupersetEmpty')
           return
         }
 
@@ -804,15 +888,17 @@ export const usePlayerStore = defineStore('player', {
             units.find((u) => u.unit_type === 'audio' || u.unit_type === 'video' || u.unit_type === 'bundle') ||
             units[0]
           this.playAudio(firstPlayable, this.bgQueue, 'mini')
-          this.showToast(`已载入超集 (${units.length} 项) 至背景队列`)
+          this.showI18nToast('playerStore.toastLoadedSupersetBg', { count: units.length })
         } else {
           // Foreground continuous viewer / slideshow
           this.openImage(units[0], units, autoPlay)
-          this.showToast(`已载入超集 (${units.length} 项) 开启全屏连播`)
+          this.showI18nToast('playerStore.toastLoadedSupersetFg', { count: units.length })
         }
       } catch (err) {
         console.error('Failed to load superset into queue', err)
-        this.showToast('载入超集失败：' + (err.message || '网络异常'))
+        this.showI18nToast('playerStore.toastLoadSupersetFailed', {
+          msg: err.message || t('playerStore.errNetwork')
+        })
       }
     },
 
@@ -820,9 +906,9 @@ export const usePlayerStore = defineStore('player', {
       if (!unit) return
       if (!this.fgQueue.some((u) => u.id === unit.id)) {
         this.fgQueue.push(unit)
-        this.showToast(`已加入连播清单: 「${unit.title}」`)
+        this.showI18nToast('playerStore.toastAddedToFgQueue', { title: unit.title })
       } else {
-        this.showToast(`「${unit.title}」已在连播清单中`)
+        this.showI18nToast('playerStore.toastAlreadyInFgQueue', { title: unit.title })
       }
     },
 
@@ -844,16 +930,16 @@ export const usePlayerStore = defineStore('player', {
     },
 
     async saveFgQueueAsSuperset(name) {
-      if (!name || !name.trim()) throw new Error('超集名称不能为空')
-      if (!this.fgQueue.length) throw new Error('连播列表为空')
+      if (!name || !name.trim()) throw new Error(t('playerStore.errEmptySupersetName'))
+      if (!this.fgQueue.length) throw new Error(t('playerStore.errFgQueueEmpty'))
 
       const res = await createSupersetFromQueue({
         name: name.trim(),
-        description: '由连播清单另存生成',
+        description: t('playerStore.fgQueueSupersetDesc'),
         icon: 'sparkles',
         unit_ids: this.fgQueue.map((u) => u.id)
       })
-      this.showToast(`已将连播清单另存为超集「${name.trim()}」(${res.unit_count}项)`)
+      this.showI18nToast('playerStore.toastSavedFgSuperset', { name: name.trim(), count: res.unit_count })
       return res
     }
   },

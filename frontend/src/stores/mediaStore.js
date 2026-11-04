@@ -11,15 +11,18 @@ import {
   fetchAllTagsFlat,
   cooldownAsset,
   fetchLensTree,
-  fetchFacetSummary
+  fetchFacetSummary,
+  fetchMaintenanceStatus
 } from '../api'
 
 export const useMediaStore = defineStore('media', {
   state: () => ({
-    currentMode: 'stream', // 'stream' | 'workplace'
-    workplaceView: 'assets', // 'assets' (资产列表) | 'taxonomy' (分类与标签中心专页)
+    currentMode: 'stream', // 'stream' | 'workplace' | 'organize'
+    workplaceView: 'assets', // 'assets' | 'taxonomy' | 'organize'
     taxonomyInitialClassCode: null,
     taxonomyInitialTagId: null,
+    organizeInitialTab: 'pipeline', // 'pipeline' | 'physical' | 'ingest'
+    organizeTargetFolder: '',
     activeCategory: 'all', // 'all' | 'image' | 'video' | 'audio'
     feedDisplayMode: 'series', // 'series' (系列聚合) | 'flat' (单集平铺)
     selectedAlgorithm: 'discover',
@@ -42,11 +45,6 @@ export const useMediaStore = defineStore('media', {
     searchQuery: '',
     loading: false,
     scanModalOpen: false,
-    recapModalOpen: false,
-    recapData: null,
-    aiOrganizerModalOpen: false,
-    aiOrganizerTargetFolder: '',
-    agentMCPModalOpen: false,
     physicalOrganizerModalOpen: false,
     physicalOrganizerTargetFolder: '',
     maintenanceLocks: [],
@@ -63,6 +61,15 @@ export const useMediaStore = defineStore('media', {
       this.workplaceView = 'taxonomy'
       this.taxonomyInitialClassCode = classCode
       this.taxonomyInitialTagId = tagId
+    },
+
+    openOrganizeWorkspace(tab = 'pipeline', folderPath = '') {
+      this.currentMode = 'workplace'
+      this.workplaceView = 'organize'
+      this.organizeInitialTab = tab || 'pipeline'
+      if (folderPath) {
+        this.organizeTargetFolder = folderPath
+      }
     },
 
     toggleFacetFilter(category, val) {

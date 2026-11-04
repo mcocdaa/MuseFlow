@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import re
@@ -9,16 +8,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import uuid
 
-import httpx
 from sqlmodel import Session, select
 
 from app.core.config import (
-    ALL_MEDIA_EXTS,
     SUPPORTED_AUDIO_EXTS,
     SUPPORTED_IMAGE_EXTS,
     SUPPORTED_VIDEO_EXTS,
-    SUPPORTED_SUBTITLE_EXTS,
-    DATA_DIR,
 )
 from app.core.path_resolver import resolve_physical_path, is_nas_online, is_network_or_nas_path
 from app.models.entities import (
@@ -29,8 +24,6 @@ from app.models.entities import (
     ProjectionJournal,
 )
 from app.services.catalog_importer import (
-    COVER_CACHE_DIR,
-    WORK_CODE_PATTERN,
     extract_work_code,
     fetch_and_cache_catalog_meta,
 )
@@ -607,7 +600,6 @@ def execute_triage_plan(
 
                     # 物理位移 (安全处理跨卷与同卷)
                     src_str = str(src.resolve())
-                    dst_str = str(dst.resolve()) if dst.exists() else str(dst)
 
                     shutil.move(str(src), str(dst))
 
@@ -625,7 +617,6 @@ def execute_triage_plan(
                     dst.parent.mkdir(parents=True, exist_ok=True)
 
                     src_str = str(src.resolve())
-                    dst_str = str(dst)
 
                     shutil.move(str(src), str(dst))
 
@@ -662,17 +653,38 @@ def execute_triage_plan(
         try:
             for item_type, src_s, dst_s, new_title in path_mapping_updates:
                 if item_type == "dir":
-                    cols = session.exec(select(Collection).where(Collection.folder_path == src_s)).all()
+                    src_prefix = src_s.rstrip("/\\") + "/"
+                    cols = session.exec(select(Collection).where(Collection.folder_path.startswith(src_s))).all()
                     for c in cols:
-                        c.folder_path = dst_s
-                        if new_title:
-                            c.name = new_title
-                        session.add(c)
+                        if c.folder_path == src_s:
+                            c.folder_path = dst_s
+                            if new_title:
+                                c.name = new_title
+                            session.add(c)
+                        elif c.folder_path and c.folder_path.startswith(src_prefix):
+                            c.folder_path = c.folder_path.replace(src_s, dst_s, 1)
+                            session.add(c)
 
+                    affected_unit_ids = set()
                     files = session.exec(select(AssetFile).where(AssetFile.file_path.startswith(src_s))).all()
                     for f in files:
-                        f.file_path = f.file_path.replace(src_s, dst_s, 1)
-                        session.add(f)
+                        if f.file_path == src_s or f.file_path.startswith(src_prefix):
+                            f.file_path = f.file_path.replace(src_s, dst_s, 1)
+                            session.add(f)
+                            if f.asset_unit_id:
+                                affected_unit_ids.add(f.asset_unit_id)
+
+                    if affected_unit_ids:
+                        a_units = session.exec(select(AssetUnit).where(AssetUnit.id.in_(affected_unit_ids))).all()
+                        for au in a_units:
+                            dyn = dict(au.dynamic_attributes or {})
+                            fp_dyn = dyn.get("folder_path")
+                            if fp_dyn and (fp_dyn == src_s or fp_dyn.startswith(src_prefix)):
+                                if fp_dyn == src_s and new_title:
+                                    au.title = new_title
+                                dyn["folder_path"] = fp_dyn.replace(src_s, dst_s, 1)
+                                au.dynamic_attributes = dyn
+                                session.add(au)
 
                 elif item_type == "file":
                     f_rec = session.exec(select(AssetFile).where(AssetFile.file_path == src_s)).first()

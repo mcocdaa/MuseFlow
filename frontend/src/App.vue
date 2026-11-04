@@ -13,7 +13,6 @@ import FloatingMiniPlayer from './components/FloatingMiniPlayer.vue'
 import AudioImmersiveModal from './components/AudioImmersiveModal.vue'
 import ScanModal from './components/ScanModal.vue'
 import PhysicalOrganizerModal from './components/PhysicalOrganizerModal.vue'
-import ThemePickerModal from './components/ThemePickerModal.vue'
 import BackgroundQueueDrawer from './components/BackgroundQueueDrawer.vue'
 
 const mediaStore = useMediaStore()
@@ -28,7 +27,7 @@ onMounted(() => {
 
 <template>
   <div
-    class="min-h-screen flex flex-col font-sans transition-colors duration-300"
+    class="min-h-screen flex flex-col font-sans transition-colors duration-200"
     style="background-color: var(--bg-app); color: var(--text-primary);"
   >
     <!-- Top Navigation Bar -->
@@ -36,24 +35,25 @@ onMounted(() => {
 
     <!-- Global Maintenance Warning Banner -->
     <Transition
-      enter-active-class="transition duration-300 ease-out"
+      enter-active-class="transition duration-200 ease-out"
       enter-from-class="opacity-0 -translate-y-2"
       enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition duration-200 ease-in"
+      leave-active-class="transition duration-150 ease-in"
       leave-from-class="opacity-100 translate-y-0"
       leave-to-class="opacity-0 -translate-y-2"
     >
       <div
         v-if="mediaStore.maintenanceLocks.length > 0"
-        class="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2.5 flex items-center justify-between text-xs text-amber-200 backdrop-blur-md sticky top-14 z-30"
+        class="border-b px-4 py-2.5 flex items-center justify-between text-xs sticky top-14 z-30"
+        style="background-color: var(--bg-surface-elevated); border-color: var(--border-hover); color: var(--text-primary);"
       >
         <div class="flex items-center gap-2 max-w-5xl mx-auto w-full">
-          <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
+          <span class="w-2 h-2 rounded-full shrink-0" style="background-color: var(--accent-color);" />
           <span class="font-semibold tracking-wide">{{ t('app.maintenanceTitle') }}</span>
-          <span class="truncate">
+          <span class="truncate" style="color: var(--text-secondary);">
             {{ mediaStore.maintenanceLocks.map(l => l.reason || l.folder_path).join('；') }}
           </span>
-          <span class="text-amber-300/70 ml-2 hidden sm:inline">{{ t('app.maintenanceHint') }}</span>
+          <span class="ml-2 hidden sm:inline" style="color: var(--text-muted);">{{ t('app.maintenanceHint') }}</span>
         </div>
       </div>
     </Transition>
@@ -71,7 +71,6 @@ onMounted(() => {
     <AudioImmersiveModal />
     <ScanModal />
     <PhysicalOrganizerModal />
-    <ThemePickerModal />
     <BackgroundQueueDrawer />
 
     <!-- Global Floating Toast Notification -->
@@ -85,10 +84,10 @@ onMounted(() => {
     >
       <div
         v-if="playerStore.toast.visible"
-        class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl shadow-2xl backdrop-blur-xl border border-white/15 text-xs font-medium text-white flex items-center gap-2.5 pointer-events-none select-none"
-        style="background-color: var(--bg-surface-elevated); box-shadow: 0 10px 30px rgba(0,0,0,0.5);"
+        class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl shadow-xl border text-xs font-medium flex items-center gap-2.5 pointer-events-none select-none"
+        style="background-color: var(--bg-surface-elevated); border-color: var(--border-hover); color: var(--text-primary);"
       >
-        <span class="w-2 h-2 rounded-full bg-purple-400 shrink-0 animate-ping" />
+        <span class="w-2 h-2 rounded-full shrink-0" style="background-color: var(--accent-color);" />
         <span class="tracking-wide">{{ playerStore.toast.message }}</span>
       </div>
     </Transition>

@@ -7,11 +7,8 @@ import { locale, toggleLocale, t, tData } from '../i18n'
 import {
   Compass,
   FolderOpen,
-  Sparkles,
   RefreshCw,
   FolderSearch,
-  BrainCircuit,
-  Palette,
   Search,
   X,
   Play,
@@ -21,7 +18,11 @@ import {
   Tv,
   ListMusic,
   Power,
-  Tags
+  Tags,
+  Workflow,
+  Sun,
+  Moon,
+  Globe
 } from 'lucide-vue-next'
 
 const mediaStore = useMediaStore()
@@ -77,263 +78,278 @@ const handleRefresh = () => {
 
 <template>
   <header
-    class="sticky top-0 z-30 backdrop-blur-md border-b px-4 lg:px-8 py-2.5 transition-colors"
+    class="sticky top-0 z-30 border-b px-4 lg:px-8 py-2.5 transition-colors"
     style="background-color: var(--bg-surface); border-color: var(--border-color);"
   >
-    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
-      <!-- Left: Brand & Mode Pill -->
-      <div class="flex items-center gap-4 shrink-0">
-        <!-- Logo -->
+    <div class="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
+      <!-- Left: Brand & 4-Page Task Navigation -->
+      <div class="flex items-center gap-6 shrink-0">
+        <!-- Brand Logo -->
         <div
-          class="flex items-center gap-2.5 cursor-pointer select-none group"
-          @click="mediaStore.currentMode = 'stream'"
+          class="flex items-center gap-2.5 cursor-pointer select-none"
           :title="t('nav.brandTitle')"
+          @click="mediaStore.currentMode = 'stream'"
         >
           <div
-            class="w-8 h-8 rounded-xl flex items-center justify-center shadow-md text-white transition-transform group-hover:scale-105 active:scale-95"
-            style="background-color: var(--accent-color);"
+            class="w-7 h-7 rounded-lg flex items-center justify-center border"
+            style="background-color: var(--accent-light); border-color: var(--accent-border); color: var(--accent-text);"
           >
-            <Compass class="w-4 h-4 text-white" />
+            <Compass class="w-4 h-4" />
           </div>
-          <span class="font-bold text-base tracking-wide text-white">MuseFlow</span>
+          <span class="font-semibold text-sm tracking-tight" style="color: var(--text-primary);">MuseFlow</span>
         </div>
 
-        <!-- Mode Toggle Segmented Control (Icon only with tooltips) -->
-        <div class="flex items-center p-0.5 bg-white/5 rounded-xl border border-white/10">
+        <!-- 4 Labeled Top-Level Task Pages -->
+        <nav
+          class="flex items-center p-1 rounded-lg border gap-1"
+          style="background-color: var(--bg-app); border-color: var(--border-color);"
+        >
           <button
             data-testid="nav-mode-stream"
-            @click="mediaStore.currentMode = 'stream'"
-            :class="[
-              'p-1.5 rounded-lg transition-all duration-200 cursor-pointer',
-              mediaStore.currentMode === 'stream'
-                ? 'text-white shadow-md'
-                : 'text-gray-400 hover:text-gray-200'
-            ]"
-            :style="mediaStore.currentMode === 'stream' ? { backgroundColor: 'var(--accent-color)' } : {}"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer"
+            :style="mediaStore.currentMode === 'stream'
+              ? 'background-color: var(--accent-color); color: #ffffff;'
+              : 'color: var(--text-secondary);'"
             :title="t('nav.modeStream')"
+            @click="mediaStore.currentMode = 'stream'"
           >
-            <Sparkles class="w-4 h-4" />
+            <Compass
+              class="w-3.5 h-3.5 shrink-0"
+              :style="mediaStore.currentMode === 'stream' ? 'color: #ffffff;' : 'color: var(--accent-text);'"
+            />
+            <span>{{ t('nav.modeStream') }}</span>
           </button>
+
           <button
             data-testid="nav-mode-workplace"
-            @click="mediaStore.currentMode = 'workplace'; mediaStore.workplaceView = 'assets'; mediaStore.loadWorkplaceItems()"
-            :class="[
-              'p-1.5 rounded-lg transition-all duration-200 cursor-pointer',
-              mediaStore.currentMode === 'workplace' && mediaStore.workplaceView !== 'taxonomy'
-                ? 'text-white shadow-md'
-                : 'text-gray-400 hover:text-gray-200'
-            ]"
-            :style="mediaStore.currentMode === 'workplace' && mediaStore.workplaceView !== 'taxonomy' ? { backgroundColor: 'var(--accent-color)' } : {}"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer"
+            :style="mediaStore.currentMode === 'workplace' && mediaStore.workplaceView === 'assets'
+              ? 'background-color: var(--accent-color); color: #ffffff;'
+              : 'color: var(--text-secondary);'"
             :title="t('nav.modeWorkplace')"
+            @click="mediaStore.currentMode = 'workplace'; mediaStore.workplaceView = 'assets'; mediaStore.loadWorkplaceItems()"
           >
-            <FolderOpen class="w-4 h-4" />
+            <FolderOpen
+              class="w-3.5 h-3.5 shrink-0"
+              :style="mediaStore.currentMode === 'workplace' && mediaStore.workplaceView === 'assets' ? 'color: #ffffff;' : 'color: var(--accent-text);'"
+            />
+            <span>{{ t('nav.modeWorkplace') }}</span>
           </button>
+
           <button
             data-testid="nav-mode-taxonomy"
-            @click="mediaStore.openTaxonomyWorkspace()"
-            :class="[
-              'p-1.5 rounded-lg transition-all duration-200 cursor-pointer',
-              mediaStore.currentMode === 'workplace' && mediaStore.workplaceView === 'taxonomy'
-                ? 'text-white shadow-md'
-                : 'text-gray-400 hover:text-gray-200'
-            ]"
-            :style="mediaStore.currentMode === 'workplace' && mediaStore.workplaceView === 'taxonomy' ? { backgroundColor: 'var(--accent-color)' } : {}"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer"
+            :style="mediaStore.currentMode === 'workplace' && mediaStore.workplaceView === 'taxonomy'
+              ? 'background-color: var(--accent-color); color: #ffffff;'
+              : 'color: var(--text-secondary);'"
             :title="t('nav.modeTaxonomy')"
+            @click="mediaStore.openTaxonomyWorkspace()"
           >
-            <Tags class="w-4 h-4" />
+            <Tags
+              class="w-3.5 h-3.5 shrink-0"
+              :style="mediaStore.currentMode === 'workplace' && mediaStore.workplaceView === 'taxonomy' ? 'color: #ffffff;' : 'color: var(--accent-text);'"
+            />
+            <span>{{ t('nav.modeTaxonomy') }}</span>
           </button>
-        </div>
+
+          <button
+            data-testid="nav-mode-organize"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer"
+            :style="mediaStore.currentMode === 'workplace' && mediaStore.workplaceView === 'organize'
+              ? 'background-color: var(--accent-color); color: #ffffff;'
+              : 'color: var(--text-secondary);'"
+            :title="t('nav.modeOrganize')"
+            @click="mediaStore.openOrganizeWorkspace('pipeline')"
+          >
+            <Workflow
+              class="w-3.5 h-3.5 shrink-0"
+              :style="mediaStore.currentMode === 'workplace' && mediaStore.workplaceView === 'organize' ? 'color: #ffffff;' : 'color: var(--accent-text);'"
+            />
+            <span>{{ t('nav.modeOrganize') }}</span>
+          </button>
+        </nav>
       </div>
 
       <!-- Center: Dual-Track Master Console Status Capsule -->
       <div
         v-if="playerStore.activeBgUnit || playerStore.bgQueue.length > 0 || (playerStore.fgViewerOpen && playerStore.fgAutoPlay)"
-        class="hidden md:flex items-center gap-2.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-sm select-none max-w-sm sm:max-w-md truncate"
+        class="hidden md:flex items-center gap-2.5 px-3 py-1 rounded-full border select-none max-w-sm sm:max-w-md truncate"
+        style="background-color: var(--bg-app); border-color: var(--border-color);"
       >
-        <!-- Background Audio Track Pill (when active track is loaded) -->
         <div
           v-if="playerStore.activeBgUnit"
           class="flex items-center gap-2 min-w-0"
         >
-          <!-- Spinning Vinyl / Music Icon (Clicking brings up player) -->
           <button
-            @click="playerStore.setBgViewMode(playerStore.bgViewMode === 'mini' ? 'disc' : 'mini')"
-            class="relative flex items-center justify-center w-6 h-6 rounded-full bg-purple-600/30 border border-purple-400/40 text-purple-200 shrink-0 hover:scale-110 transition-transform"
+            class="relative flex items-center justify-center w-6 h-6 rounded-full border shrink-0 transition-transform cursor-pointer"
+            style="background-color: var(--bg-surface-elevated); border-color: var(--border-hover); color: var(--text-primary);"
             :title="t('nav.bgAudioTitle', { title: tData(playerStore.activeBgUnit.title) })"
+            @click="playerStore.setBgViewMode(playerStore.bgViewMode === 'mini' ? 'disc' : 'mini')"
           >
             <Music
-              class="w-3 h-3 text-purple-300"
+              class="w-3 h-3"
               :class="{ 'animate-pulse': playerStore.isBgPlaying }"
             />
           </button>
 
-          <!-- Track Title (truncated) -->
           <span
-            @click="playerStore.setBgViewMode('mini')"
-            class="text-xs text-gray-200 truncate cursor-pointer hover:text-purple-300 transition-colors font-medium max-w-[100px] sm:max-w-[130px]"
+            class="text-xs truncate cursor-pointer font-medium max-w-[100px] sm:max-w-[140px]"
+            style="color: var(--text-primary);"
             :title="tData(playerStore.activeBgUnit.title)"
+            @click="playerStore.setBgViewMode('mini')"
           >
             {{ tData(playerStore.activeBgUnit.title) }}
           </span>
 
-          <!-- Inline Transport Controls -->
           <div class="flex items-center gap-0.5">
             <button
-              @click.stop="playerStore.togglePlayAudio"
-              class="p-1 hover:text-white text-gray-400 transition-colors"
+              class="p-1 transition-colors cursor-pointer"
+              style="color: var(--text-secondary);"
               :title="playerStore.isBgPlaying ? t('nav.pauseBg') : t('nav.playBg')"
+              @click.stop="playerStore.togglePlayAudio"
             >
-              <Pause v-if="playerStore.isBgPlaying" class="w-3.5 h-3.5 fill-current" />
-              <Play v-else class="w-3.5 h-3.5 fill-current" />
+              <Pause v-if="playerStore.isBgPlaying" class="w-3.5 h-3.5" />
+              <Play v-else class="w-3.5 h-3.5" />
             </button>
             <button
-              @click.stop="playerStore.nextAudio"
-              class="p-1 hover:text-white text-gray-400 transition-colors"
+              class="p-1 transition-colors cursor-pointer"
+              style="color: var(--text-secondary);"
               :title="t('nav.nextTrack')"
+              @click.stop="playerStore.nextAudio"
             >
               <SkipForward class="w-3 h-3" />
             </button>
           </div>
 
-          <!-- Queue Drawer Toggle Button -->
           <button
-            @click.stop="playerStore.toggleQueueDrawer()"
-            class="p-1 hover:text-purple-300 text-gray-400 transition-colors relative"
-            :class="playerStore.queueDrawerOpen ? 'text-purple-300 bg-white/10 rounded' : ''"
+            class="p-1 transition-colors relative cursor-pointer"
+            style="color: var(--text-secondary);"
             :title="t('nav.openBgQueue', { count: playerStore.bgQueue.length })"
+            @click.stop="playerStore.toggleQueueDrawer()"
           >
             <ListMusic class="w-3.5 h-3.5" />
-            <span
-              v-if="playerStore.bgQueue.length > 0"
-              class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-purple-400"
-            />
           </button>
 
-          <!-- Stop & Exit Background Playback Button -->
           <button
-            @click.stop="playerStore.stopAndExitBgPlayback()"
-            class="p-1 hover:text-amber-400 text-gray-400 transition-colors"
+            class="p-1 transition-colors cursor-pointer"
+            style="color: var(--text-secondary);"
             :title="t('nav.stopBg')"
+            @click.stop="playerStore.stopAndExitBgPlayback()"
           >
             <Power class="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <!-- Background Queue Pill (when not playing, but queue has items) -->
         <div
           v-else-if="playerStore.bgQueue.length > 0"
-          @click="playerStore.toggleQueueDrawer()"
-          class="flex items-center gap-1.5 cursor-pointer hover:text-purple-300 text-gray-300 text-xs px-1.5 py-0.5 rounded-lg hover:bg-white/5 transition-colors"
+          class="flex items-center gap-1.5 cursor-pointer text-xs px-1.5 py-0.5 rounded-lg transition-colors"
+          style="color: var(--text-secondary);"
           :title="t('nav.openBgQueue', { count: playerStore.bgQueue.length })"
+          @click="playerStore.toggleQueueDrawer()"
         >
-          <ListMusic class="w-3.5 h-3.5 text-purple-400" />
+          <ListMusic class="w-3.5 h-3.5" />
           <span class="font-mono text-[11px]">{{ t('nav.queuePill', { count: playerStore.bgQueue.length }) }}</span>
           <button
-            @click.stop="playerStore.playAudio(playerStore.bgQueue[0], playerStore.bgQueue, 'disc')"
-            class="p-1 hover:text-white text-purple-300 rounded ml-0.5"
+            class="p-1 rounded ml-0.5 cursor-pointer"
+            style="color: var(--text-primary);"
             :title="t('nav.startQueue')"
+            @click.stop="playerStore.playAudio(playerStore.bgQueue[0], playerStore.bgQueue, 'disc')"
           >
-            <Play class="w-3 h-3 fill-current" />
+            <Play class="w-3 h-3" />
           </button>
         </div>
 
-        <!-- Foreground Slideshow Capsule (if active) -->
         <div
           v-if="playerStore.fgViewerOpen && playerStore.fgAutoPlay"
-          class="flex items-center gap-1.5 pl-2 border-l border-white/10 shrink-0 text-pink-300 text-xs font-medium"
+          class="flex items-center gap-1.5 pl-2 border-l shrink-0 text-xs font-medium"
+          style="border-color: var(--border-color); color: var(--text-secondary);"
         >
-          <Tv class="w-3.5 h-3.5 text-pink-400" />
+          <Tv class="w-3.5 h-3.5" />
           <span class="font-mono text-[11px]">{{ t('nav.slideshowPill', { sec: playerStore.fgTimeRemaining }) }}</span>
         </div>
       </div>
 
-      <!-- Right: Minimalist Icon Actions with Tooltips -->
+      <!-- Right: Monochrome Utility Controls -->
       <div class="flex items-center gap-1.5 shrink-0">
-        <!-- Expandable Search -->
+        <!-- Search Input / Button -->
         <div class="relative flex items-center">
           <div
             v-if="isSearchOpen || mediaStore.searchQuery"
-            class="flex items-center bg-white/5 border border-white/10 rounded-xl px-2.5 py-1 transition-all duration-300 w-44 sm:w-60 shadow-sm"
+            class="flex items-center border rounded-lg px-2.5 py-1.5 transition-all duration-200 w-44 sm:w-60"
+            style="background-color: var(--bg-app); border-color: var(--border-color);"
           >
-            <Search class="w-3.5 h-3.5 text-gray-400 shrink-0 mr-1.5" />
+            <Search class="w-3.5 h-3.5 shrink-0 mr-1.5" style="color: var(--text-muted);" />
             <input
               ref="searchInputRef"
               v-model="mediaStore.searchQuery"
               type="text"
               :placeholder="t('nav.searchPlaceholder')"
-              class="bg-transparent w-full text-xs text-white placeholder-gray-500 focus:outline-none"
+              class="bg-transparent w-full text-xs focus:outline-none"
+              style="color: var(--text-primary);"
               @blur="onSearchBlur"
               @keydown.esc="onSearchEsc"
-            />
+            >
             <button
               v-if="mediaStore.searchQuery"
-              @click="mediaStore.searchQuery = ''"
-              class="text-gray-400 hover:text-white shrink-0 ml-1 p-0.5"
+              class="shrink-0 ml-1 p-0.5 cursor-pointer"
+              style="color: var(--text-muted);"
               :title="t('nav.clearSearch')"
+              @click="mediaStore.searchQuery = ''"
             >
               <X class="w-3 h-3" />
             </button>
           </div>
           <button
             v-else
-            @click="toggleSearch"
-            class="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all border border-transparent hover:border-white/10"
+            class="p-2 rounded-lg transition-colors border border-transparent cursor-pointer"
+            style="color: var(--text-secondary);"
             :title="t('nav.searchTooltip')"
+            @click="toggleSearch"
           >
             <Search class="w-4 h-4" />
           </button>
         </div>
 
-        <!-- Theme Picker Button -->
+        <!-- Quick Scan Modal Trigger -->
         <button
-          @click="themeStore.themePickerOpen = true"
-          class="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition-all border border-transparent hover:border-white/10 cursor-pointer"
-          :title="t('nav.themeTooltip', { name: tData(themeStore.currentTheme.name) })"
-        >
-          <Palette class="w-4 h-4" style="color: var(--accent-color);" />
-        </button>
-
-        <!-- Scan Directory Button -->
-        <button
-          @click="mediaStore.scanModalOpen = true"
-          class="p-2 text-indigo-400 hover:text-indigo-300 hover:bg-white/10 rounded-xl transition-all border border-transparent hover:border-white/10 cursor-pointer"
+          class="p-2 rounded-lg transition-colors border border-transparent cursor-pointer"
+          style="color: var(--accent-text);"
           :title="t('nav.scanTooltip')"
+          @click="mediaStore.scanModalOpen = true"
         >
           <FolderSearch class="w-4 h-4" />
         </button>
 
-        <!-- Refresh Button -->
+        <!-- Refresh Current View -->
         <button
-          @click="handleRefresh"
           :title="t('nav.refreshTooltip')"
-          class="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all border border-transparent hover:border-white/10 cursor-pointer"
+          class="p-2 rounded-lg transition-colors border border-transparent cursor-pointer text-emerald-400"
+          @click="handleRefresh"
         >
           <RefreshCw :class="['w-4 h-4', mediaStore.loading ? 'animate-spin' : '']" />
         </button>
 
-        <!-- Compact Bilingual Toggle Button -->
+        <!-- Direct 1-Click Dark / Light Theme Toggle -->
+        <button
+          data-testid="theme-toggle-btn"
+          class="p-2 rounded-lg transition-colors border border-transparent cursor-pointer"
+          :title="t('nav.themeTooltip', { name: tData(themeStore.currentTheme.name) })"
+          @click="themeStore.toggleTheme()"
+        >
+          <Sun v-if="themeStore.isDarkMode" class="w-4 h-4 text-amber-400" />
+          <Moon v-else class="w-4 h-4 text-indigo-500" />
+        </button>
+
+        <!-- Bilingual Toggle Button -->
         <button
           data-testid="lang-toggle-btn"
           data-action="toggle-locale"
-          @click="toggleLocale()"
           :title="t('nav.langTooltip')"
-          class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 hover:border-white/20 cursor-pointer select-none"
-          style="white-space: nowrap; flex-shrink: 0;"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors border cursor-pointer select-none shrink-0"
+          style="background-color: var(--bg-app); border-color: var(--border-color); color: var(--text-primary);"
+          @click="toggleLocale()"
         >
-          <svg
-            class="w-3.5 h-3.5 text-gray-400 shrink-0"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-            <path d="M2 12h20" />
-          </svg>
+          <Globe class="w-3.5 h-3.5 shrink-0" style="color: var(--accent-text);" />
           <span>{{ locale === 'zh' ? 'EN' : '中文' }}</span>
         </button>
       </div>

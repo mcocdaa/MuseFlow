@@ -1,6 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Tuple
 from app.core.config import (
     SUPPORTED_IMAGE_EXTS,
     SUPPORTED_VIDEO_EXTS,
@@ -48,8 +48,8 @@ def analyze_folder_for_bundles(folder_path: Path, file_paths: List[Path]) -> Lis
     claimed_files = set()
 
     # 策略 1：检查是否是“专用单项目输出文件夹”
-    # 例如文件夹下只有 1 个主视频，伴随若干字幕、音轨或封面
-    if len(video_files) == 1 and (len(subtitle_files) > 0 or len(audio_files) > 0):
+    # 例如文件夹下只有 1 个主视频，伴随最多 1 条分离音轨与若干字幕或封面（避免吞并含多个独立音轨与 1 个特典 PV 的音频专辑）
+    if len(video_files) == 1 and len(audio_files) <= 1 and (len(subtitle_files) > 0 or len(audio_files) > 0):
         main_video = video_files[0]
         # 此时该单元标题优先采用文件夹名或视频文件名
         title = folder_path.name if folder_path.name else main_video.stem
@@ -105,19 +105,22 @@ def analyze_folder_for_bundles(folder_path: Path, file_paths: List[Path]) -> Lis
                 claimed_files.add(img)
         return units
 
-    # 策略 2：基于 Stem 同名匹配（支持 ep1.mp4+ep1.srt, track1.wav+track1.lrc 以及双扩展名 track1.wav.vtt / ep1.zh.srt）
+    # 策略 2：基于 Stem 同名匹配（支持 ep1.mp4+ep1.srt, track1.wav+track1.lrc 以及多层扩展名 track1.wav.chs.lrc / ep1.zh-cn.srt）
     LANG_OR_MEDIA_INNER_EXTS = (
         SUPPORTED_AUDIO_EXTS
         | SUPPORTED_VIDEO_EXTS
-        | {".zh", ".chs", ".cht", ".cn", ".sc", ".tc", ".jp", ".ja", ".en"}
+        | {".zh", ".chs", ".cht", ".cn", ".sc", ".tc", ".jp", ".ja", ".en", ".zh-cn", ".zh-tw", ".zh-hans", ".zh-hant", ".chi", ".jpn", ".eng"}
     )
 
     def _get_match_stem(p: Path) -> str:
-        s = p.stem
+        s = p.stem.strip()
         if p.suffix.lower() in SUPPORTED_SUBTITLE_EXTS:
-            inner_suffix = Path(s).suffix.lower()
-            if inner_suffix in LANG_OR_MEDIA_INNER_EXTS and Path(s).stem:
-                return Path(s).stem
+            while True:
+                inner_suffix = Path(s).suffix.lower()
+                if inner_suffix in LANG_OR_MEDIA_INNER_EXTS and Path(s).stem.strip():
+                    s = Path(s).stem.strip()
+                else:
+                    break
         return s
 
     by_stem: Dict[str, List[Path]] = defaultdict(list)
@@ -145,17 +148,17 @@ def analyze_folder_for_bundles(folder_path: Path, file_paths: List[Path]) -> Lis
                 claimed_files.add(img)
             units.append(unit)
         elif a_list and s_list:
-            primary = a_list[0]
-            unit = DetectedUnit(title=stem, unit_type="audio", primary_file=primary)
-            claimed_files.add(primary)
-            for s in s_list:
-                role = "lyrics" if s.suffix.lower() in (".lrc", ".slc", ".cue") else "subtitle"
-                unit.add_file(s, role)
-                claimed_files.add(s)
-            for img in (i_list or folder_cover_imgs[:1]):
-                unit.add_file(img, "cover")
-                claimed_files.add(img)
-            units.append(unit)
+            for primary in a_list:
+                unit = DetectedUnit(title=stem, unit_type="audio", primary_file=primary)
+                claimed_files.add(primary)
+                for s in s_list:
+                    role = "lyrics" if s.suffix.lower() in (".lrc", ".slc", ".cue") else "subtitle"
+                    unit.add_file(s, role)
+                    claimed_files.add(s)
+                for img in (i_list or folder_cover_imgs[:1]):
+                    unit.add_file(img, "cover")
+                    claimed_files.add(img)
+                units.append(unit)
 
     # 若文件夹内含音频或视频，将目录级封面 (cover.jpg/folder.jpg) 标记为已认领，避免作为孤立卡片混入信息流
     if (video_files or audio_files) and folder_cover_imgs:

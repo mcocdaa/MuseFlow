@@ -103,17 +103,23 @@
                       v-if="idx > 0 && !lvl.naming" 
                       @click="moveLevel(idx, -1)" 
                       class="p-1 hover:text-white text-gray-400 text-xs"
-                    >◀</button>
+                    >
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    </button>
                     <button 
                       v-if="idx < pipelineLevels.length - 2 && !lvl.naming" 
                       @click="moveLevel(idx, 1)" 
                       class="p-1 hover:text-white text-gray-400 text-xs"
-                    >▶</button>
+                    >
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
                     <button 
                       v-if="pipelineLevels.length > 2 && !lvl.naming" 
                       @click="removeLevel(idx)" 
                       class="p-1 hover:text-red-400 text-gray-400 text-xs"
-                    >×</button>
+                    >
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
                   </div>
                 </div>
 
@@ -170,7 +176,9 @@
               </div>
 
               <!-- 连接箭头 -->
-              <div v-if="idx < pipelineLevels.length - 1" class="text-gray-500 font-bold shrink-0">➔</div>
+              <div v-if="idx < pipelineLevels.length - 1" class="text-gray-500 shrink-0">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </div>
             </template>
           </div>
         </div>

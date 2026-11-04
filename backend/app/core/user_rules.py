@@ -49,6 +49,10 @@ class UserRules(BaseModel):
         default=None,
         description="domain 分类树的默认根标签名称（可选，如由 user_rules.json 指定）"
     )
+    domain_roots_by_type: Dict[str, str] = Field(
+        default_factory=dict,
+        description="按主媒体类型 (audio/video/image) 分别指定的默认根题材标签名称"
+    )
     spec_keyword_rules: Dict[str, List[str]] = Field(
         default_factory=dict,
         description="规格标签关键词自动推断规则 {标签名: [路径或标题关键词列表]}"
@@ -85,9 +89,17 @@ class UserRules(BaseModel):
         default_factory=list,
         description="自定义在解析物理路径时需要忽略的文件夹名称"
     )
+    ignored_dir_names: List[str] = Field(
+        default_factory=list,
+        description="扫描物理目录树时直接跳过的缓存或非媒体垃圾子目录名称"
+    )
     container_bucket_dirs: List[str] = Field(
         default_factory=list,
         description="作为分类或批次容器大桶（而非单一作品）处理的目录名集合"
+    )
+    atomic_album_containers: List[str] = Field(
+        default_factory=list,
+        description="其下叶级作品文件夹应作为单一不可拆分图集/画册/漫画单元 (AssetUnit) 纳管的分类容器目录名集合"
     )
     accessory_dir_patterns: List[str] = Field(
         default_factory=list,

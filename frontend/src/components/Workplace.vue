@@ -63,11 +63,12 @@ import {
   syncLibraryChanges,
   reindexLibrary,
   fetchTagSuggestions,
-  batchAssignTag
+  batchAssignTag,
+  apiUrl
 } from '../api'
 import PipelineBuilderModal from './PipelineBuilderModal.vue'
-import TagManagerModal from './TagManagerModal.vue'
 import TaxonomyWorkspaceView from './TaxonomyWorkspaceView.vue'
+import OrganizeWorkspaceView from './OrganizeWorkspaceView.vue'
 import LensTreeNode from './LensTreeNode.vue'
 
 const mediaStore = useMediaStore()
@@ -77,7 +78,6 @@ const selectedItem = ref(null)
 const newSupersetName = ref('')
 const showNewSupersetInput = ref(false)
 const showPipelineModal = ref(false)
-const showTagManagerModal = ref(false)
 const showMoreTools = ref(false)
 const showAlgoDetails = ref(false)
 
@@ -519,38 +519,8 @@ const parentTagSetWorkplace = computed(() => {
   return s
 })
 
-const getTagBadgeStyle = (classCode) => {
-  switch (classCode) {
-    case 'character':
-    case 'guest':
-      return 'bg-pink-500/12 text-pink-300 border-pink-500/25'
-    case 'interaction':
-    case 'difficulty':
-      return 'bg-orange-500/12 text-orange-300 border-orange-500/25'
-    case 'domain':
-    case 'genre':
-    case 'topic':
-    case 'project':
-    case 'tech_stack':
-      return 'bg-purple-500/12 text-purple-300 border-purple-500/25'
-    case 'va':
-    case 'release_year':
-    case 'gear':
-      return 'bg-amber-500/12 text-amber-300 border-amber-500/25'
-    case 'spec':
-    case 'album':
-      return 'bg-sky-500/12 text-sky-300 border-sky-500/25'
-    case 'creator':
-    case 'artist':
-    case 'host':
-    case 'client':
-    case 'instructor':
-      return 'bg-teal-500/12 text-teal-300 border-teal-500/25'
-    case 'workflow':
-      return 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
-    default:
-      return 'bg-white/5 text-gray-300 border-white/10'
-  }
+const getTagBadgeStyle = () => {
+  return 'bg-white/5 text-gray-300 border-white/10'
 }
 
 const getRowCleanTags = (item) => {
@@ -949,6 +919,11 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
       @jump-to-missing="handleJumpFromTaxonomyToMissing"
     />
 
+    <!-- Dedicated Full-Page Organization & Ingest Workspace -->
+    <OrganizeWorkspaceView
+      v-else-if="mediaStore.workplaceView === 'organize'"
+    />
+
     <!-- Standard 3-Column Asset Browser Workspace -->
     <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[700px]">
       <!-- Left Sidebar: Collections, Supersets & Virtual Lens -->
@@ -963,12 +938,12 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             :class="[
               'flex-1 py-1.5 px-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap',
               mediaStore.activeLens === 'physical'
-                ? 'bg-purple-600/30 text-purple-200 border border-purple-500/30 shadow-sm'
-                : 'text-gray-400 hover:text-gray-200'
+                ? 'bg-white/10 text-white border border-white/15 shadow-sm'
+                : 'text-gray-400 hover:text-gray-200 border border-transparent'
             ]"
             :title="t('workplace.foldersTip')"
           >
-            <Folder class="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <Folder class="w-3.5 h-3.5 text-sky-400 shrink-0" />
             <span>{{ t('workplace.folders') }}</span>
           </button>
 
@@ -977,12 +952,12 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             :class="[
               'flex-1 py-1.5 px-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap',
               mediaStore.activeLens !== 'physical'
-                ? 'bg-purple-600/30 text-purple-200 border border-purple-500/30 shadow-sm'
-                : 'text-gray-400 hover:text-gray-200'
+                ? 'bg-white/10 text-white border border-white/15 shadow-sm'
+                : 'text-gray-400 hover:text-gray-200 border border-transparent'
             ]"
             :title="t('workplace.taxonomyTip')"
           >
-            <Tag class="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            <Tag class="w-3.5 h-3.5 text-indigo-400 shrink-0" />
             <span>{{ t('workplace.taxonomy') }}</span>
           </button>
         </div>
@@ -995,7 +970,8 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             </label>
             <button
               @click="mediaStore.openTaxonomyWorkspace(mediaStore.activeLens)"
-              class="text-[10px] text-purple-400 hover:text-purple-300 font-medium cursor-pointer"
+              class="text-[10px] font-medium cursor-pointer"
+              style="color: var(--accent-text);"
             >
               {{ t('workplace.manageCenter') }}
             </button>
@@ -1008,13 +984,13 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               :class="[
                 'px-2.5 py-1.5 text-xs rounded-xl font-medium truncate transition-all border cursor-pointer flex items-center justify-between gap-1.5',
                 mediaStore.activeLens === facet.code
-                  ? 'bg-purple-600/30 text-purple-200 border-purple-500/40 shadow-xs'
+                  ? 'bg-white/10 text-white border-white/20 shadow-xs'
                   : 'bg-white/5 border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/10'
               ]"
               :title="`${tFacet(facet.code, facet.display_name)} (${facet.tag_count || 0})`"
             >
               <div class="flex items-center gap-1.5 min-w-0 truncate">
-                <span class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: facet.color || '#a855f7' }" />
+                <Tag class="w-3 h-3 shrink-0" style="color: var(--accent-text);" />
                 <span class="truncate">{{ tFacet(facet.code, facet.display_name) }}</span>
               </div>
               <span class="text-[10px] font-mono opacity-60 shrink-0">{{ facet.tag_count || '' }}</span>
@@ -1028,14 +1004,14 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             data-testid="workplace-all-media-btn"
             @click="handleSelectAllRoot"
             :class="[
-              'w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors text-left cursor-pointer',
+              'w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors text-left cursor-pointer border',
               !mediaStore.selectedCollectionId && !mediaStore.selectedSupersetId && !mediaStore.selectedLensTagId && !mediaStore.selectedMissingFacet
-                ? 'bg-purple-600/30 text-purple-200 border border-purple-500/30'
-                : 'text-gray-300 hover:bg-white/5'
+                ? 'bg-white/10 text-white border-white/20'
+                : 'border-transparent text-gray-300 hover:bg-white/5'
             ]"
           >
             <span class="flex items-center gap-2 whitespace-nowrap">
-              <HardDrive class="w-4 h-4 text-purple-400 shrink-0" />
+              <HardDrive class="w-4 h-4 shrink-0" style="color: var(--accent-text);" />
               <span>{{ t('workplace.allMedia') }}</span>
             </span>
             <span class="text-[10px] text-gray-400 bg-white/5 px-2 py-0.5 rounded-full font-mono">
@@ -1048,10 +1024,10 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             v-if="totalUntaggedCount > 0"
             @click="handleToggleMissingFacet(vacuumFacets[0]?.code)"
             :class="[
-              'w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors text-left cursor-pointer',
+              'w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors text-left cursor-pointer border',
               mediaStore.selectedMissingFacet
-                ? 'bg-amber-500/25 text-amber-200 border border-amber-500/40 shadow-sm'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                ? 'bg-white/10 text-white border-white/20 shadow-sm'
+                : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/5'
             ]"
             :title="t('workplace.unorganizedTip')"
           >
@@ -1059,7 +1035,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               <Clock class="w-4 h-4 text-amber-400 shrink-0" />
               <span>{{ t('workplace.unorganized') }}</span>
             </span>
-            <span class="text-[10px] text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full font-mono font-semibold">
+            <span class="text-[10px] text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-full font-mono font-semibold">
               {{ totalUntaggedCount }}
             </span>
           </button>
@@ -1071,7 +1047,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <div>
             <div class="flex items-center justify-between text-xs font-semibold text-gray-400 mb-2.5 px-1">
               <span class="flex items-center gap-1.5 uppercase tracking-wider text-[11px] whitespace-nowrap">
-                <Folder class="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                <Folder class="w-3.5 h-3.5 text-sky-400 shrink-0" />
                 <span>{{ t('workplace.collections') }}</span>
               </span>
               <span class="text-[11px] text-gray-500">{{ mediaStore.collections.length }}</span>
@@ -1081,11 +1057,11 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               <div
                 v-for="col in mediaStore.collections"
                 :key="col.id"
-                class="group/col flex items-center justify-between rounded-lg transition-colors text-left"
+                class="group/col flex items-center justify-between rounded-lg transition-colors text-left border"
                 :class="[
                   mediaStore.selectedCollectionId === col.id
-                    ? 'bg-blue-600/30 text-blue-200 border border-blue-500/30'
-                    : 'text-gray-300 hover:bg-white/5'
+                    ? 'bg-white/10 text-white border-white/20'
+                    : 'border-transparent text-gray-300 hover:bg-white/5'
                 ]"
               >
                 <button
@@ -1094,7 +1070,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   :title="tData(col.name)"
                 >
                   <span class="truncate flex items-center gap-2 min-w-0">
-                    <FolderOpen class="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                    <FolderOpen class="w-3.5 h-3.5 text-sky-400/80 shrink-0" />
                     <span class="truncate">{{ tData(col.name) }}</span>
                   </span>
                   <span class="text-[10px] text-gray-500 shrink-0 bg-white/5 px-1.5 py-0.5 rounded-full ml-1.5">
@@ -1105,7 +1081,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 <button
                   v-if="col.folder_path"
                   @click.stop="mediaStore.openPhysicalOrganizer(col.folder_path)"
-                  class="p-1.5 text-amber-400 hidden group-hover/col:inline-flex hover:text-amber-200 transition-opacity shrink-0"
+                  class="p-1.5 text-amber-400 hidden group-hover/col:inline-flex hover:text-amber-300 transition-opacity shrink-0"
                 >
                   <FolderCog class="w-3.5 h-3.5" />
                 </button>
@@ -1117,7 +1093,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <div>
             <div class="flex items-center justify-between text-xs font-semibold text-gray-400 mb-2.5 px-1">
               <span class="flex items-center gap-1.5 uppercase tracking-wider text-[11px] whitespace-nowrap">
-                <Sparkles class="w-3.5 h-3.5 text-pink-400 shrink-0" />
+                <Sparkles class="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                 <span>{{ t('workplace.supersets') }}</span>
               </span>
               <button
@@ -1135,12 +1111,12 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 v-model="newSupersetName"
                 type="text"
                 :placeholder="t('workplace.newSupersetPlaceholder')"
-                class="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-pink-500/50"
+                class="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-white/30"
                 @keyup.enter="handleCreateSuperset"
               />
               <button
                 @click="handleCreateSuperset"
-                class="bg-pink-600 hover:bg-pink-500 text-white text-xs px-2 py-1 rounded-lg shrink-0"
+                class="bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs px-2 py-1 rounded-lg shrink-0"
               >
                 {{ t('workplace.confirmBtn') }}
               </button>
@@ -1150,11 +1126,11 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               <div
                 v-for="sup in mediaStore.supersets"
                 :key="sup.id"
-                class="group/sup flex items-center justify-between rounded-lg transition-colors text-left"
+                class="group/sup flex items-center justify-between rounded-lg transition-colors text-left border"
                 :class="[
                   mediaStore.selectedSupersetId === sup.id
-                    ? 'bg-pink-600/30 text-pink-200 border border-pink-500/30'
-                    : 'text-gray-300 hover:bg-white/5'
+                    ? 'bg-white/10 text-white border-white/20'
+                    : 'border-transparent text-gray-300 hover:bg-white/5'
                 ]"
               >
                 <button
@@ -1163,7 +1139,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   :title="tData(sup.name)"
                 >
                   <span class="truncate flex items-center gap-2 min-w-0">
-                    <Tag class="w-3.5 h-3.5 text-pink-400 shrink-0" />
+                    <Tag class="w-3.5 h-3.5 text-indigo-400/80 shrink-0" />
                     <span class="truncate">{{ tData(sup.name) }}</span>
                   </span>
                   <span class="text-[10px] text-gray-500 shrink-0 bg-white/5 px-1.5 py-0.5 rounded-full ml-1.5">
@@ -1175,19 +1151,19 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 <div class="hidden group-hover/sup:flex items-center gap-0.5 pr-1 shrink-0">
                   <button
                     @click.stop="playerStore.loadSuperset(sup.id, 'bg', true)"
-                    class="p-1 text-purple-300 hover:text-white hover:bg-white/10 rounded transition-colors"
+                    class="p-1 text-gray-300 hover:text-white hover:bg-white/10 rounded transition-colors"
                   >
                     <Play class="w-3 h-3 fill-current" />
                   </button>
                   <button
                     @click.stop="playerStore.loadSuperset(sup.id, 'fg', true)"
-                    class="p-1 text-pink-300 hover:text-white hover:bg-white/10 rounded transition-colors"
+                    class="p-1 text-gray-300 hover:text-white hover:bg-white/10 rounded transition-colors"
                   >
                     <Tv class="w-3 h-3" />
                   </button>
                   <button
                     @click.stop="handleDeleteSuperset(sup, $event)"
-                    class="p-1 text-red-400 hover:text-red-200 hover:bg-red-500/20 rounded transition-colors"
+                    class="p-1 text-gray-400 hover:text-red-300 hover:bg-red-500/20 rounded transition-colors"
                   >
                     <Trash2 class="w-3 h-3" />
                   </button>
@@ -1203,17 +1179,12 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             <!-- Lens Metadata & Coverage Header -->
             <div class="flex items-center justify-between text-xs font-semibold text-gray-300 mb-2.5 px-1">
               <div class="flex items-center gap-2 min-w-0">
-                <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: mediaStore.lensTreeData?.color || '#a855f7' }" />
+                <Tag class="w-3.5 h-3.5 text-gray-400 shrink-0" />
                 <span class="truncate font-semibold">{{ tFacet(mediaStore.activeLens, mediaStore.lensTreeData?.display_name || t('workplace.taxonomy')) }}</span>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
                 <span
-                  class="text-[10px] px-2 py-0.5 rounded-full font-mono whitespace-nowrap"
-                  :class="[
-                    (mediaStore.lensTreeData?.coverage_percent || 0) >= 80
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                      : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                  ]"
+                  class="text-[10px] px-2 py-0.5 rounded-full font-mono whitespace-nowrap bg-white/10 text-gray-300 border border-white/15"
                 >
                   {{ t('workplace.coverage', { pct: mediaStore.lensTreeData?.coverage_percent ?? 0 }) }}
                 </span>
@@ -1227,7 +1198,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             </div>
 
             <!-- Loading Spinner -->
-            <div v-if="mediaStore.lensTreeLoading" class="py-8 flex justify-center items-center text-xs text-purple-300">
+            <div v-if="mediaStore.lensTreeLoading" class="py-8 flex justify-center items-center text-xs text-gray-300">
               <RefreshCw class="w-4 h-4 animate-spin mr-2" />
               <span>{{ t('workplace.buildingLens') }}</span>
             </div>
@@ -1282,7 +1253,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               @input="handleSearch"
               type="text"
               :placeholder="t('workplace.searchPlaceholder')"
-              class="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors"
+              class="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
             />
             <button
               v-if="mediaStore.searchQuery"
@@ -1299,10 +1270,10 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             <button
               @click="handleSelectAllRoot"
               :class="[
-                'px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
+                'px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap border',
                 !mediaStore.selectedMissingFacet
-                  ? 'bg-purple-600/30 text-purple-200 shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-white/10 text-white border-white/15 shadow-sm'
+                  : 'border-transparent text-gray-400 hover:text-gray-200'
               ]"
               :title="t('workplace.filterAllTip')"
             >
@@ -1312,15 +1283,15 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               v-if="totalUntaggedCount > 0"
               @click="handleToggleMissingFacet(vacuumFacets[0]?.code)"
               :class="[
-                'px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap',
+                'px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap border',
                 mediaStore.selectedMissingFacet
-                  ? 'bg-amber-500/30 text-amber-200 border border-amber-500/40 shadow-sm'
-                  : 'text-amber-400/80 hover:text-amber-300 hover:bg-white/5'
+                  ? 'bg-white/10 text-white border-white/15 shadow-sm'
+                  : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/5'
               ]"
               :title="t('workplace.filterInboxTip')"
             >
               <span>{{ t('workplace.filterInbox') }}</span>
-              <span class="text-[10px] font-mono px-1 rounded-full bg-amber-500/20 text-amber-300">
+              <span class="text-[10px] font-mono px-1 rounded-full bg-white/10 text-gray-300">
                 {{ totalUntaggedCount }}
               </span>
             </button>
@@ -1334,7 +1305,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               :class="[
                 'p-2 rounded-xl text-xs font-medium transition-all border select-none',
                 isBatchMode
-                  ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
+                  ? 'bg-white/15 text-white border-white/30 shadow-sm'
                   : 'bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/10'
               ]"
               :title="isBatchMode ? t('workplace.batchModeExit') : t('workplace.batchModeEnter')"
@@ -1346,29 +1317,29 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             <button
               @click="handleSyncChanges"
               :disabled="isSyncing"
-              class="p-2 rounded-xl bg-white/5 hover:bg-emerald-500/15 border border-white/10 hover:border-emerald-500/30 text-emerald-300 transition-all text-xs disabled:opacity-50"
+              class="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-emerald-400 transition-all text-xs disabled:opacity-50"
               :title="t('workplace.syncChangesTip')"
             >
-              <RefreshCw :class="['w-4 h-4 text-emerald-400', isSyncing ? 'animate-spin' : '']" />
+              <RefreshCw :class="['w-4 h-4', isSyncing ? 'animate-spin' : '']" />
             </button>
 
             <!-- Tag Center (Dedicated Workspace Page) -->
             <button
               @click="mediaStore.openTaxonomyWorkspace(mediaStore.activeLens !== 'physical' ? mediaStore.activeLens : null)"
-              class="p-2 rounded-xl bg-white/5 hover:bg-teal-500/15 border border-white/10 hover:border-teal-500/30 text-teal-300 transition-all text-xs cursor-pointer"
+              class="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-indigo-400 transition-all text-xs cursor-pointer"
               :title="t('workplace.tagCenterTip')"
             >
-              <Tag class="w-4 h-4 text-teal-400" />
+              <Tag class="w-4 h-4" />
             </button>
 
             <!-- Pipeline Organizer -->
             <button
               data-testid="workplace-pipeline-btn"
               @click="showPipelineModal = true"
-              class="p-2 rounded-xl bg-white/5 hover:bg-blue-500/15 border border-white/10 hover:border-blue-500/30 text-blue-300 transition-all text-xs"
+              class="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-sky-400 transition-all text-xs"
               :title="t('workplace.pipelineTip')"
             >
-              <FolderCog class="w-4 h-4 text-blue-400" />
+              <FolderCog class="w-4 h-4" />
             </button>
 
             <!-- More Tools Menu Dropdown -->
@@ -1378,7 +1349,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 :class="[
                   'p-2 rounded-xl border transition-all text-xs',
                   showMoreTools
-                    ? 'bg-white/15 border-purple-500/50 text-white'
+                    ? 'bg-white/15 border-white/30 text-white'
                     : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
                 ]"
                 :title="t('workplace.moreToolsTip')"
@@ -1487,7 +1458,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           <div class="flex items-center gap-3 text-xs text-blue-300 min-w-0 truncate">
             <div class="w-10 h-10 rounded-lg overflow-hidden bg-black/40 border border-blue-400/30 shrink-0">
               <img
-                :src="`/api/stream/collection_thumbnail/${currentCollection.id}`"
+                :src="apiUrl(`/stream/collection_thumbnail/${currentCollection.id}`)"
                 class="w-full h-full object-cover"
                 @error="(e) => e.target.style.display = 'none'"
               />
@@ -1620,9 +1591,9 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
             :class="[
               'p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition-all select-none',
               isSelected(item.id)
-                ? 'bg-purple-600/25 border-purple-500 shadow-md ring-1 ring-purple-500/50 text-white'
+                ? 'bg-white/15 border-white/30 shadow-md ring-1 ring-white/20 text-white'
                 : selectedItem?.id === item.id
-                  ? 'bg-purple-600/20 border-purple-500/40 text-purple-100 shadow-md'
+                  ? 'bg-white/10 border-white/25 text-white shadow-sm'
                   : 'bg-white/5 hover:bg-white/10 border-white/5 text-gray-300'
             ]"
           >
@@ -1635,7 +1606,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                 class="w-5 h-5 rounded-lg flex items-center justify-center border transition-all shrink-0 cursor-pointer"
                 :class="[
                   isSelected(item.id)
-                    ? 'bg-purple-600 text-white border-purple-400 shadow-sm'
+                    ? 'bg-white text-black border-white shadow-sm'
                     : 'bg-white/5 border-white/20 hover:border-white/40'
                 ]"
               >
@@ -1646,11 +1617,14 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               <div class="w-10 h-10 rounded-lg bg-black/40 overflow-hidden shrink-0 flex items-center justify-center border border-white/10 relative">
                 <component
                   :is="isAudioUnit(item) ? Music : (item.unit_type === 'image' ? ImageIcon : Video)"
-                  class="w-4 h-4 text-gray-500 absolute"
+                  :class="[
+                    'w-4 h-4 absolute',
+                    isAudioUnit(item) ? 'text-emerald-400/80' : (item.unit_type === 'image' ? 'text-amber-400/80' : 'text-sky-400/80')
+                  ]"
                 />
                 <img
                   v-if="item.cover_path || item.unit_type === 'video' || item.unit_type === 'image' || item.dynamic_attributes?.image_count > 0"
-                  :src="`/api/stream/thumbnail/${item.id}`"
+                  :src="apiUrl(`/stream/thumbnail/${item.id}`)"
                   class="relative z-10 w-full h-full object-cover"
                   loading="lazy"
                   @error="(e) => e.target.style.display = 'none'"
@@ -1662,13 +1636,13 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   <span class="truncate">{{ tData(item.title) }}</span>
                   <span
                     v-if="item.dynamic_attributes?.track_count > 1"
-                    class="bg-purple-500/20 text-purple-300 text-[10px] px-1.5 py-0.2 rounded border border-purple-500/30 shrink-0 whitespace-nowrap font-mono"
+                    class="bg-white/5 text-gray-300 text-[10px] px-1.5 py-0.2 rounded border border-white/10 shrink-0 whitespace-nowrap font-mono"
                   >
                     {{ t('workplace.tracksBadge', { tracks: item.dynamic_attributes.track_count }) }}<template v-if="item.dynamic_attributes?.image_count > 0">{{ t('workplace.artBadge', { images: item.dynamic_attributes.image_count }) }}</template>
                   </span>
                   <span
                     v-else-if="item.unit_type === 'bundle'"
-                    class="bg-purple-500/20 text-purple-300 text-[10px] px-1.5 py-0.2 rounded border border-purple-500/30 shrink-0 whitespace-nowrap"
+                    class="bg-white/5 text-gray-300 text-[10px] px-1.5 py-0.2 rounded border border-white/10 shrink-0 whitespace-nowrap"
                   >
                     {{ t('workplace.bundleFilesBadge', { count: item.files?.length || 1 }) }}
                   </span>
@@ -1681,17 +1655,18 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
                   <!-- Star Rating with Decimal -->
                   <span
                     v-if="item.rating > 0"
-                    class="flex items-center gap-0.5 text-amber-400 font-mono text-[10px] font-semibold bg-amber-400/10 px-1.5 py-0.2 rounded border border-amber-400/20 shrink-0 whitespace-nowrap"
+                    class="flex items-center gap-1 text-amber-400 font-mono text-[10px] font-semibold bg-amber-400/10 px-1.5 py-0.2 rounded border border-amber-400/20 shrink-0 whitespace-nowrap"
                   >
-                    ★ {{ Number(item.rating).toFixed(1) }}
+                    <Star class="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                    <span>{{ Number(item.rating).toFixed(1) }}</span>
                   </span>
 
                   <!-- Recommendation Composite Algorithm Score -->
                   <span
                     v-if="item.composite_score > 0 && !selectedItem"
-                    class="flex items-center gap-1 text-purple-300 font-mono text-[10px] font-semibold bg-purple-500/15 px-1.5 py-0.2 rounded border border-purple-500/25 shrink-0 whitespace-nowrap"
+                    class="flex items-center gap-1 text-indigo-300 font-mono text-[10px] font-semibold bg-indigo-500/10 px-1.5 py-0.2 rounded border border-indigo-500/20 shrink-0 whitespace-nowrap"
                   >
-                    <Sparkles class="w-2.5 h-2.5" />
+                    <Sparkles class="w-2.5 h-2.5 text-indigo-400" />
                     <span>{{ t('workplace.scoreBadge', { score: Number(item.composite_score).toFixed(1) }) }}</span>
                   </span>
                 </div>
@@ -1797,7 +1772,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
           />
           <img
             v-if="selectedItem.cover_path || selectedItem.unit_type === 'video' || selectedItem.unit_type === 'image' || selectedItem.dynamic_attributes?.image_count > 0"
-            :src="`/api/stream/thumbnail/${selectedItem.id}`"
+            :src="apiUrl(`/stream/thumbnail/${selectedItem.id}`)"
             class="relative z-10 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             @error="(e) => e.target.style.display = 'none'"
           />
@@ -1886,7 +1861,7 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
               ]"
               :title="`[${tFacet(tItem.class_code, tItem.class_name)}] ${tData(tItem.display_path || tItem.name)}${tItem.is_primary_landing ? t('workplace.primaryTagSuffix') : ''}`"
             >
-              <span v-if="tItem.is_primary_landing" class="text-[9px] opacity-80">★</span>
+              <Star v-if="tItem.is_primary_landing" class="w-2.5 h-2.5 opacity-80 fill-current" />
               <button
                 @click="handleTogglePrimaryLanding(tItem)"
                 class="hover:opacity-80 cursor-pointer"
@@ -2346,13 +2321,6 @@ const handleJumpFromTaxonomyToMissing = async (facetCode) => {
       :isOpen="showPipelineModal"
       @close="showPipelineModal = false"
       @executed="mediaStore.loadWorkplaceItems()"
-    />
-
-    <!-- Tag Taxonomy Manager Modal -->
-    <TagManagerModal
-      :isOpen="showTagManagerModal"
-      @close="showTagManagerModal = false"
-      @changed="handleTagChanged"
     />
   </div>
 </template>

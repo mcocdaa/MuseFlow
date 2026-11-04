@@ -61,9 +61,11 @@ app.include_router(tags.router)
 def health_check():
     return {"status": "ok", "app": "MuseFlow", "version": "0.2.0"}
 
-# Static build serving if frontend/dist exists
+# Optional static SPA serving (can be disabled via MUSEFLOW_SERVE_STATIC=0 for pure headless API deployment)
 import os
+_serve_static = os.getenv("MUSEFLOW_SERVE_STATIC", "1").strip().lower() not in ("0", "false", "no")
 _env_frontend_dist = os.getenv("MUSEFLOW_FRONTEND_DIST")
 FRONTEND_DIST = Path(_env_frontend_dist).resolve() if _env_frontend_dist else (Path(__file__).resolve().parent.parent.parent / "frontend" / "dist")
-if FRONTEND_DIST.exists():
+if _serve_static and FRONTEND_DIST.exists():
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="static")
+

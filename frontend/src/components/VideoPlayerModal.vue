@@ -26,7 +26,7 @@ import {
   Volume1,
   Snowflake
 } from 'lucide-vue-next'
-import { revealInExplorer, openWithDefaultApp } from '../api'
+import { revealInExplorer, openWithDefaultApp, apiUrl } from '../api'
 
 const playerStore = usePlayerStore()
 const mediaStore = useMediaStore()
@@ -51,12 +51,12 @@ const subtitleFile = computed(() => {
 
 const videoStreamUrl = computed(() => {
   if (!primaryFile.value) return ''
-  return `/api/stream/file/${primaryFile.value.id}`
+  return apiUrl(`/stream/file/${primaryFile.value.id}`)
 })
 
 const subtitleStreamUrl = computed(() => {
   if (!subtitleFile.value) return ''
-  return `/api/stream/subtitle/${subtitleFile.value.id}`
+  return apiUrl(`/stream/subtitle/${subtitleFile.value.id}`)
 })
 
 const toggleFullscreen = () => {

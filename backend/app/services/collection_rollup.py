@@ -1,19 +1,21 @@
 import re
 from typing import List, Tuple, Dict, Any, Optional
 from collections import defaultdict
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select
 from app.models.entities import Collection, AssetUnit
 
 from app.core.user_rules import load_user_rules
+from app.services.catalog_importer import WORK_CODE_PATTERN as WORK_CODE_REGEX
 
-WORK_CODE_REGEX = re.compile(r'([A-Z]{2,4}\d{5,8})', re.IGNORECASE)
 DISC_REGEX = re.compile(r'^(disc|cd|vol|part|volume)[\s\._-]*\d+$', re.IGNORECASE)
 
 ACCESSORY_PATTERNS = [
     r'^(img|image|images|photo|photos|pic|pics|picture|pictures|illust|jacket|scans|booklet)$',
-    r'^(图片|插图|插画|封面.*|壁纸)$',
+    r'^(图片|插图|插画|封面.*|壁纸|视频)$',
     r'^\d+[\._-]?(img|image|illust|插画|插图|图片|封面.*)$',
-    r'^(mp3|wav|flac|mkv|mp4|audio|video|main|standard|default)$',
+    r'^(mp3|wav|flac|m4a|ogg|aac|mkv|mp4|mov|avi|webm|jpg|jpeg|png|webp|gif|bmp|ass|srt|vtt|audio|video|videos|main|standard|default|4k|60fps|1080p|720p)$',
+    r'^\d+%?[\._-]?(?:mp3|wav|flac|m4a|ogg|aac|mkv|mp4|mov|avi|webm|jpg|jpeg|png|webp|gif|bmp)$',
+    r'^(?:mp3|wav|flac|m4a|ogg|aac|mkv|mp4|mov|avi|webm|jpg|jpeg|png|webp|gif|bmp)[\._-]?\d+$',
     r'^(bonus|extra|extras|sample|subtitles|花絮|附赠|附属.*|样本|字幕.*)$',
 ]
 COMBINED_ACCESSORY_REGEX = re.compile('|'.join(ACCESSORY_PATTERNS), re.IGNORECASE)
@@ -151,15 +153,8 @@ def rollup_all_split_works(session: Session) -> Dict[str, Any]:
         "affected_works": len(affected_works)
     }
 
-def rollup_all_accessory_collections(session: Session) -> Dict[str, Any]:
-    return rollup_all_split_works(session)
-
 rollup_split_work_collections = rollup_all_split_works
 
-
-SUB_ALBUM_KEYWORDS = [
-    '限定', '专栏', '定制', '第一季', '第二季', 'Special', 'Season', 'Bonus'
-]
 
 def is_container_or_author_bucket(col: Collection, unit_count: int) -> bool:
     """判断一个集合是否为作者目录、分类目录或批次归档大目录（而非单个具体作品）"""
@@ -169,12 +164,14 @@ def is_container_or_author_bucket(col: Collection, unit_count: int) -> bool:
     if "容器" in desc or "归档大目录" in desc:
         return True
     rules = load_user_rules()
+    stripped_name = re.sub(r"^\d+(?:[\._]\d+)?[\s_]+", "", col.name or "")
     if (
         col.name in rules.container_bucket_dirs
         or col.name in rules.domain_mapping
         or col.name in rules.workflow_mapping
         or col.name in rules.creator_parent_dirs
         or col.name in rules.known_creator_dirs
+        or stripped_name in rules.known_creator_dirs
     ):
         return True
     return False
@@ -205,11 +202,20 @@ def clean_series_name(name: str) -> str:
     return name.strip()
 
 
+NOISE_SERIES_PREFIX_REGEX = re.compile(
+    r'^(?:IMG|VID|VIDEO|DSC|DCIM|PIC|PXL|SCREENSHOT|CAMERA|MMEXPORT|IMAGE|WECHAT|QQ|SNAP|CLIP|MOV|DJI|GOPRO|\d+%|\d{8})[-_\s\d]*',
+    re.IGNORECASE,
+)
+
+
 def extract_group_key_and_title(clean_title: str) -> Tuple[Optional[str], Optional[str]]:
     """
     智能解析单个标题中的分集特征，返回 (系列分组主键, 推荐系列展示标题)。
     支持带编号、带中文括弧、带汉字回/集/期/日/天、带上下部、带减号序列的多样化剧集命名。
     """
+    if not clean_title or NOISE_SERIES_PREFIX_REGEX.match(clean_title):
+        return None, None
+
     # 模式 1: 带小数点的编号前缀，例如 A-06.1, A-06.7
     m_code_dec = re.match(r'^([A-Za-z]+[-_ ]*\d+)[\._](\d+)[-_ ]*(.*)', clean_title)
     if m_code_dec:
@@ -220,11 +226,11 @@ def extract_group_key_and_title(clean_title: str) -> Tuple[Optional[str], Option
         subname = clean_series_name(subname)
         return code, f'{code} {subname}'.strip() if subname else code
 
-    # 模式 2: 字母编号前缀如 N006, S079, S140, N206
-    m_code = re.match(r'^([A-Za-z]+[-_ ]*\d{3,4})[-_ ]*(.*)', clean_title)
+    # 模式 2: 字母编号前缀如 N006, S079, S140, N206 (限定 1~2 位字母加 3~4 位数字)
+    m_code = re.match(r'^([A-Za-z]{1,2}[-_ ]?\d{3,4})(?:[-_ ]+(.*)|$)', clean_title)
     if m_code:
         code = m_code.group(1).upper()
-        rest = m_code.group(2).strip()
+        rest = (m_code.group(2) or '').strip()
         clean_sub = clean_series_name(rest)
         clean_sub = re.sub(r'[-_ ]*(?:\d+|第[一二三四五六七八九十\d]+[章节回天集部期]|(?:上|中|下)集?).*$', '', clean_sub).strip()
         clean_sub = clean_series_name(clean_sub)
@@ -234,31 +240,32 @@ def extract_group_key_and_title(clean_title: str) -> Tuple[Optional[str], Option
     m_bracket = re.search(r'^(.*?)[-_ ]*[（(【\[]\s*([0-9一二三四五六七八九十\d]+|第[0-9一二三四五六七八九十\d]+[回集章期夜天日节篇部步话話]|上|中|下|前|后)\s*[)）】\]](.*)$', clean_title)
     if m_bracket:
         base = clean_series_name(m_bracket.group(1))
-        if len(base) >= 2 and not base.isdigit():
+        if len(base) >= 2 and not base.isdigit() and not NOISE_SERIES_PREFIX_REGEX.match(base):
             return base, base
 
     # 模式 4: 第X集/回/章/期/夜/天/日/节/篇/部/步/话，例如 播客系列第3期, 训练营 第1天
     m_num = re.search(r'^(.*?)[-_ ]*第\s*([0-9一二三四五六七八九十\d]+)\s*[回集章期夜天日节篇部步话話](.*)$', clean_title)
     if m_num:
         base = clean_series_name(m_num.group(1))
-        if len(base) >= 2 and not base.isdigit():
+        if len(base) >= 2 and not base.isdigit() and not NOISE_SERIES_PREFIX_REGEX.match(base):
             return base, base
 
     # 模式 5: 上/中/下/前/后 (集/篇/部/本/篇目)，例如 科技专题上篇, 纪录片上部
     m_updown = re.search(r'^(.*?)[-_ ]*(?:上|中|下|前|后)(?:[集篇部本])?(?:[-_ ]+(.*)|$)', clean_title)
     if m_updown:
         base = clean_series_name(m_updown.group(1))
-        if len(base) >= 2 and not base.isdigit():
+        if len(base) >= 2 and not base.isdigit() and not NOISE_SERIES_PREFIX_REGEX.match(base):
             return base, base
 
-    # 模式 6: 短横线编号序列，例如 示例系列-1, 专栏-2 (仅限 1~3 位数字集数，排除网址水印或分辨率后缀)
-    m_dash = re.match(r'^(.*?)[-_ ]+([0-9]{1,3})$', clean_title)
+    # 模式 6: 短横线编号序列，例如 示例系列-1, 专栏-2 (仅限短横线连接 1~3 位数字集数，排除网址水印或分辨率后缀)
+    m_dash = re.match(r'^(.*?)\s*-\s*([0-9]{1,3})$', clean_title)
     if m_dash:
         base = clean_series_name(m_dash.group(1))
         if (
             len(base) >= 2
             and not base.isdigit()
-            and not re.search(r'\.(?:com|net|org|cc|tv|me|xyz)|\b(?:720p|1080p|4k|4000k)\b', base, re.I)
+            and not NOISE_SERIES_PREFIX_REGEX.match(base)
+            and not re.search(r'\.(?:com|net|org|cc|tv|me|xyz)|\b(?:720p|1080p|4k|4000k|preview|edit|cam)\b', base, re.I)
         ):
             return base, base
 
@@ -282,17 +289,47 @@ def group_multipart_works_in_buckets(session: Session) -> Dict[str, Any]:
         if u.collection_id:
             units_by_col[u.collection_id].append(u)
 
+    # 0. 自愈退回无效或单文件残留的虚拟子系列集合（例如仅剩1个单元、纯散图或相机编号噪音）
+    dissolved_count = 0
+    for cid, c in list(col_map.items()):
+        if not c.parent_id or "旗下独立系列作品" not in (c.description or ""):
+            continue
+        c_units = units_by_col.get(cid, [])
+        is_noise_name = bool(
+            NOISE_SERIES_PREFIX_REGEX.match(c.name or "")
+            or re.search(r'\b(?:cam|preview|edit)\b', c.name or "", re.I)
+        )
+        all_images = bool(c_units) and all(u.unit_type == "image" for u in c_units)
+        if len(c_units) < 2 or all_images or is_noise_name:
+            parent_id = c.parent_id
+            for u in c_units:
+                u.collection_id = parent_id
+                attrs = dict(u.dynamic_attributes or {})
+                attrs.pop("is_series_episode", None)
+                attrs.pop("series_name", None)
+                u.dynamic_attributes = attrs
+                session.add(u)
+                units_by_col[parent_id].append(u)
+            units_by_col.pop(cid, None)
+            col_map.pop(cid, None)
+            session.flush()
+            session.delete(c)
+            session.flush()
+            dissolved_count += 1
+
     created_series_count = 0
     grouped_units_count = 0
 
-    for cid, c in col_map.items():
+    for cid, c in list(col_map.items()):
         c_units = units_by_col.get(cid, [])
         if not is_eligible_series_container(c, len(c_units)):
             continue
 
-        # 尝试聚类
+        # 尝试聚类（散图 image 不参与剧集聚类）
         groups = defaultdict(list)
         for u in c_units:
+            if u.unit_type == "image":
+                continue
             clean = re.sub(r'\.(mp3|wav|flac|m4a|mp4|mkv)$', '', u.title or '', flags=re.I).strip()
             gkey, sname = extract_group_key_and_title(clean)
             if gkey:
@@ -355,7 +392,7 @@ def group_multipart_works_in_buckets(session: Session) -> Dict[str, Any]:
                 session.add(existing_sub)
 
     # 全局重锚所有父级集合的 cover_asset_id（防止封面指针悬空或漂移至子集合单元）
-    for c in cols:
+    for c in col_map.values():
         if c.cover_asset_id:
             cu = session.get(AssetUnit, c.cover_asset_id)
             if not cu or cu.collection_id != c.id:
@@ -378,4 +415,5 @@ def group_multipart_works_in_buckets(session: Session) -> Dict[str, Any]:
     return {
         "created_series_count": created_series_count,
         "grouped_units_count": grouped_units_count,
+        "dissolved_series_count": dissolved_count,
     }

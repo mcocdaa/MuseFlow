@@ -26,7 +26,5 @@ backend/tests/manual_*.py
 *.sqlite3
 *.db
 .env
-dist
-frontend/dist
 frontend/node_modules
 docs/

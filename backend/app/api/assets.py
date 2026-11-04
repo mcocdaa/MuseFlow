@@ -29,7 +29,17 @@ def enrich_units_batch(units: List[AssetUnit], session: Session) -> List[AssetUn
         col_map = {c.id: c.name for c in collections}
 
     # 2. 批量查询 AssetFile
-    files = session.exec(select(AssetFile).where(AssetFile.asset_unit_id.in_(unit_ids))).all()
+    # 对已封装 gallery manifest 的原子作品 (is_atomic_work)，在批量列表查询中跳过 role='image' 的大量内部画册页行，避免数万次冗余 ORM/Pydantic 校验
+    from sqlalchemy import or_
+    atomic_ids = [u.id for u in units if (u.dynamic_attributes or {}).get("is_atomic_work")]
+    if len(units) > 1 and atomic_ids:
+        file_stmt = select(AssetFile).where(
+            AssetFile.asset_unit_id.in_(unit_ids),
+            or_(AssetFile.role != "image", AssetFile.asset_unit_id.not_in(atomic_ids)),
+        )
+    else:
+        file_stmt = select(AssetFile).where(AssetFile.asset_unit_id.in_(unit_ids))
+    files = session.exec(file_stmt).all()
     files_by_unit = defaultdict(list)
     for f in files:
         files_by_unit[f.asset_unit_id].append(AssetFileRead.model_validate(f))

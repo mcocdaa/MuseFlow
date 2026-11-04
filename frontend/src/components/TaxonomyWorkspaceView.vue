@@ -52,12 +52,7 @@
             <span
               v-for="c in p.classes"
               :key="c.code"
-              class="px-1.5 py-0.5 rounded text-[10px] font-medium border"
-              :style="{
-                backgroundColor: `${c.color}15`,
-                borderColor: `${c.color}35`,
-                color: c.color
-              }"
+              class="px-1.5 py-0.5 rounded text-[10px] font-medium border bg-white/5 border-white/10 text-gray-300"
               :title="`${tFacet(c.code, c.display_name)} (${c.code})`"
             >
               {{ tFacet(c.code, c.display_name) }}
@@ -98,8 +93,8 @@
               :class="[
                 'w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer',
                 showPresetsPanel
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-400 hover:text-purple-300 hover:bg-white/5'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-indigo-400 hover:text-indigo-300 hover:bg-white/5'
               ]"
               :title="t('tax.presetsBtnTip')"
             >
@@ -109,10 +104,10 @@
             <button
               @click="handleReorganizeAll"
               :disabled="reorganizing"
-              class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer disabled:opacity-40"
+              class="w-7 h-7 rounded-lg flex items-center justify-center text-emerald-400 hover:text-emerald-300 hover:bg-white/5 transition-all cursor-pointer disabled:opacity-40"
               :title="t('tax.reorganizeBtnTip')"
             >
-              <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin text-purple-400': reorganizing }" />
+              <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': reorganizing }" />
             </button>
 
             <button
@@ -121,7 +116,7 @@
                 'w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer',
                 showCreateClassCard
                   ? 'bg-blue-600 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-sky-400 hover:text-sky-300 hover:bg-white/5'
               ]"
               :title="t('tax.createClassBtnTip')"
             >
@@ -152,18 +147,7 @@
             />
           </div>
 
-          <div class="flex items-center justify-between pt-0.5">
-            <div class="flex items-center gap-1">
-              <button
-                v-for="c in presetColors"
-                :key="c"
-                type="button"
-                @click="newClassForm.color = c"
-                class="w-3.5 h-3.5 rounded-full border transition-all cursor-pointer"
-                :style="{ backgroundColor: c, borderColor: newClassForm.color === c ? '#fff' : 'transparent' }"
-              />
-            </div>
-
+          <div class="flex items-center justify-end pt-0.5">
             <div class="flex items-center gap-1">
               <button
                 type="button"
@@ -212,16 +196,16 @@
             @click="selectClass(tc.id)"
             :title="formatDimensionTooltip(tc)"
             class="w-full px-3 py-2 rounded-xl text-left transition-all border flex items-center justify-between gap-2 cursor-pointer group"
-            :class="selectedClassId === tc.id
-              ? 'bg-purple-600/20 border-purple-500/40 text-white'
-              : 'bg-transparent hover:bg-white/[0.04] border-transparent text-gray-300'"
+            :style="selectedClassId === tc.id
+              ? 'background-color: var(--accent-light); border-color: var(--accent-border); color: var(--text-primary);'
+              : 'border-color: transparent; color: var(--text-secondary);'"
           >
-            <div class="flex items-center gap-2.5 min-w-0">
-              <span class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: tc.color || '#a855f7' }" />
+            <div class="flex items-center gap-2 min-w-0">
+              <TagIcon class="w-3.5 h-3.5 shrink-0 opacity-70" />
               <span class="text-xs font-medium truncate">{{ tFacet(tc.code, tc.display_name) }}</span>
               <Star
                 v-if="tc.is_required && tc.code !== 'media_kind'"
-                class="w-3 h-3 text-amber-400/80 shrink-0"
+                class="w-3 h-3 opacity-60 shrink-0"
               />
             </div>
             <span class="text-[11px] font-mono text-gray-500 group-hover:text-gray-300 shrink-0">
@@ -245,33 +229,33 @@
             class="flex items-center gap-2 min-w-0"
             :title="t('tax.currentClassHeaderTip', { name: tFacet(currentClass.code, currentClass.display_name), code: currentClass.code, count: currentClassTags.length })"
           >
-            <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: currentClass.color || '#a855f7' }" />
-            <h3 class="text-sm font-semibold text-white truncate">{{ tFacet(currentClass.code, currentClass.display_name) }}</h3>
-            <span class="text-xs font-mono text-gray-500">{{ currentClassTags.length }}</span>
+            <TagIcon class="w-3.5 h-3.5 shrink-0" style="color: var(--accent-text);" />
+            <h3 class="text-sm font-semibold truncate" style="color: var(--text-primary);">{{ tFacet(currentClass.code, currentClass.display_name) }}</h3>
+            <span class="text-xs font-mono" style="color: var(--text-muted);">{{ currentClassTags.length }}</span>
           </div>
 
           <div class="flex items-center gap-1 shrink-0">
             <button
               v-if="currentClass.code !== 'media_kind'"
               @click="handleToggleRequired(currentClass)"
-              class="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer"
+              class="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer border"
               :class="currentClass.is_required
-                ? 'bg-amber-500/15 text-amber-300'
-                : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'"
+                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'"
               :title="currentClass.is_required ? t('tax.requiredToggleOnTip') : t('tax.requiredToggleOffTip')"
             >
-              <Star class="w-3.5 h-3.5" :class="{ 'fill-amber-400/30': currentClass.is_required }" />
+              <Star class="w-3.5 h-3.5" :class="{ 'fill-amber-400/30 text-amber-400': currentClass.is_required }" />
             </button>
 
             <button
               @click="handleToggleProjectable(currentClass)"
-              class="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer"
+              class="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer border"
               :class="currentClass.is_projectable
-                ? 'bg-blue-500/15 text-blue-300'
-                : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'"
+                ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+                : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'"
               :title="currentClass.is_projectable ? t('tax.projectableToggleOnTip') : t('tax.projectableToggleOffTip')"
             >
-              <Folder class="w-3.5 h-3.5" />
+              <Folder class="w-3.5 h-3.5" :class="{ 'text-sky-400': currentClass.is_projectable }" />
             </button>
 
             <button
@@ -594,7 +578,7 @@
                 <div class="flex items-center gap-2.5 min-w-0">
                   <img
                     v-if="u.cover_path || u.unit_type === 'video' || u.unit_type === 'image' || u.dynamic_attributes?.image_count > 0"
-                    :src="`/api/stream/thumbnail/${u.id}`"
+                    :src="apiUrl(`/stream/thumbnail/${u.id}`)"
                     class="w-7 h-7 rounded-lg object-cover bg-black/40 shrink-0"
                     @error="(e) => e.target.style.display = 'none'"
                   />
@@ -621,7 +605,7 @@
             <button
               v-if="currentClass && getFacetStat(currentClass.code)?.missing_units > 0"
               @click="handleJumpToMissingFacet(currentClass.code)"
-              class="mt-4 px-3 py-1.5 rounded-xl border border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+              class="mt-4 px-3 py-1.5 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-gray-200 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
               :title="t('tax.filterMissingFacetTip', { name: tFacet(currentClass.code, currentClass.display_name) })"
             >
               <span>{{ t('tax.missingFacetCountBtn', { count: getFacetStat(currentClass.code).missing_units }) }}</span>
@@ -671,6 +655,7 @@ import {
   fetchTagUnits,
   removeTag,
   reorganizeTags,
+  apiUrl,
 } from '../api'
 import { useMediaStore } from '../stores/mediaStore'
 import { usePlayerStore } from '../stores/playerStore'

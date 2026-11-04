@@ -186,8 +186,30 @@ def get_thumbnail(unit_id: int, session: Session = Depends(get_session)):
     if not unit:
         raise HTTPException(status_code=404, detail="AssetUnit not found")
 
-    # 优先检查系列封面本地缓存
-    if unit.collection_id:
+    # 1. 若单元标题自身含标准作品编号，优先检查本地封面缓存
+    m_unit = WORK_CODE_PATTERN.search(unit.title or "")
+    if m_unit:
+        work_code = m_unit.group(1).upper()
+        cached_cover = COVER_CACHE_DIR / f"{work_code}.jpg"
+        if cached_cover.exists():
+            try:
+                shutil.copyfile(cached_cover, local_thumb)
+            except Exception:
+                pass
+            return FileResponse(cached_cover, media_type="image/jpeg")
+
+    # 2. 查找单元自身的 cover_file_id 或 primary 文件
+    primary_file = None
+    if unit.cover_file_id:
+        primary_file = session.get(AssetFile, unit.cover_file_id)
+    if not primary_file:
+        primary_file = session.exec(
+            select(AssetFile).where(AssetFile.asset_unit_id == unit.id, AssetFile.role == "primary")
+        ).first()
+
+    # 3. 仅当非原子单曲音频自身无图片封面时，才回退复用所属系列的封面缓存（严禁覆盖独立图片/画册/视频单元的自身缩略图）
+    is_own_image_cover = bool(primary_file and primary_file.extension.lower() in (".jpg", ".jpeg", ".png", ".webp", ".gif"))
+    if unit.collection_id and unit.unit_type == "audio" and not is_own_image_cover and not (unit.dynamic_attributes or {}).get("is_atomic_work"):
         local_col_thumb = THUMBNAILS_DIR / f"thumb_col_{unit.collection_id}.jpg"
         if local_col_thumb.exists():
             try:
@@ -208,15 +230,6 @@ def get_thumbnail(unit_id: int, session: Session = Depends(get_session)):
                     except Exception:
                         pass
                     return FileResponse(cached_cover, media_type="image/jpeg")
-
-    # 优先从 primary 文件生成或读取缩略图 (仅在非 NAS 或 NAS 在线时)
-    primary_file = None
-    if unit.cover_file_id:
-        primary_file = session.get(AssetFile, unit.cover_file_id)
-    if not primary_file:
-        primary_file = session.exec(
-            select(AssetFile).where(AssetFile.asset_unit_id == unit.id, AssetFile.role == "primary")
-        ).first()
 
     if primary_file:
         is_nas = is_network_or_nas_path(primary_file.file_path)

@@ -1,8 +1,25 @@
 import axios from 'axios'
 
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/+$/, '')
+
+export const apiUrl = (path = '') => {
+  if (!path) return API_BASE_URL
+  if (/^https?:\/\//i.test(path)) return path
+  const normalized = path.startsWith('/') ? path : `/${path}`
+  if (normalized.startsWith('/api/')) {
+    return `${API_BASE_URL}${normalized.slice(4)}`
+  }
+  return `${API_BASE_URL}${normalized}`
+}
+
+export const getThumbnailUrl = (unitId) => apiUrl(`/stream/thumbnail/${unitId}`)
+export const getCollectionThumbnailUrl = (collectionId) => apiUrl(`/stream/collection_thumbnail/${collectionId}`)
+export const getStreamFileUrl = (fileId) => apiUrl(`/stream/file/${fileId}`)
+export const getSubtitleUrl = (fileId) => apiUrl(`/stream/subtitle/${fileId}`)
+
 const api = axios.create({
-  baseURL: '/api',
-  timeout: 120000, // 120s for AI deep reasoning
+  baseURL: API_BASE_URL,
+  timeout: 120000,
 })
 
 export const fetchFeed = (params) => api.get('/recommend/feed', { params }).then(res => res.data)
@@ -10,7 +27,7 @@ export const fetchAlgorithms = () => api.get('/recommend/algorithms').then(res =
 export const fetchAssets = (params) => api.get('/assets', { params }).then(res => res.data)
 export const fetchAssetDetail = (id) => api.get(`/assets/${id}`).then(res => res.data)
 export const rateAsset = (id, rating, isFavorite, notes = null) => api.post(`/assets/${id}/rate`, { rating, is_favorite: isFavorite, notes }).then(res => res.data)
-export const cooldownAsset = (id, days = 14, reason = '听腻了') => api.post(`/assets/${id}/cooldown`, { days, reason }).then(res => res.data)
+export const cooldownAsset = (id, days = 14, reason = 'cooldown') => api.post(`/assets/${id}/cooldown`, { days, reason }).then(res => res.data)
 export const fetchTagAffinityProfile = () => api.get('/recommend/profile/tags').then(res => res.data)
 export const fetchAssetAlgorithmStats = (id) => api.get(`/assets/${id}/algorithm_stats`).then(res => res.data)
 
@@ -31,16 +48,6 @@ export const openWithDefaultApp = (params) => api.post('/system/open', params).t
 export const fetchMountStatus = () => api.get('/system/mount_status').then(res => res.data)
 export const syncLibraryChanges = () => api.post('/system/sync_changes').then(res => res.data)
 export const reindexLibrary = () => api.post('/system/reindex_all').then(res => res.data)
-export const fetchMemoryRecapContext = () => api.get('/ai/memory_recap_context').then(res => res.data)
-
-// AI Deep Organizer API
-export const analyzeFolderWithAI = (folderPath, instruction = '') =>
-  api.post('/ai/analyze_folder', { folder_path: folderPath, instruction }).then(res => res.data)
-
-export const applyAITriagePlan = (folderPath, plan) =>
-  api.post('/ai/apply_triage', { folder_path: folderPath, plan }).then(res => res.data)
-
-export const fetchAISettings = () => api.get('/ai/settings').then(res => res.data)
 
 // Physical Organizer & Maintenance API
 export const fetchMaintenanceStatus = () => api.get('/organize/maintenance').then(res => res.data)
@@ -79,5 +86,6 @@ export const batchAssignTag = (data) => api.post('/tags/batch_assign', data).the
 export const fetchMCPConfig = () => api.get('/system/mcp_config').then(res => res.data)
 
 export default api
+
 
 

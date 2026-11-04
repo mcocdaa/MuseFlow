@@ -94,8 +94,8 @@ def get_pipeline_presets():
     return [
         {
             "id": "category_standard",
-            "name": "⭐ 题材分类与创作者分流流水线",
-            "description": "按「题材/分类」➔「创作者/社团」分层归类，作品名规范统一",
+            "name": "题材分类与创作者分流流水线",
+            "description": "按「题材/分类」与「创作者/社团」分层归类，作品名规范统一",
             "levels": [
                 {"level_index": 0, "facet": "tag.domain", "fallback": "通用分类"},
                 {"level_index": 1, "facet": "tag.creator", "fallback": "独立创作者"},
@@ -104,8 +104,8 @@ def get_pipeline_presets():
         },
         {
             "id": "creator_first",
-            "name": "👤 创作者/社团优先流水线",
-            "description": "按「创作者/社团」➔「题材」分层，作品名保持纯净，同名时自动消歧",
+            "name": "创作者/社团优先流水线",
+            "description": "按「创作者/社团」与「题材」分层，作品名保持纯净，同名时自动消歧",
             "levels": [
                 {"level_index": 0, "facet": "tag.creator", "fallback": "其他创作者"},
                 {"level_index": 1, "facet": "tag.domain", "fallback": "综合作品"},
@@ -114,8 +114,8 @@ def get_pipeline_presets():
         },
         {
             "id": "media_kind_clean",
-            "name": "📁 媒体形态扁平整理流水线",
-            "description": "按「媒体形态」➔「分类」快速两级归类，极度清爽",
+            "name": "媒体形态扁平整理流水线",
+            "description": "按「媒体形态」与「分类」快速两级归类，极度清爽",
             "levels": [
                 {"level_index": 0, "facet": "tag.media_kind", "fallback": "媒体"},
                 {"level_index": 1, "facet": "tag.domain", "fallback": "精选"},

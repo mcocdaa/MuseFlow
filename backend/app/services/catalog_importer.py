@@ -34,8 +34,11 @@ COVER_CACHE_DIR = DATA_DIR / "cache" / "covers"
 COVER_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 PLUGINS_DIR = DATA_DIR / "plugins"
 
-# Generic catalog work identifier pattern (e.g. AB123456, ISBN/ISRC/Catalog prefix + digits)
-WORK_CODE_PATTERN = re.compile(r"([A-Z]{2,4}\d{5,8})", re.IGNORECASE)
+# Generic catalog work identifier pattern (e.g. AB123456, ALB888777, ISBN/ISRC/Catalog 2-3 letter prefix + 6-8 digits, excluding camera/video IDs)
+WORK_CODE_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9])(?!(?:DSC|IMG|VID|PXL|MOV|DJI|SHOT|PORT|AV|BV|SM|CV|DF|EA|EE|EQ|FE)\d)([A-Z]{2,3}\d{6,8})(?![A-Za-z0-9])",
+    re.IGNORECASE,
+)
 
 
 def extract_work_code(text: str) -> Optional[str]:
@@ -568,7 +571,7 @@ def import_catalog_library(
         session.commit()
 
     ensure_superset(
-        name="🎧 音频精选集 (Audio Hub)",
+        name="音频精选集 (Audio Hub)",
         desc="全部导入的专辑与音频系列合集",
         icon="sparkles",
         unit_ids=all_imported_unit_ids
@@ -576,7 +579,7 @@ def import_catalog_library(
 
     if video_unit_ids:
         ensure_superset(
-            name="🎬 专辑伴生视频/短片",
+            name="专辑伴生视频/短片",
             desc="专辑目录附带的演示视频、PV 与短片集合",
             icon="film",
             unit_ids=video_unit_ids

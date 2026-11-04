@@ -135,8 +135,11 @@ def build_all_series_cards(session: Session, context: Dict[str, Any]) -> List[Di
                 aud_cnt = int(attrs.get("audio_count") or (1 if u.unit_type == "audio" else 0))
                 vid_cnt = int(attrs.get("video_count") or (1 if u.unit_type in ("video", "bundle") else 0))
                 img_cnt = int(attrs.get("image_count") or (1 if u.unit_type == "image" else 0))
-                trk_cnt = int(attrs.get("track_count") or max(1, aud_cnt + vid_cnt))
-                tot_cnt = trk_cnt + (img_cnt if u.unit_type != "image" else 0)
+                if u.unit_type == "image":
+                    trk_cnt = max(1, img_cnt + vid_cnt)
+                else:
+                    trk_cnt = int(attrs.get("track_count") or max(1, aud_cnt + vid_cnt))
+                tot_cnt = max(1, aud_cnt + vid_cnt + img_cnt)
 
                 series_cards.append({
                     "id": u.id,
@@ -283,8 +286,11 @@ def build_all_series_cards(session: Session, context: Dict[str, Any]) -> List[Di
             aud_cnt = int(attrs.get("audio_count") or (1 if u.unit_type == "audio" else 0))
             vid_cnt = int(attrs.get("video_count") or (1 if u.unit_type in ("video", "bundle") else 0))
             img_cnt = int(attrs.get("image_count") or (1 if u.unit_type == "image" else 0))
-            trk_cnt = int(attrs.get("track_count") or max(1, aud_cnt + vid_cnt))
-            tot_cnt = trk_cnt + (img_cnt if u.unit_type != "image" else 0)
+            if u.unit_type == "image":
+                trk_cnt = max(1, img_cnt + vid_cnt)
+            else:
+                trk_cnt = int(attrs.get("track_count") or max(1, aud_cnt + vid_cnt))
+            tot_cnt = max(1, aud_cnt + vid_cnt + img_cnt)
 
             series_cards.append({
                 "id": u.id,
@@ -319,10 +325,15 @@ def build_all_series_cards(session: Session, context: Dict[str, Any]) -> List[Di
                 "dynamic_attributes": attrs,
             })
 
-    # Batch preload files for all representative unit cards so front-end players can instantly stream
+    # Batch preload primary/playable files for representative unit cards (skipping 40k+ internal gallery role=='image' rows)
     all_rep_uids = [card["representative_unit_id"] for card in series_cards if card.get("representative_unit_id")]
     if all_rep_uids:
-        raw_files = session.exec(select(AssetFile).where(AssetFile.asset_unit_id.in_(all_rep_uids))).all()
+        raw_files = session.exec(
+            select(AssetFile).where(
+                AssetFile.asset_unit_id.in_(all_rep_uids),
+                AssetFile.role != "image",
+            )
+        ).all()
         files_map = defaultdict(list)
         for f in raw_files:
             files_map[f.asset_unit_id].append(AssetFileRead.model_validate(f))

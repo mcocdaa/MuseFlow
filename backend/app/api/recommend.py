@@ -42,8 +42,11 @@ def get_recommendation_feed(
             aud_cnt = int(attrs.get("audio_count") or (1 if ur.unit_type == "audio" else 0))
             vid_cnt = int(attrs.get("video_count") or (1 if ur.unit_type in ("video", "bundle") else 0))
             img_cnt = int(attrs.get("image_count") or (1 if ur.unit_type == "image" else 0))
-            trk_cnt = int(attrs.get("track_count") or max(1, aud_cnt + vid_cnt))
-            tot_cnt = trk_cnt + (img_cnt if ur.unit_type != "image" else 0)
+            if ur.unit_type == "image":
+                trk_cnt = max(1, img_cnt + vid_cnt)
+            else:
+                trk_cnt = int(attrs.get("track_count") or max(1, aud_cnt + vid_cnt))
+            tot_cnt = max(1, aud_cnt + vid_cnt + img_cnt)
             feed_cards.append(FeedCardRead(
                 id=ur.id,
                 card_id=f"unit_{ur.id}",

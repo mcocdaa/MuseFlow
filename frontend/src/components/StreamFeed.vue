@@ -48,7 +48,8 @@ import {
   addItemToSuperset,
   addItemsBatchToSuperset,
   fetchAssets,
-  fetchAssetDetail
+  fetchAssetDetail,
+  apiUrl
 } from '../api'
 
 const mediaStore = useMediaStore()
@@ -59,22 +60,22 @@ const { t, tData, tFacet, tAlgo, tAlgoDesc } = i18n
 const algoMeta = {
   resonance: {
     icon: Flame,
-    color: '#f43f5e',
+    color: '#fbbf24',
     desc: '基于多次打分复合偏好、标签亲和力扩散与疲劳度冷却的深度智能共鸣推荐',
   },
   discover: {
     icon: Compass,
-    color: '#38bdf8',
+    color: 'var(--accent-text)',
     desc: '全库随机漫游，探索未被注意的角落',
   },
   affinity: {
     icon: Sparkles,
-    color: '#c084fc',
+    color: '#818cf8',
     desc: '根据评分、收藏与有效停留时长个性化加权',
   },
   flashback: {
     icon: Clock,
-    color: '#fbbf24',
+    color: '#34d399',
     desc: '优先重温往日索引、久未浏览的珍贵记忆',
   },
 }
@@ -328,14 +329,14 @@ const displayItems = computed(() => {
 })
 
 const FACET_META = {
-  media_kind: { name: '媒体形态', icon: Layers, color: '#60a5fa' },
-  spec: { name: '语种与声学', icon: Globe, color: '#38bdf8' },
-  domain: { name: '核心题材', icon: Sparkles, color: '#c084fc' },
-  character: { name: '角色人设', icon: Heart, color: '#f472b6' },
-  interaction: { name: '互动表现', icon: Flame, color: '#fb923c' },
-  creator: { name: '创作者 / 社团', icon: User, color: '#34d399' },
-  va: { name: '声优 / 演职员', icon: Music, color: '#fbbf24' },
-  workflow: { name: '状态分流', icon: CheckCheck, color: '#a3e635' },
+  media_kind: { name: '媒体形态', icon: Layers, color: 'var(--text-secondary)' },
+  spec: { name: '语种与声学', icon: Globe, color: 'var(--text-secondary)' },
+  domain: { name: '核心题材', icon: Sparkles, color: 'var(--text-secondary)' },
+  character: { name: '角色人设', icon: Heart, color: 'var(--text-secondary)' },
+  interaction: { name: '互动表现', icon: Flame, color: 'var(--text-secondary)' },
+  creator: { name: '创作者 / 社团', icon: User, color: 'var(--text-secondary)' },
+  va: { name: '声优 / 演职员', icon: Music, color: 'var(--text-secondary)' },
+  workflow: { name: '状态分流', icon: CheckCheck, color: 'var(--text-secondary)' },
 }
 
 const availableFacets = computed(() => {
@@ -350,7 +351,7 @@ const availableFacets = computed(() => {
   for (const tObj of sourceTags) {
     if (!tObj.name || tObj.name.length > 30) continue
     const code = tObj.class_code || 'domain'
-    const metaCfg = FACET_META[code] || { name: tObj.class_name || '分类标签', icon: Sparkles, color: '#c084fc' }
+    const metaCfg = FACET_META[code] || { name: tObj.class_name || '分类标签', icon: Sparkles, color: 'var(--text-secondary)' }
     const displayName = tFacet(code, tObj.class_name || metaCfg.name)
     const iconComp = metaCfg.icon
 
@@ -667,38 +668,8 @@ const parentTagNameSet = computed(() => {
   return s
 })
 
-const getCardTagBadgeClass = (classCode) => {
-  switch (classCode) {
-    case 'character':
-    case 'guest':
-      return 'bg-pink-500/12 text-pink-300 border-pink-500/25 hover:bg-pink-500/25'
-    case 'interaction':
-    case 'difficulty':
-      return 'bg-orange-500/12 text-orange-300 border-orange-500/25 hover:bg-orange-500/25'
-    case 'domain':
-    case 'genre':
-    case 'topic':
-    case 'project':
-    case 'tech_stack':
-      return 'bg-purple-500/12 text-purple-300 border-purple-500/25 hover:bg-purple-500/25'
-    case 'va':
-    case 'release_year':
-    case 'gear':
-      return 'bg-amber-500/12 text-amber-300 border-amber-500/25 hover:bg-amber-500/25'
-    case 'spec':
-    case 'album':
-      return 'bg-sky-500/12 text-sky-300 border-sky-500/25 hover:bg-sky-500/25'
-    case 'creator':
-    case 'artist':
-    case 'host':
-    case 'client':
-    case 'instructor':
-      return 'bg-teal-500/12 text-teal-300 border-teal-500/25 hover:bg-teal-500/25'
-    case 'workflow':
-      return 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20 hover:bg-emerald-500/25'
-    default:
-      return 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/15'
-  }
+const getCardTagBadgeClass = () => {
+  return 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/15'
 }
 
 const getCleanCardTags = (card) => {
@@ -787,12 +758,15 @@ const handleCardClick = async (card) => {
     }
   }
 
-  // Ensure playable unit has full files metadata for streaming
+  // Ensure playable unit has full files or manifest metadata for streaming
   let playableCard = card
-  if (!playableCard.files || playableCard.files.length === 0) {
+  const hasManifest =
+    Array.isArray(playableCard.dynamic_attributes?.tracks) && playableCard.dynamic_attributes.tracks.length > 0 ||
+    Array.isArray(playableCard.dynamic_attributes?.gallery) && playableCard.dynamic_attributes.gallery.length > 0
+  if ((!playableCard.files || playableCard.files.length === 0) && !hasManifest) {
     try {
       const detail = await fetchAssetDetail(playableCard.representative_unit_id || playableCard.id)
-      if (detail && detail.files && detail.files.length > 0) {
+      if (detail) {
         playableCard = detail
       }
     } catch (e) {
@@ -912,15 +886,20 @@ const handleToggleFavorite = (e, card) => {
           :class="[
             'p-2 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 border cursor-pointer',
             mediaStore.sidebarOpen
-              ? 'bg-purple-600/20 text-purple-200 border-purple-500/40 shadow-sm'
+              ? 'bg-white/10 text-white border-white/20 shadow-sm'
               : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
           ]"
           :title="mediaStore.sidebarOpen ? t('stream.collapseSidebarTitle') : t('stream.expandSidebarTitle')"
         >
-          <component :is="mediaStore.sidebarOpen ? PanelLeftClose : PanelLeftOpen" class="w-4 h-4 text-purple-400" />
+          <component
+            :is="mediaStore.sidebarOpen ? PanelLeftClose : PanelLeftOpen"
+            class="w-4 h-4"
+            style="color: var(--accent-text);"
+          />
           <span
             v-if="activeFilterList.length > 0"
-            class="text-[10px] px-1.5 py-0.2 rounded-full font-bold text-white bg-purple-600 font-mono"
+            class="text-[10px] px-1.5 py-0.2 rounded-full font-bold text-white font-mono"
+            style="background-color: var(--accent-color);"
           >
             {{ activeFilterList.length }}
           </span>
@@ -933,7 +912,7 @@ const handleToggleFavorite = (e, card) => {
             :class="[
               'px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer',
               mediaStore.feedDisplayMode === 'series'
-                ? 'bg-purple-600/30 text-purple-200 shadow-sm'
+                ? 'bg-white/10 text-white shadow-sm'
                 : 'text-gray-400 hover:text-gray-200'
             ]"
             :title="t('stream.seriesModeTitle')"
@@ -945,7 +924,7 @@ const handleToggleFavorite = (e, card) => {
             :class="[
               'px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer',
               mediaStore.feedDisplayMode === 'flat'
-                ? 'bg-purple-600/30 text-purple-200 shadow-sm'
+                ? 'bg-white/10 text-white shadow-sm'
                 : 'text-gray-400 hover:text-gray-200'
             ]"
             :title="t('stream.flatModeTitle')"
@@ -958,10 +937,10 @@ const handleToggleFavorite = (e, card) => {
         <button
           v-if="displayItems.length > 0"
           @click="startSlideshowAll"
-          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-purple-200 bg-white/5 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500/30 transition-all cursor-pointer"
+          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-gray-200 bg-white/5 hover:bg-white/10 border border-white/10 transition-all cursor-pointer"
           :title="t('stream.autoplayBtnTitle')"
         >
-          <Play class="w-3.5 h-3.5 fill-current text-purple-400" />
+          <Play class="w-3.5 h-3.5 fill-current text-emerald-400" />
           <span>{{ t('stream.autoplayBtn') }}</span>
         </button>
 
@@ -972,7 +951,7 @@ const handleToggleFavorite = (e, card) => {
           :class="[
             'p-2 rounded-xl text-xs font-medium transition-all border cursor-pointer',
             isBatchMode
-              ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
+              ? 'bg-white/15 text-white border-white/30 shadow-sm'
               : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
           ]"
           :title="isBatchMode ? t('stream.exitBatchTitle') : t('stream.enterBatchTitle')"
@@ -1083,7 +1062,7 @@ const handleToggleFavorite = (e, card) => {
         <!-- Sidebar Header -->
         <div class="px-4 py-3 border-b flex items-center justify-between shrink-0" style="border-color: var(--border-color);">
           <div class="flex items-center gap-2">
-            <div class="p-1 rounded-lg text-purple-400 bg-purple-500/10">
+            <div class="p-1 rounded-lg bg-white/5" style="color: var(--accent-text);">
               <FolderTree class="w-4 h-4" />
             </div>
             <span class="text-xs font-bold tracking-wide uppercase" style="color: var(--text-main);">
@@ -1151,11 +1130,11 @@ const handleToggleFavorite = (e, card) => {
 
           <!-- Empty state if no tags found -->
           <div v-else-if="availableFacets.length === 0" class="p-6 text-center text-xs text-gray-500">
-            <TagIcon class="w-6 h-6 mx-auto mb-2 opacity-40 text-purple-400" />
+            <TagIcon class="w-6 h-6 mx-auto mb-2 opacity-40 text-gray-400" />
             <p>{{ t('stream.noTagsFound') }}</p>
             <button
               @click="mediaStore.loadTags()"
-              class="mt-2 text-purple-400 hover:text-purple-300 underline text-[11px]"
+              class="mt-2 text-gray-300 hover:text-white underline text-[11px]"
             >
               {{ t('stream.resyncTagsBtn') }}
             </button>
@@ -1174,11 +1153,11 @@ const handleToggleFavorite = (e, card) => {
               class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-300 hover:text-white hover:bg-white/5 transition-colors select-none cursor-pointer"
             >
               <div class="flex items-center gap-2">
-                <component :is="group.icon || TagIcon" class="w-3.5 h-3.5" :style="{ color: group.color || '#c084fc' }" />
+                <component :is="group.icon || TagIcon" class="w-3.5 h-3.5" style="color: var(--accent-text);" />
                 <span>{{ group.name }}</span>
                 <span
                   v-if="getActiveCountInSection(group.key) > 0"
-                  class="text-[10px] px-1.5 py-0.2 rounded-full font-bold text-purple-200 bg-purple-600/40 border border-purple-500/40"
+                  class="text-[10px] px-1.5 py-0.2 rounded-full font-bold text-white bg-white/10 border border-white/20"
                 >
                   {{ getActiveCountInSection(group.key) }}
                 </span>
@@ -1204,23 +1183,24 @@ const handleToggleFavorite = (e, card) => {
                 :class="[
                   'group flex items-center justify-between py-1.5 px-2 rounded-lg text-xs cursor-pointer select-none transition-all mb-1',
                   (!mediaStore.activeFacetFilters.media_kind || mediaStore.activeFacetFilters.media_kind.length === 0)
-                    ? 'bg-purple-600/25 border border-purple-500/50 text-white font-medium shadow-xs'
+                    ? 'bg-white/10 border border-white/20 text-white font-medium shadow-xs'
                     : 'hover:bg-white/5 text-gray-400 hover:text-gray-200 border border-transparent'
                 ]"
                 style="padding-left: 8px;"
               >
                 <div class="flex items-center gap-1.5 min-w-0">
-                  <span class="w-3 text-center text-purple-400 text-[10px]">★</span>
+                  <Star class="w-3 h-3 shrink-0 text-amber-400" />
                   <component
                     :is="(!mediaStore.activeFacetFilters.media_kind || mediaStore.activeFacetFilters.media_kind.length === 0) ? CheckSquare : Square"
                     class="w-3.5 h-3.5 shrink-0 transition-colors"
-                    :class="(!mediaStore.activeFacetFilters.media_kind || mediaStore.activeFacetFilters.media_kind.length === 0) ? 'text-purple-400' : 'text-gray-600 group-hover:text-gray-400'"
+                    :style="(!mediaStore.activeFacetFilters.media_kind || mediaStore.activeFacetFilters.media_kind.length === 0) ? 'color: var(--accent-text);' : ''"
+                    :class="(!mediaStore.activeFacetFilters.media_kind || mediaStore.activeFacetFilters.media_kind.length === 0) ? '' : 'text-gray-600 group-hover:text-gray-400'"
                   />
                   <span class="truncate font-medium">{{ t('stream.allMediaKinds') }}</span>
                 </div>
                 <span
                   class="text-[10px] font-mono px-1.5 py-0.2 rounded-full shrink-0 ml-1.5"
-                  :class="(!mediaStore.activeFacetFilters.media_kind || mediaStore.activeFacetFilters.media_kind.length === 0) ? 'bg-purple-500/30 text-purple-200 font-bold' : 'bg-white/5 text-gray-500'"
+                  :class="(!mediaStore.activeFacetFilters.media_kind || mediaStore.activeFacetFilters.media_kind.length === 0) ? 'bg-white/15 text-white font-bold' : 'bg-white/5 text-gray-500'"
                 >
                   {{ mediaStore.feedItems.length }}
                 </span>
@@ -1508,7 +1488,7 @@ const handleToggleFavorite = (e, card) => {
           </div>
 
           <img
-            :src="card.is_series && card.collection_id ? `/api/stream/collection_thumbnail/${card.collection_id}` : `/api/stream/thumbnail/${card.representative_unit_id || card.id}`"
+            :src="card.is_series && card.collection_id ? apiUrl(`/stream/collection_thumbnail/${card.collection_id}`) : apiUrl(`/stream/thumbnail/${card.representative_unit_id || card.id}`)"
             :alt="tData(card.title)"
             loading="lazy"
             class="relative z-10 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1533,64 +1513,64 @@ const handleToggleFavorite = (e, card) => {
             v-if="!isBatchMode"
             class="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-20"
           >
-            <!-- Composite Multi-Media Badges for Series -->
-            <template v-if="card.is_series && card.unit_count > 1">
+            <!-- Composite Multi-Media Badges for Series & Atomic Works -->
+            <template v-if="(card.is_series && card.unit_count > 1) || card.total_count > 1">
               <span
                 v-if="card.audio_count > 0"
-                class="flex items-center gap-1 bg-emerald-600/90 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
+                class="flex items-center gap-1 bg-black/75 border border-white/15 backdrop-blur-md text-[10px] font-medium text-gray-100 px-2 py-0.5 rounded-md"
               >
-                <Music class="w-3 h-3" />
+                <Music class="w-3 h-3 text-emerald-400" />
                 <span>{{ t('stream.badgeTracks', { count: card.audio_count }) }}</span>
               </span>
               <span
                 v-if="card.video_count > 0"
-                class="flex items-center gap-1 bg-blue-600/90 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
+                class="flex items-center gap-1 bg-black/75 border border-white/15 backdrop-blur-md text-[10px] font-medium text-gray-100 px-2 py-0.5 rounded-md"
               >
-                <Video class="w-3 h-3" />
+                <Video class="w-3 h-3 text-sky-400" />
                 <span>{{ t('stream.badgeVideos', { count: card.video_count }) }}</span>
               </span>
               <span
                 v-if="card.image_count > 0"
-                class="flex items-center gap-1 bg-amber-600/90 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
+                class="flex items-center gap-1 bg-black/75 border border-white/15 backdrop-blur-md text-[10px] font-medium text-gray-100 px-2 py-0.5 rounded-md"
               >
-                <ImageIcon class="w-3 h-3" />
+                <ImageIcon class="w-3 h-3 text-amber-400" />
                 <span>{{ t('stream.badgeArtworks', { count: card.image_count }) }}</span>
               </span>
               <span
                 v-if="!card.audio_count && !card.video_count && !card.image_count"
-                class="flex items-center gap-1 bg-purple-600/90 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
+                class="flex items-center gap-1 bg-black/75 border border-white/15 backdrop-blur-md text-[10px] font-medium text-gray-100 px-2 py-0.5 rounded-md"
               >
-                <Layers class="w-3 h-3" />
+                <Layers class="w-3 h-3 text-indigo-400" />
                 <span>{{ t('stream.badgeEpisodes', { count: card.unit_count }) }}</span>
               </span>
             </template>
             <template v-else>
               <span
                 v-if="card.unit_type === 'bundle'"
-                class="flex items-center gap-1 bg-purple-600/80 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
+                class="flex items-center gap-1 bg-black/75 border border-white/15 backdrop-blur-md text-[10px] font-medium text-gray-100 px-2 py-0.5 rounded-md"
               >
-                <Layers class="w-3 h-3" />
+                <Layers class="w-3 h-3 text-indigo-400" />
                 <span>{{ t('stream.badgeBundle') }}</span>
               </span>
               <span
                 v-else-if="card.unit_type === 'video'"
-                class="flex items-center gap-1 bg-blue-600/80 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
+                class="flex items-center gap-1 bg-black/75 border border-white/15 backdrop-blur-md text-[10px] font-medium text-gray-100 px-2 py-0.5 rounded-md"
               >
-                <Video class="w-3 h-3" />
+                <Video class="w-3 h-3 text-sky-400" />
                 <span>{{ t('stream.badgeVideo') }}</span>
               </span>
               <span
                 v-else-if="card.unit_type === 'audio'"
-                class="flex items-center gap-1 bg-emerald-600/80 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
+                class="flex items-center gap-1 bg-black/75 border border-white/15 backdrop-blur-md text-[10px] font-medium text-gray-100 px-2 py-0.5 rounded-md"
               >
-                <Music class="w-3 h-3" />
+                <Music class="w-3 h-3 text-emerald-400" />
                 <span>{{ t('stream.badgeAudio') }}</span>
               </span>
               <span
                 v-else
-                class="flex items-center gap-1 bg-amber-600/80 backdrop-blur-md text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow"
+                class="flex items-center gap-1 bg-black/75 border border-white/15 backdrop-blur-md text-[10px] font-medium text-gray-100 px-2 py-0.5 rounded-md"
               >
-                <ImageIcon class="w-3 h-3" />
+                <ImageIcon class="w-3 h-3 text-amber-400" />
                 <span>{{ t('stream.badgeImage') }}</span>
               </span>
             </template>
@@ -1601,7 +1581,7 @@ const handleToggleFavorite = (e, card) => {
             v-if="card.duration_seconds"
             class="absolute bottom-2.5 right-2.5 bg-black/70 backdrop-blur-sm text-[10px] text-gray-200 px-2 py-0.5 rounded-md flex items-center gap-1 font-mono z-20"
           >
-            <Clock class="w-3 h-3 text-gray-400" />
+            <Clock class="w-3 h-3 text-sky-400/80" />
             <span>{{ formatDuration(card.duration_seconds) }}</span>
           </div>
 
@@ -1653,13 +1633,13 @@ const handleToggleFavorite = (e, card) => {
         <div class="p-3.5 flex flex-col justify-between flex-grow">
           <div>
             <!-- Title -->
-            <h4 class="text-sm font-medium text-gray-100 truncate group-hover:text-purple-300 transition-colors" :title="tData(card.title)">
+            <h4 class="text-sm font-medium text-gray-100 truncate group-hover:text-white transition-colors" :title="tData(card.title)">
               {{ tData(card.title) }}
             </h4>
 
             <!-- Collection Info -->
             <div class="flex items-center justify-between text-[11px] text-gray-400 mt-1">
-              <span v-if="card.is_series && card.unit_count > 1 && (card.audio_count > 0 || card.image_count > 0 || card.video_count > 0)" class="text-purple-400 font-mono text-[11px] font-semibold truncate max-w-[200px]">
+              <span v-if="card.is_series && card.unit_count > 1 && (card.audio_count > 0 || card.image_count > 0 || card.video_count > 0)" class="text-gray-300 font-mono text-[11px] font-medium truncate max-w-[200px]">
                 <template v-if="card.audio_count > 0 && card.image_count > 0">
                   {{ t('stream.seriesMetaAudioArt', { audio: card.audio_count, image: card.image_count }) }}
                 </template>

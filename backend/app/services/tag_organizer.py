@@ -18,7 +18,6 @@ MuseFlow (灵眸流) — 通用标签类组织与分类层级管理器 (Tag Orga
 import json
 import logging
 import re
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 from sqlalchemy import text
 from sqlmodel import Session, select, func
@@ -26,7 +25,7 @@ from sqlmodel import Session, select, func
 from app.models.entities import AssetFile, AssetUnit, AssetUnitTagLink, Collection, Tag, TagClass, TagAlias
 from app.services.tag_service import TagHierarchyCacheManager, normalize_tag_name
 from app.services.catalog_importer import extract_work_code, fetch_and_cache_catalog_meta, COVER_CACHE_DIR, WORK_CODE_PATTERN
-from app.services.reverse_tagger import is_valid_creator_candidate
+from app.services.reverse_tagger import get_or_create_tag_fast, is_valid_creator_candidate
 from app.core.user_rules import (
     load_user_rules,
     apply_creator_cleaning,
@@ -36,53 +35,6 @@ from app.core.user_rules import (
 )
 
 logger = logging.getLogger("museflow.tag_organizer")
-
-
-def get_or_create_tag_fast(
-    session: Session,
-    tag_by_norm: Dict[str, Tag],
-    name: str,
-    tag_class_id: int,
-    parent_id: Optional[int] = None,
-) -> Optional[Tag]:
-    """
-    纯内存秒级获取或创建标签（支持跨 TagClass 同名消歧，避免正交元类碰撞）
-    """
-    clean_name = name.strip()
-    if not clean_name:
-        return None
-    _, norm_name = normalize_tag_name(clean_name)
-    scoped_key = f"{norm_name}::{tag_class_id}"
-
-    if scoped_key in tag_by_norm:
-        existing = tag_by_norm[scoped_key]
-        if parent_id is not None and existing.parent_id is None and existing.id != parent_id:
-            existing.parent_id = parent_id
-            session.add(existing)
-        return existing
-
-    existing = tag_by_norm.get(norm_name)
-    if existing and existing.tag_class_id == tag_class_id:
-        tag_by_norm[scoped_key] = existing
-        if parent_id is not None and existing.parent_id is None and existing.id != parent_id:
-            existing.parent_id = parent_id
-            session.add(existing)
-        return existing
-
-    db_norm = scoped_key if existing is not None else norm_name
-
-    new_tag = Tag(
-        name=clean_name,
-        normalized_name=db_norm,
-        tag_class_id=tag_class_id,
-        parent_id=parent_id,
-    )
-    session.add(new_tag)
-    session.flush()
-    tag_by_norm[scoped_key] = new_tag
-    if existing is None:
-        tag_by_norm[norm_name] = new_tag
-    return new_tag
 
 
 def assign_link_fast(
@@ -169,18 +121,22 @@ def _merge_alias_map_in_class(
     merged_count = 0
     class_tags = session.exec(select(Tag).where(Tag.tag_class_id == class_id)).all()
     tag_by_name = {t.name: t for t in class_tags}
+    tag_by_lower = {t.name.lower(): t for t in class_tags}
 
     for alias, canonical_name in alias_map.items():
-        if alias == canonical_name or alias not in tag_by_name:
+        if alias == canonical_name:
             continue
-        alias_tag = tag_by_name[alias]
-        canon_tag = tag_by_name.get(canonical_name)
+        alias_tag = tag_by_name.get(alias) or tag_by_lower.get(alias.lower())
+        if not alias_tag or alias_tag.name == canonical_name:
+            continue
+        canon_tag = tag_by_name.get(canonical_name) or tag_by_lower.get(canonical_name.lower())
         if not canon_tag:
             canon_tag = get_or_create_tag_fast(
                 session, tag_by_norm, canonical_name, class_id, parent_id=alias_tag.parent_id
             )
             if canon_tag:
                 tag_by_name[canonical_name] = canon_tag
+                tag_by_lower[canonical_name.lower()] = canon_tag
 
         if canon_tag and canon_tag.id != alias_tag.id:
             alias_links = session.exec(
@@ -205,24 +161,29 @@ def _merge_alias_map_in_class(
             for ch in children:
                 if ch.id != canon_tag.id:
                     ch.parent_id = canon_tag.id
-                    session.add(ch)
+                else:
+                    ch.parent_id = None
+                session.add(ch)
 
             existing_alias = session.exec(
-                select(TagAlias).where(TagAlias.alias_name == alias, TagAlias.tag_id == canon_tag.id)
+                select(TagAlias).where(TagAlias.alias_name == alias_tag.name, TagAlias.tag_id == canon_tag.id)
             ).first()
             if not existing_alias:
                 session.add(
                     TagAlias(
                         tag_id=canon_tag.id,
-                        alias_name=alias,
-                        normalized_alias=alias.lower(),
-                        language="ja" if re.search(r"[\u3040-\u30ff]", alias) else "zh",
+                        alias_name=alias_tag.name,
+                        normalized_alias=alias_tag.name.lower(),
+                        language="ja" if re.search(r"[\u3040-\u30ff]", alias_tag.name) else "zh",
                     )
                 )
 
             session.flush()
-            session.delete(alias_tag)
-            tag_by_name.pop(alias, None)
+            session.execute(text("DELETE FROM asset_unit_tag_link WHERE tag_id = :tid"), {"tid": alias_tag.id})
+            session.execute(text("DELETE FROM tag_alias WHERE tag_id = :tid"), {"tid": alias_tag.id})
+            session.execute(text("DELETE FROM tag WHERE id = :tid"), {"tid": alias_tag.id})
+            tag_by_name.pop(alias_tag.name, None)
+            tag_by_lower.pop(alias_tag.name.lower(), None)
             merged_count += 1
 
     session.flush()
@@ -268,6 +229,16 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
     logger.info("开始执行全量多维标签体系系统性类结构重组与元数据映射...")
     user_rules = load_user_rules(force_reload=True)
 
+    # 0. 清理任何悬空的关联记录（例如已解散或移除的旧单元）
+    session.execute(
+        text(
+            "DELETE FROM asset_unit_tag_link "
+            "WHERE unit_id NOT IN (SELECT id FROM assetunit) "
+            "   OR tag_id NOT IN (SELECT id FROM tag)"
+        )
+    )
+    session.flush()
+
     class_map_objs = ensure_all_classes_and_tags(session, user_rules)
     class_map = {k: v.id for k, v in class_map_objs.items()}
 
@@ -281,10 +252,13 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
     all_tags_init = session.exec(select(Tag)).all()
     purged_invalid = 0
     for t in all_tags_init:
+        if t.tag_class_id == mk_id:
+            continue
         t_clean = t.name.strip()
         is_blacklisted = t_clean in user_rules.slang_filter or t_clean in user_rules.ignore_segments
         is_bad_creator = (cr_id is not None and t.tag_class_id == cr_id and not is_valid_creator_candidate(t_clean, user_rules))
         if is_blacklisted or is_bad_creator:
+            session.execute(text("UPDATE tag SET parent_id = NULL WHERE parent_id = :tid"), {"tid": t.id})
             session.execute(text("DELETE FROM asset_unit_tag_link WHERE tag_id = :tid"), {"tid": t.id})
             session.execute(text("DELETE FROM tag_alias WHERE tag_id = :tid"), {"tid": t.id})
             session.execute(text("DELETE FROM tag WHERE id = :tid"), {"tid": t.id})
@@ -323,6 +297,7 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
     t_image = get_or_create_tag_fast(session, tag_by_norm, "图片", mk_id)
     t_bundle = get_or_create_tag_fast(session, tag_by_norm, "复合媒体", mk_id)
     t_coded_audio: Optional[Tag] = None
+    t_album_image: Optional[Tag] = None
 
     units = session.exec(select(AssetUnit)).all()
     stats["total_units"] = len(units)
@@ -364,6 +339,7 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
     unit_path_map: Dict[int, str] = {uid: fp for uid, fp in session.exec(stmt_u_path).all()}
 
     units_by_code: Dict[str, List[AssetUnit]] = {}
+    unit_code_by_uid: Dict[int, str] = {}
     for u in units:
         fp = unit_path_map.get(u.id, "")
         fp_codes = [m.upper() for m in WORK_CODE_PATTERN.findall(fp)]
@@ -371,8 +347,10 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
         # 优先采用文件路径最深层的具体作品编号，回退至所属 Collection 的作品编号
         unit_code = fp_codes[-1] if fp_codes else col_code
         is_coded = bool(unit_code)
+        is_atomic = bool((u.dynamic_attributes or {}).get("is_atomic_work"))
         if unit_code:
             units_by_code.setdefault(unit_code, []).append(u)
+            unit_code_by_uid[u.id] = unit_code
 
         if u.unit_type == "audio":
             assign_link_fast(session, existing_links, new_links, u.id, t_audio.id, is_primary=not is_coded)
@@ -386,7 +364,12 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
             assign_link_fast(session, existing_links, new_links, u.id, t_video.id, is_primary=True)
             stats["media_kind_assigned"] += 1
         elif u.unit_type == "image":
-            assign_link_fast(session, existing_links, new_links, u.id, t_image.id, is_primary=True)
+            assign_link_fast(session, existing_links, new_links, u.id, t_image.id, is_primary=not is_atomic)
+            if is_atomic:
+                if t_album_image is None:
+                    t_album_image = get_or_create_tag_fast(session, tag_by_norm, "独立画册", mk_id, parent_id=t_image.id)
+                if t_album_image:
+                    assign_link_fast(session, existing_links, new_links, u.id, t_album_image.id, is_primary=True)
             stats["media_kind_assigned"] += 1
         elif u.unit_type == "bundle":
             assign_link_fast(session, existing_links, new_links, u.id, t_bundle.id, is_primary=True)
@@ -404,6 +387,8 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
             for tn in t_list:
                 reassigned_map[tn] = tc_id
 
+    official_domain_pairs: Set[Tuple[int, str]] = set()
+    official_unit_creator_name: Dict[int, str] = {}
     for work_code, code_units in units_by_code.items():
         meta = meta_by_code.get(work_code)
         if not meta:
@@ -423,6 +408,7 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
                 c_tag = get_or_create_tag_fast(session, tag_by_norm, clean_circle, cr_id)
                 if c_tag:
                     for u in code_units:
+                        official_unit_creator_name[u.id] = clean_circle
                         assign_link_fast(session, existing_links, new_links, u.id, c_tag.id, is_primary=True)
                         stats["creator_links_added"] += 1
 
@@ -454,6 +440,7 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
                     d_tag = get_or_create_tag_fast(session, tag_by_norm, d_clean, dest_cid, parent_id=dest_pid)
                     if d_tag:
                         for u in code_units:
+                            official_domain_pairs.add((u.id, d_clean))
                             assign_link_fast(session, existing_links, new_links, u.id, d_tag.id, is_primary=False)
                             stats["domain_links_added"] += 1
 
@@ -475,7 +462,15 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
             if t.id is None:
                 continue
             clean_name = apply_creator_cleaning(t.name, user_rules)
-            if clean_name and clean_name != t.name:
+            if clean_name != t.name:
+                if not is_valid_creator_candidate(clean_name, user_rules):
+                    session.execute(text("UPDATE tag SET parent_id = NULL WHERE parent_id = :tid"), {"tid": t.id})
+                    session.execute(text("DELETE FROM asset_unit_tag_link WHERE tag_id = :tid"), {"tid": t.id})
+                    session.execute(text("DELETE FROM tag_alias WHERE tag_id = :tid"), {"tid": t.id})
+                    session.execute(text("DELETE FROM tag WHERE id = :tid"), {"tid": t.id})
+                    cr_by_name.pop(t.name, None)
+                    stats["purged_invalid_tags"] += 1
+                    continue
                 target_tag = cr_by_name.get(clean_name)
                 if target_tag and target_tag.id != t.id:
                     t_links = session.exec(select(AssetUnitTagLink).where(AssetUnitTagLink.tag_id == t.id)).all()
@@ -491,12 +486,39 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
                             existing_links.add((tl.unit_id, target_tag.id))
                         session.delete(tl)
                         existing_links.discard((tl.unit_id, t.id))
-                    session.delete(t)
+                    session.flush()
+                    session.execute(
+                        text("UPDATE tag SET parent_id = :cid WHERE parent_id = :tid AND id != :cid"),
+                        {"cid": target_tag.id, "tid": t.id},
+                    )
+                    session.execute(text("UPDATE tag SET parent_id = NULL WHERE parent_id = :tid"), {"tid": t.id})
+                    session.execute(text("DELETE FROM asset_unit_tag_link WHERE tag_id = :tid"), {"tid": t.id})
+                    session.execute(text("DELETE FROM tag_alias WHERE tag_id = :tid"), {"tid": t.id})
+                    session.execute(text("DELETE FROM tag WHERE id = :tid"), {"tid": t.id})
+                    cr_by_name.pop(t.name, None)
                     stats["aliases_merged"] += 1
                 else:
+                    cr_by_name.pop(t.name, None)
                     t.name = clean_name
+                    _, bnorm = normalize_tag_name(clean_name)
+                    tag_by_norm[f"{bnorm}::{cr_id}"] = t
                     session.add(t)
                     cr_by_name[clean_name] = t
+
+        # 若带编号作品已拥有官方元数据社团 (official_unit_creator_name)，自动剥离同单元上残留的其他非官方 creator 标签（如汉化组名）
+        if official_unit_creator_name:
+            cr_id_set = {t.id for t in session.exec(select(Tag).where(Tag.tag_class_id == cr_id)).all() if t.id}
+            for uid, off_cname in official_unit_creator_name.items():
+                off_tag = cr_by_name.get(off_cname)
+                if not off_tag or not off_tag.id:
+                    continue
+                for tid in cr_id_set:
+                    if tid != off_tag.id and (uid, tid) in existing_links:
+                        session.execute(
+                            text("DELETE FROM asset_unit_tag_link WHERE unit_id = :uid AND tag_id = :tid"),
+                            {"uid": uid, "tid": tid},
+                        )
+                        existing_links.discard((uid, tid))
 
     if va_id:
         stats["aliases_merged"] += _merge_alias_map_in_class(
@@ -563,11 +585,16 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
         all_after_reassign = session.exec(select(Tag)).all()
         by_name_any: Dict[str, Tag] = {t.name: t for t in all_after_reassign}
         for alias_n, canon_n in user_rules.domain_aliases.items():
-            if alias_n == canon_n or alias_n not in by_name_any or canon_n not in by_name_any:
+            if alias_n == canon_n or alias_n not in by_name_any:
                 continue
             a_tag = by_name_any[alias_n]
-            c_tag = by_name_any[canon_n]
-            if a_tag.id and c_tag.id and a_tag.id != c_tag.id:
+            c_tag = by_name_any.get(canon_n)
+            if not c_tag:
+                dest_cid = reassigned_map.get(canon_n, dom_id)
+                c_tag = get_or_create_tag_fast(session, tag_by_norm, canon_n, dest_cid, parent_id=a_tag.parent_id if dest_cid == a_tag.tag_class_id else None)
+                if c_tag:
+                    by_name_any[canon_n] = c_tag
+            if a_tag.id and c_tag and c_tag.id and a_tag.id != c_tag.id:
                 a_links = session.exec(select(AssetUnitTagLink).where(AssetUnitTagLink.tag_id == a_tag.id)).all()
                 for al in a_links:
                     if (al.unit_id, c_tag.id) not in existing_links:
@@ -582,6 +609,8 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
                         existing_links.add((al.unit_id, c_tag.id))
                     existing_links.discard((al.unit_id, a_tag.id))
                 session.flush()
+                session.execute(text("UPDATE tag SET parent_id = :cid WHERE parent_id = :tid AND id != :cid"), {"cid": c_tag.id, "tid": a_tag.id})
+                session.execute(text("UPDATE tag SET parent_id = NULL WHERE parent_id = :tid"), {"tid": a_tag.id})
                 session.execute(text("DELETE FROM asset_unit_tag_link WHERE tag_id = :tid"), {"tid": a_tag.id})
                 session.execute(text("DELETE FROM tag_alias WHERE tag_id = :tid"), {"tid": a_tag.id})
                 session.execute(text("DELETE FROM tag WHERE id = :tid"), {"tid": a_tag.id})
@@ -589,25 +618,40 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
                 stats["aliases_merged"] += 1
         session.flush()
 
-    # 5. 依据 user_rules.domain_hierarchy 组织 domain 分类层级树
+    # 5. 依据 user_rules.domain_hierarchy 组织 domain 分类层级树 (支持多根节点如 有声读物 / 精选视频 / 视觉图集)
     if dom_id and user_rules.domain_hierarchy:
         dom_tags = session.exec(select(Tag).where(Tag.tag_class_id == dom_id)).all()
         dom_by_name = {t.name: t for t in dom_tags}
-        root_dom: Optional[Tag] = None
+        all_child_names_in_hierarchy = {
+            ch for ch_list in user_rules.domain_hierarchy.values() for ch in ch_list
+        }
+        top_root_names = set(user_rules.domain_roots_by_type.values())
         if user_rules.domain_root_name:
+            top_root_names.add(user_rules.domain_root_name)
+
+        root_dom: Optional[Tag] = None
+        if user_rules.domain_root_name and not user_rules.domain_roots_by_type:
             root_dom = dom_by_name.get(user_rules.domain_root_name) or get_or_create_tag_fast(
                 session, tag_by_norm, user_rules.domain_root_name, dom_id
             )
 
         for parent_cat_name, child_names in user_rules.domain_hierarchy.items():
+            is_top_root = (parent_cat_name in top_root_names) or (
+                bool(user_rules.domain_roots_by_type) and parent_cat_name not in all_child_names_in_hierarchy
+            )
+            default_pid = None if is_top_root else (root_dom.id if root_dom else None)
+
             parent_tag = dom_by_name.get(parent_cat_name)
             if not parent_tag:
                 parent_tag = get_or_create_tag_fast(
-                    session, tag_by_norm, parent_cat_name, dom_id, parent_id=root_dom.id if root_dom else None
+                    session, tag_by_norm, parent_cat_name, dom_id, parent_id=default_pid
                 )
                 if parent_tag:
                     dom_by_name[parent_cat_name] = parent_tag
-            elif root_dom and parent_tag.id != root_dom.id and parent_tag.parent_id != root_dom.id:
+            elif is_top_root and parent_tag.parent_id is not None:
+                parent_tag.parent_id = None
+                session.add(parent_tag)
+            elif not is_top_root and root_dom and parent_tag.id != root_dom.id and parent_tag.parent_id != root_dom.id:
                 parent_tag.parent_id = root_dom.id
                 session.add(parent_tag)
 
@@ -616,10 +660,57 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
 
             for ch_name in child_names:
                 ch_tag = dom_by_name.get(ch_name)
-                if ch_tag and ch_tag.id != parent_tag.id and ch_tag.parent_id != parent_tag.id:
+                if not ch_tag and ch_name in user_rules.domain_hierarchy:
+                    ch_tag = get_or_create_tag_fast(session, tag_by_norm, ch_name, dom_id, parent_id=parent_tag.id)
+                    if ch_tag:
+                        dom_by_name[ch_name] = ch_tag
+                elif ch_tag and ch_tag.id != parent_tag.id and ch_tag.parent_id != parent_tag.id:
                     ch_tag.parent_id = parent_tag.id
                     session.add(ch_tag)
                     stats["hierarchy_organized"] += 1
+
+        # 5.5 物理目录移动后的陈旧路径标签自愈：若单元已移出原分类目录，自动剥离不再匹配的同级路径专属标签（保留官方元数据标签）
+        if user_rules.domain_mapping:
+            parent_of_dom: Dict[str, str] = {}
+            for p_cat, ch_list in user_rules.domain_hierarchy.items():
+                for ch_c in ch_list:
+                    parent_of_dom[ch_c] = p_cat
+            path_exclusive_names = {
+                apply_domain_cleaning(k, user_rules) for k in user_rules.domain_mapping
+            } - top_root_names
+            path_excl_tags = {
+                t.id: t.name for t in dom_tags if t.id and t.name in path_exclusive_names
+            }
+            if path_excl_tags:
+                stale_pairs: List[Tuple[int, int]] = []
+                for uid, fp in unit_path_map.items():
+                    parts = [s.strip() for s in fp.replace("\\", "/").split("/")[:-1] if s.strip()]
+                    active_doms = {
+                        apply_domain_cleaning(s, user_rules)
+                        for s in parts
+                        if s in user_rules.domain_mapping
+                    }
+                    valid_doms = set(active_doms)
+                    for d_n in list(active_doms):
+                        cur_p = parent_of_dom.get(d_n)
+                        while cur_p and cur_p not in valid_doms:
+                            valid_doms.add(cur_p)
+                            cur_p = parent_of_dom.get(cur_p)
+                    for tid, tname in path_excl_tags.items():
+                        if (
+                            (uid, tid) in existing_links
+                            and tname not in valid_doms
+                            and (uid, tname) not in official_domain_pairs
+                        ):
+                            stale_pairs.append((uid, tid))
+                for uid, tid in stale_pairs:
+                    session.execute(
+                        text("DELETE FROM asset_unit_tag_link WHERE unit_id = :uid AND tag_id = :tid"),
+                        {"uid": uid, "tid": tid},
+                    )
+                    existing_links.discard((uid, tid))
+                if stale_pairs:
+                    session.flush()
 
     # 6. 依据 user_rules.class_hierarchies 组织其他正交元类 (character, interaction, spec) 的内部层级树
     if user_rules.class_hierarchies:
@@ -649,20 +740,23 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
 
     session.flush()
 
-    # 6.5 若配置了 domain_root_name，为因位于待分类/散装目录而缺失具体题材标签的单元补齐根题材兜底
-    if dom_id and user_rules.domain_root_name:
-        root_dom_tag = get_or_create_tag_fast(session, tag_by_norm, user_rules.domain_root_name, dom_id)
-        if root_dom_tag:
-            dom_tag_ids = {t.id for t in session.exec(select(Tag).where(Tag.tag_class_id == dom_id)).all() if t.id}
-            units_with_dom = {uid for (uid, tid) in existing_links if tid in dom_tag_ids}
-            fallback_dom_links: List[AssetUnitTagLink] = []
-            for u in units:
-                if u.id not in units_with_dom:
-                    assign_link_fast(session, existing_links, fallback_dom_links, u.id, root_dom_tag.id, is_primary=True)
-            if fallback_dom_links:
-                for i in range(0, len(fallback_dom_links), 2000):
-                    session.add_all(fallback_dom_links[i : i + 2000])
-                    session.flush()
+    # 6.5 若配置了 domain_roots_by_type 或 domain_root_name，为因位于待分类/散装目录而缺失具体题材标签的单元按主媒体类型补齐根题材兜底
+    if dom_id and (user_rules.domain_roots_by_type or user_rules.domain_root_name):
+        dom_tag_ids = {t.id for t in session.exec(select(Tag).where(Tag.tag_class_id == dom_id)).all() if t.id}
+        units_with_dom = {uid for (uid, tid) in existing_links if tid in dom_tag_ids}
+        fallback_dom_links: List[AssetUnitTagLink] = []
+        for u in units:
+            if u.id not in units_with_dom:
+                mtype_key = "video" if u.unit_type in ("video", "bundle") else u.unit_type
+                target_root_name = user_rules.domain_roots_by_type.get(mtype_key) or user_rules.domain_root_name
+                if target_root_name:
+                    r_tag = get_or_create_tag_fast(session, tag_by_norm, target_root_name, dom_id)
+                    if r_tag:
+                        assign_link_fast(session, existing_links, fallback_dom_links, u.id, r_tag.id, is_primary=True)
+        if fallback_dom_links:
+            for i in range(0, len(fallback_dom_links), 2000):
+                session.add_all(fallback_dom_links[i : i + 2000])
+                session.flush()
 
     # 7. 依据 user_rules.spec_keyword_rules 或集合信息按需补齐 spec 标签
     spec_id = class_map.get("spec")
@@ -704,49 +798,101 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
                 session.add_all(spec_links[i : i + 2000])
                 session.flush()
 
-    # 7.5 基于伴随字幕/歌词文件 (subtitle / lyrics) 与本地化特征自动对齐 workflow 状态
+    # 7.5 基于伴随字幕/歌词文件 (subtitle / .lrc) 与物理工作流目录自动对齐并自愈 workflow 状态
     if wf_id and user_rules.workflow_mapping:
         wf_tags = session.exec(select(Tag).where(Tag.tag_class_id == wf_id)).all()
         wf_by_name = {t.name: t for t in wf_tags}
         t_localized = wf_by_name.get("已汉化") or get_or_create_tag_fast(session, tag_by_norm, "已汉化", wf_id)
         t_untranslated = wf_by_name.get("待翻译") or get_or_create_tag_fast(session, tag_by_norm, "待翻译", wf_id)
         t_archived = wf_by_name.get("已归档") or get_or_create_tag_fast(session, tag_by_norm, "已归档", wf_id)
+        t_pending = wf_by_name.get("待整理") or get_or_create_tag_fast(session, tag_by_norm, "待整理", wf_id)
+
+        untrans_dir_names = {k for k, v in user_rules.workflow_mapping.items() if v == "待翻译"}
+        pending_dir_names = {k for k, v in user_rules.workflow_mapping.items() if v == "待整理"}
 
         sub_unit_ids = set(
-            session.exec(select(AssetFile.asset_unit_id).where(AssetFile.role.in_(["subtitle", "lyrics"]))).all()
+            session.exec(
+                select(AssetFile.asset_unit_id).where(
+                    (AssetFile.role == "subtitle")
+                    | ((AssetFile.role == "lyrics") & (AssetFile.extension != ".cue"))
+                    | (AssetFile.extension.in_([".lrc", ".srt", ".vtt", ".ass", ".ssa", ".slc"]))
+                )
+            ).all()
+        )
+        loc_keywords = (
+            "汉化", "漢化", "中国翻訳", "中字", "字幕", "简体", "簡体", "繁体", "繁體",
+            "[chinese]", "(chinese)", "[gb]", "中文版", "中文翻译", "中文台本",
         )
         localized_col_ids: Set[int] = set()
+        localized_work_codes: Set[str] = set()
         for u in units:
-            if u.id in sub_unit_ids and u.collection_id:
-                localized_col_ids.add(u.collection_id)
+            if u.id in sub_unit_ids:
+                if u.collection_id and u.collection_id in col_code_map:
+                    localized_col_ids.add(u.collection_id)
+                ucode = unit_code_by_uid.get(u.id)
+                if ucode:
+                    localized_work_codes.add(ucode)
         for cid, col in cols_by_id.items():
-            c_text = f"{col.name or ''} {col.folder_path or ''}"
-            if any(kw in c_text for kw in ("汉化", "中字", "中文", "字幕", "简体", "繁体", "繁體")):
+            # 仅对作品级集合检查完整路径，对分类桶集合仅检查集合名称中的明确汉化字样
+            c_text = f"{col.name or ''} {col.folder_path or ''}".lower() if cid in col_code_map else (col.name or "").lower()
+            if any(kw in c_text for kw in loc_keywords):
                 localized_col_ids.add(cid)
 
-        wf_tag_ids = {t.id for t in session.exec(select(Tag).where(Tag.tag_class_id == wf_id)).all() if t.id}
-        units_with_wf = {
-            uid for (uid, tid) in existing_links if tid in wf_tag_ids
-        }
-
         wf_links: List[AssetUnitTagLink] = []
+        stale_wf_pairs: List[Tuple[int, int]] = []
         for u in units:
-            has_loc = (u.id in sub_unit_ids) or (u.collection_id in localized_col_ids)
-            if has_loc and t_localized:
-                assign_link_fast(session, existing_links, wf_links, u.id, t_localized.id, is_primary=False)
-                units_with_wf.add(u.id)
-            elif u.id not in units_with_wf:
-                if u.collection_id in col_code_map and t_untranslated:
-                    assign_link_fast(session, existing_links, wf_links, u.id, t_untranslated.id, is_primary=False)
-                elif t_archived:
-                    assign_link_fast(session, existing_links, wf_links, u.id, t_archived.id, is_primary=False)
+            fp = unit_path_map.get(u.id, "")
+            parts = {s.strip() for s in fp.replace("\\", "/").split("/")[:-1] if s.strip()}
+            in_untrans_dir = bool(parts & untrans_dir_names)
+            in_pending_dir = bool(parts & pending_dir_names)
+            ucode = unit_code_by_uid.get(u.id)
+
+            if in_untrans_dir:
+                if t_untranslated:
+                    assign_link_fast(session, existing_links, wf_links, u.id, t_untranslated.id, is_primary=True)
+                if t_localized and (u.id, t_localized.id) in existing_links:
+                    stale_wf_pairs.append((u.id, t_localized.id))
+                if t_archived and (u.id, t_archived.id) in existing_links:
+                    stale_wf_pairs.append((u.id, t_archived.id))
+            else:
+                if t_untranslated and (u.id, t_untranslated.id) in existing_links:
+                    stale_wf_pairs.append((u.id, t_untranslated.id))
+                if not in_pending_dir and t_pending and (u.id, t_pending.id) in existing_links:
+                    stale_wf_pairs.append((u.id, t_pending.id))
+
+                dyn = u.dynamic_attributes or {}
+                tracks_text = " ".join(
+                    f"{tr.get('title', '')} {tr.get('sub_folder', '')}" for tr in dyn.get("tracks", [])
+                ).lower()
+                u_title_lower = f"{u.title or ''} {tracks_text}".lower()
+                already_loc_coded = bool(ucode and t_localized and (u.id, t_localized.id) in existing_links)
+                has_loc = (
+                    (u.id in sub_unit_ids)
+                    or (u.collection_id in localized_col_ids)
+                    or (bool(ucode) and ucode in localized_work_codes)
+                    or any(kw in u_title_lower for kw in loc_keywords)
+                    or already_loc_coded
+                )
+                if has_loc and t_localized:
+                    assign_link_fast(session, existing_links, wf_links, u.id, t_localized.id, is_primary=not in_pending_dir)
+                    if t_archived and (u.id, t_archived.id) in existing_links:
+                        stale_wf_pairs.append((u.id, t_archived.id))
+                elif not in_pending_dir and t_archived:
+                    assign_link_fast(session, existing_links, wf_links, u.id, t_archived.id, is_primary=True)
+
+        for uid, tid in stale_wf_pairs:
+            session.execute(
+                text("DELETE FROM asset_unit_tag_link WHERE unit_id = :uid AND tag_id = :tid"),
+                {"uid": uid, "tid": tid},
+            )
+            existing_links.discard((uid, tid))
 
         if wf_links:
             for i in range(0, len(wf_links), 2000):
                 session.add_all(wf_links[i : i + 2000])
                 session.flush()
 
-        # 消除互斥冲突：若同一单元同时拥有 已汉化 与 待翻译，移除 待翻译
+        # 消除互斥冲突：若同一单元同时拥有 已汉化 与 待翻译/已归档，移除 待翻译/已归档；若拥有 待整理 与 已归档，移除 已归档
         if t_localized and t_untranslated:
             session.execute(
                 text("""
@@ -758,16 +904,39 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
                 """),
                 {"untrans_id": t_untranslated.id, "loc_id": t_localized.id},
             )
-            session.flush()
+        if t_localized and t_archived:
+            session.execute(
+                text("""
+                    DELETE FROM asset_unit_tag_link
+                    WHERE tag_id = :arch_id
+                      AND unit_id IN (
+                          SELECT unit_id FROM asset_unit_tag_link WHERE tag_id = :loc_id
+                      )
+                """),
+                {"arch_id": t_archived.id, "loc_id": t_localized.id},
+            )
+        if t_pending and t_archived:
+            session.execute(
+                text("""
+                    DELETE FROM asset_unit_tag_link
+                    WHERE tag_id = :arch_id
+                      AND unit_id IN (
+                          SELECT unit_id FROM asset_unit_tag_link WHERE tag_id = :pend_id
+                      )
+                """),
+                {"arch_id": t_archived.id, "pend_id": t_pending.id},
+            )
+        session.flush()
 
     # 8. 清理孤立废弃标签（仅保护通用核心标签与 user_rules 显式声明的层级根节点）
     all_db_tags = session.exec(select(Tag)).all()
     protected_system_names = {
-        "音频", "视频", "图片", "复合媒体",
+        "音频", "视频", "图片", "复合媒体", "有声专辑", "独立画册",
         "待整理", "已归档",
     }
     if user_rules.domain_root_name:
         protected_system_names.add(user_rules.domain_root_name)
+    protected_system_names.update(user_rules.domain_roots_by_type.values())
     protected_system_names.update(user_rules.domain_hierarchy.keys())
     for h_map in user_rules.class_hierarchies.values():
         protected_system_names.update(h_map.keys())
@@ -784,7 +953,7 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
             session.delete(t)
             stats["orphans_cleaned"] += 1
 
-    # 9. 方案 A 落点唯一性自愈（递归消除祖先链重复 primary_landing）
+    # 9. 方案 A 落点唯一性自愈（递归消除祖先链重复 primary_landing 及同元类多重落点）
     for _ in range(3):
         session.execute(text("""
             UPDATE asset_unit_tag_link
@@ -803,6 +972,27 @@ def reorganize_all_tags(session: Session) -> Dict[str, Any]:
                   )
             )
         """))
+
+    # 同元类 (TagClass) 落点唯一性兜底：每个 (unit_id, tag_class_id) 最多保留 1 个 is_primary_landing = 1
+    session.execute(text("""
+        UPDATE asset_unit_tag_link
+        SET is_primary_landing = 0
+        WHERE rowid IN (
+            SELECT rowid FROM (
+                SELECT l.rowid,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY l.unit_id, t.tag_class_id
+                           ORDER BY CASE WHEN t.parent_id IS NOT NULL THEN 1 ELSE 0 END DESC,
+                                    l.confidence DESC,
+                                    l.rowid DESC
+                       ) AS rn
+                FROM asset_unit_tag_link l
+                JOIN tag t ON l.tag_id = t.id
+                WHERE l.is_primary_landing = 1
+            )
+            WHERE rn > 1
+        )
+    """))
 
     session.commit()
     TagHierarchyCacheManager.invalidate()
